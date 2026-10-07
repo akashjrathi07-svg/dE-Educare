@@ -1,0 +1,14 @@
+/*
+Theme Name: DE Educare
+Theme URI: https://deeducare.com/
+Author: DE EDUCARE LLP
+Description: Block theme for deeducare.com, built from the "De educare Website v4" design. Home, CAT, MBA-CET, OMETs, Free resources and Contact pages, with test lists that link to the student portal.
+Version: 1.0.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 7.4
+License: Proprietary
+Text Domain: deeducare
+*/
+
+/* All styles live in assets/css/site.css (loaded on the front end and in the editor). */
