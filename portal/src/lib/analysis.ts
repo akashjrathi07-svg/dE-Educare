@@ -131,11 +131,14 @@ export function analyse(qs: AnalysedQuestion[]) {
 
   const worst = qs.slice().sort((a, b) => (b.time - ref(b)) - (a.time - ref(a)))[0];
   const easyMiss = qs.filter(q => q.result !== 'ok' && q.difficulty !== 'hard').map(q => q.topic);
-  const guruTake = worst
-    ? `You lost the most time on ${worst.topic} (${fmt(worst.time)} vs ${peersReady ? 'peers' : 'ideal'} ${fmt(ref(worst))}). ` +
-      (easyMiss.length ? `${easyMiss.length} mark${easyMiss.length > 1 ? 's' : ''} ${peersReady ? 'most peers scored' : 'within easy reach'} slipped in ${[...new Set(easyMiss)].slice(0, 3).join(' and ')}. ` : '') +
-      'Fix those before your next full mock.'
-    : '';
+  const who = peersReady ? 'peers' : 'ideal';
+  const timePart = worst && worst.time > ref(worst)
+    ? `You lost the most time on ${worst.topic} (${fmt(worst.time)} vs ${who} ${fmt(ref(worst))}). `
+    : worst ? `You stayed within ${peersReady ? "peer" : "ideal"} time on every question. ` : '';
+  const missPart = easyMiss.length
+    ? `${easyMiss.length} easy or medium question${easyMiss.length > 1 ? 's' : ''} ${peersReady ? 'most peers got right' : 'within reach'} slipped in ${[...new Set(easyMiss)].slice(0, 3).join(', ')}. Fix those before your next full mock.`
+    : worst ? 'Every easy and medium question converted. Push your attempt count next time.' : '';
+  const guruTake = (timePart + missPart).trim();
 
   return { peersReady, timeStats, timeRows, sections, topics, difficulty, timeSplit, swot, guruTake };
 }

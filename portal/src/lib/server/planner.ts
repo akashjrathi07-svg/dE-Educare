@@ -25,7 +25,7 @@ export async function ensureWeek(userId: string, group: string, variant = 0) {
   const tb = TASKS[group] ?? TASKS.mba;
   for (let d = 0; d < 7; d++) for (let k = 0; k < 4; k++) {
     const [title, meta, tag] = tb[(d + k + variant * 2) % tb.length];
-    await sql`insert into planner_tasks (user_id, day, title, meta, tag, sort) values (${userId}, ${start}::date + ${d}, ${title}, ${meta}, ${tag}, ${k})`;
+    await sql`insert into planner_tasks (user_id, day, title, meta, tag, sort) values (${userId}, ${start}::date + ${d}::int, ${title}, ${meta}, ${tag}, ${k})`;
   }
 }
 

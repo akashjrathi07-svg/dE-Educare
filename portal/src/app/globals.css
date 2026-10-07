@@ -313,3 +313,8 @@ button.tr:hover, a.tr:hover { background: var(--sunk); color: var(--ink); }
 .toggle[aria-checked='true'] { background: #1F3A8A; }
 .toggle[aria-checked='true']::after { left: 19px; }
 .dark-panel { background: #10142B; color: #fff; border-radius: 18px; padding: 18px 20px; }
+.room-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+@media (max-width: 899px) { .room-grid { grid-template-columns: 1fr; } }
+.comm-grid { display: grid; gap: 16px; grid-template-columns: 170px minmax(0, 1fr); align-items: start; }
+.comm-ch { display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 760px) { .comm-grid { grid-template-columns: 1fr; } .comm-ch { flex-direction: row; overflow-x: auto; scrollbar-width: none; } .comm-ch > * { flex: none; } }

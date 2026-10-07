@@ -32,6 +32,11 @@ describe('analysis', () => {
 
   it("writes Guru's take from the biggest time loss", () => {
     expect(data.guruTake).toContain('TSD (4m 10s vs peers 2m 30s)');
+    expect(data.guruTake).toContain('1 easy or medium question most peers got right slipped in Tables');
+  });
+
+  it('does not claim lost time when the student was faster everywhere', () => {
+    expect(analyse([q({ time: 10 })]).guruTake).toContain('stayed within peer time');
   });
 
   it('falls back to ideal time before peers exist', () => {
