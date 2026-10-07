@@ -22,7 +22,7 @@ export default async function Tests({ searchParams }: { searchParams: Promise<{ 
   const children = await sql`
     select n.id, n.name, n.sub, n.is_free,
       (select count(*) from catalog_nodes c where c.parent_id = n.id)::int as kids,
-      (select count(*) from tests t where t.node_id = n.id and t.status = 'live')::int as tests
+      (select count(*) from tests t where t.node_id = n.id and t.status = 'live' and (t.live_from is null or t.live_from <= now()))::int as tests
     from catalog_nodes n where n.parent_id = ${id} order by n.sort`;
   const tests = await sql`
     select t.id, t.slug, t.name, t.type, t.duration_min, t.is_free,

@@ -41,7 +41,7 @@ export default async function Result({ params }: { params: Promise<{ id: string 
     { k: a.percentile_estimated ? 'Est. percentile' : 'Percentile', v: Number(a.percentile).toFixed(1), u: '%ile' },
     { k: 'Accuracy', v: a.accuracy + '%', u: '' },
     { k: 'Attempted', v: String(a.correct + a.wrong), u: '/ ' + b.questions.length },
-    { k: 'Rank', v: '#' + a.rank, u: 'of ' + total },
+    { k: 'Rank', v: a.rank == null ? '—' : '#' + a.rank, u: a.rank == null ? 'not ranked' : 'of ' + total },
     { k: 'Time', v: fmt(a.time_sec ?? 0), u: '' },
   ];
   const weakest = [...data.sections].sort((x, y) => x.acc - y.acc)[0];

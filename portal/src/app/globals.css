@@ -43,7 +43,7 @@ button { cursor: pointer; }
 
 /* ---------- Layout ---------- */
 .shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
-.side { position: sticky; top: 0; height: 100vh; overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 20px; padding: 20px 16px; }
+.side { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 20px; padding: 20px 16px; }
 .main { min-width: 0; padding: 32px 36px 96px; }
 .page { width: 100%; max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 @media (max-width: 979px) {
@@ -291,7 +291,7 @@ button.tr:hover, a.tr:hover { background: var(--sunk); color: var(--ink); }
 
 /* ---------- Admin ---------- */
 .admin { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); background: #F4F5F9; color: #10142B; }
-.admin-side { position: sticky; top: 0; height: 100vh; background: #10142B; color: #fff; display: flex; flex-direction: column; gap: 18px; padding: 20px 14px; overflow-y: auto; scrollbar-width: none; }
+.admin-side { position: sticky; top: 0; align-self: start; height: 100vh; background: #10142B; color: #fff; display: flex; flex-direction: column; gap: 18px; padding: 20px 14px; overflow-y: auto; scrollbar-width: none; }
 .admin-nav { display: flex; flex-direction: column; gap: 2px; }
 .admin-nav a { display: flex; gap: 11px; align-items: center; padding: 8px; border-radius: 11px; color: rgba(255,255,255,.75); font-size: 14px; font-weight: 700; }
 .admin-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }

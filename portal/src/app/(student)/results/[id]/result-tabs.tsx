@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { fmt, type Analysis } from '@/lib/analysis';
 import { askGuru } from '@/components/guru';
+import { ReportQuestion } from './report-question';
 
 const TABS = [['time', 'Time & solutions'], ['section', 'Section-wise'], ['topic', 'Topic-wise'], ['difficulty', 'Difficulty'], ['swot', 'SWOT']] as const;
 const DIFF: Record<string, string> = { easy: 'ok', medium: 'mid', hard: 'bad' };
@@ -63,6 +64,7 @@ export function ResultTabs({ data, solutionsOpen }: { data: Analysis; solutionsO
                       <div className="row" style={{ gap: 16, fontSize: 12, fontWeight: 800, color: 'var(--muted)' }}>
                         <span>Your time: {fmt(r.you)}</span><span>Peer average: {r.peer != null ? fmt(r.peer) : '—'}</span><span>Topper: {r.topper != null ? fmt(r.topper) : '—'}</span><span style={{ color: 'var(--priInk)' }}>Ideal: {fmt(r.ideal)}</span>
                       </div>
+                      <ReportQuestion questionId={r.questionId} />
                     </div>
                   )}
                 </div>

@@ -75,7 +75,7 @@ export function webhookSignatureValid(rawBody: string, signature: string) {
 /** Marks the order paid and grants the plan. Safe to call more than once. */
 export async function fulfil(orderId: string, paymentId: string, method: string | null, amount: number, raw: unknown) {
   return sql.begin(async tx => {
-    const [o] = await tx`select o.*, c.validity, e.exam_date from orders o join courses c on c.id = o.course_id left join exams e on e.id = c.exam_id where o.id = ${orderId} for update`;
+    const [o] = await tx`select o.*, c.validity, e.exam_date from orders o join courses c on c.id = o.course_id left join exams e on e.id = c.exam_id where o.id = ${orderId} for update of o`;
     if (!o) return false;
     if (o.status === 'paid') return true;
     await tx`insert into payments (order_id, gateway_payment_id, method, amount_paise, raw) values (${orderId}, ${paymentId}, ${method}, ${amount}, ${tx.json((raw ?? {}) as never)}) on conflict (gateway_payment_id) do nothing`;

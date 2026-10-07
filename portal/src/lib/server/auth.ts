@@ -60,12 +60,25 @@ export async function verifyOtp(phoneInput: string, code: string): Promise<{ ok:
   let isNew = false;
   if (!user) {
     isNew = true;
-    [user] = await sql<User[]>`
-      insert into users (phone, de_id) values (${phone}, ${'DE-' + new Date().getFullYear() + '-' + String(crypto.randomInt(10000, 99999))})
-      on conflict (phone) do update set phone = excluded.phone returning *`;
+    [user] = await createUser(phone);
   }
   await createSession(user.id);
   return { ok: true, user, isNew };
+}
+
+/** New account with a unique DE ID (DE-2026-482130). Retries on the rare ID clash. */
+export async function createUser(phone: string, role: Role = 'student') {
+  for (let i = 0; ; i++) {
+    const deId = 'DE-' + new Date().getFullYear() + '-' + String(crypto.randomInt(100000, 1000000));
+    try {
+      return await sql<User[]>`
+        insert into users (phone, de_id, role) values (${phone}, ${deId}, ${role})
+        on conflict (phone) do update set phone = excluded.phone returning *`;
+    } catch (e) {
+      if (i < 5 && (e as { code?: string; constraint_name?: string }).code === '23505') continue;
+      throw e;
+    }
+  }
 }
 
 async function createSession(userId: string) {

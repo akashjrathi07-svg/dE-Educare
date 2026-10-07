@@ -200,10 +200,13 @@ export async function submitAttempt(attemptId: string, userId: string) {
           wrong = excluded.wrong, skipped = excluded.skipped, time_sec = excluded.time_sec, percentile = excluded.percentile`;
     }
 
-    const others = (await tx`select score::float from attempts where test_id = ${a.test_id} and status = 'submitted' and id <> ${attemptId}`).map(r => r.score as number);
+    // Ranking set in the test builder: everyone (All-India), batch-mates only, or no rank shown.
+    const [{ ranking }] = await tx`select ranking from tests where id = ${a.test_id}`;
+    const others = (await tx`select score::float from attempts where test_id = ${a.test_id} and status = 'submitted' and id <> ${attemptId}
+      ${ranking === 'batch' ? tx`and user_id in (select m2.user_id from batch_members m1 join batch_members m2 on m2.batch_id = m1.batch_id where m1.user_id = ${userId})` : tx``}`).map(r => r.score as number);
     const real = others.length + 1 >= REAL_PERCENTILE_MIN_ATTEMPTS;
     const percentile = real ? percentileFromScores(total.score, others) : percentileFromCurve(total.max ? Math.max(0, total.score) / total.max : 0, b.curve);
-    const rank = others.filter(s => s > total.score).length + 1;
+    const rank = ranking === 'none' ? null : others.filter(s => s > total.score).length + 1;
 
     await tx`
       update attempts set status = 'submitted', submitted_at = now(), score = ${total.score}, max_score = ${total.max}, accuracy = ${total.accuracy},

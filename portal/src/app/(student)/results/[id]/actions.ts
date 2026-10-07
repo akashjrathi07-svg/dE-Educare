@@ -31,3 +31,16 @@ export async function generateAiAnalysis(attemptId: string) {
   await sql`update attempts set ai_analysis = ${text}, ai_generated_at = now() where id = ${attemptId}`;
   revalidatePath(`/results/${attemptId}`);
 }
+
+/** "Report a problem" on a solution. Shows up in Admin → Question bank. One open report per student per question. */
+export async function reportQuestion(questionId: string, reason: string, note: string) {
+  const u = await currentUser();
+  if (!u) return { ok: false, message: 'Please sign in again.' };
+  const REASONS = ['Wrong answer key', 'Question unclear', 'Solution wrong or missing', 'Typo or formatting', 'Other'];
+  if (!REASONS.includes(reason)) return { ok: false, message: 'Pick a reason.' };
+  const [seen] = await sql`select 1 from attempt_answers aa join attempts a on a.id = aa.attempt_id where a.user_id = ${u.id} and aa.question_id = ${questionId} limit 1`;
+  if (!seen) return { ok: false, message: 'You can report questions from your own tests.' };
+  const [dup] = await sql`select 1 from question_reports where question_id = ${questionId} and user_id = ${u.id} and status = 'open'`;
+  if (!dup) await sql`insert into question_reports (question_id, user_id, reason, note) values (${questionId}, ${u.id}, ${reason}, ${note.trim().slice(0, 500) || null})`;
+  return { ok: true, message: 'Thanks, our content team will check it.' };
+}
