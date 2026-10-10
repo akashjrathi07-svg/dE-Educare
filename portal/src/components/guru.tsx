@@ -1,4 +1,5 @@
 'use client';
+import { COIN_COST } from '@/lib/economy';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -34,6 +35,7 @@ export function Guru({ firstName, quota }: { firstName: string; quota: { limit: 
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [left, setLeft] = useState<number | null>(quota.limit == null ? null : Math.max(0, quota.limit - quota.used));
+  const [bonus, setBonus] = useState(quota.credits);
   const [voice, setVoice] = useState<Voice>('idle');
   const [voiceQ, setVoiceQ] = useState('');
   const [voiceA, setVoiceA] = useState('');
@@ -61,9 +63,10 @@ export function Guru({ firstName, quota }: { firstName: string; quota: { limit: 
       const res = await fetch('/api/guru', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, page: ctx[1], mode: viaVoice ? 'voice' : 'chat' }) });
       const h = res.headers.get('x-guru-left');
       if (h) setLeft(h === 'unlimited' ? null : Number(h));
+      const hb = res.headers.get('x-guru-bonus');
+      if (hb) setBonus(Number(hb));
       if (!res.ok || !res.body) {
         reply = await res.text();
-        if (res.status === 429) setLeft(0);
       } else {
         const reader = res.body.getReader();
         const dec = new TextDecoder();
@@ -138,14 +141,14 @@ export function Guru({ firstName, quota }: { firstName: string; quota: { limit: 
     r.start();
   };
 
-  const quotaLabel = left == null ? 'Unlimited · AI mentor' : `${left} of ${quota.limit} free questions left today${quota.credits ? ` · ${quota.credits} credits` : ''}`;
+  const quotaLabel = left == null ? 'Unlimited coins · AI mentor' : `${left} of ${quota.limit} coins left today${bonus ? ` · ${bonus} bonus` : ''} · ${mode === 'voice' ? `${COIN_COST.voice} coins per voice reply` : `${COIN_COST.chat} coin per message`}`;
   const vlabel = { idle: 'Tap to talk', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking' }[voice];
 
   if (!open) {
     return (
       <button type="button" className="fab" onClick={() => { setOpen(true); load(); }} aria-label="Ask Guru">
         <span className="orb" />
-        <span className="fab-label"><span style={{ fontSize: 14, fontWeight: 800 }}>Ask Guru</span><span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.7)' }}>Chat or voice · knows this page</span></span>
+        <span className="fab-label"><span style={{ fontSize: 14, fontWeight: 800 }}>Ask Guru</span><span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.7)' }}>Chat or voice tutor · knows this page</span></span>
       </button>
     );
   }

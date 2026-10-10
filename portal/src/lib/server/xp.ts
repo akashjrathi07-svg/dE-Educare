@@ -1,17 +1,11 @@
 import 'server-only';
 import { sql } from './db';
+import { grantBonus } from './coins';
+import { STREAK_COINS } from '../economy';
 
-/** Adds XP once per (kind, ref). Every 1,000 XP earned also grants a free-mock credit. */
+/** Adds XP once per (kind, ref). XP is spent in the rewards store (coins, coupons, a free mock). */
 export async function awardXp(userId: string, kind: string, xp: number, ref: string | null = null) {
-  const inserted = await sql`
-    insert into xp_events (user_id, kind, xp, ref) values (${userId}, ${kind}, ${xp}, ${ref})
-    on conflict do nothing returning id`;
-  if (!inserted.length || xp <= 0) return;
-  const [{ earned }] = await sql`select coalesce(sum(xp), 0)::int as earned from xp_events where user_id = ${userId} and xp > 0`;
-  const milestones = Math.floor(earned / 1000);
-  for (let m = 1; m <= milestones; m++) {
-    await sql`insert into test_credits (user_id, kind, source) values (${userId}, 'mock', ${'xp-' + m * 1000}) on conflict do nothing`;
-  }
+  await sql`insert into xp_events (user_id, kind, xp, ref) values (${userId}, ${kind}, ${xp}, ${ref}) on conflict do nothing`;
 }
 
 /** Removes XP for something undone (e.g. unticking a planner task). */
@@ -27,16 +21,21 @@ export async function xpTotals(userId: string) {
   return { earned: r.earned as number, balance: r.balance as number };
 }
 
-/** Daily free test keeps the streak: consecutive days count up, a missed day resets to 1. */
+/** Daily free test keeps the streak: consecutive days count up, a missed day resets to 1. Milestones pay bonus coins. */
 export async function bumpStreak(userId: string) {
-  await sql`
+  const [s] = await sql`
     insert into streaks (user_id, current, best, last_day) values (${userId}, 1, 1, current_date)
     on conflict (user_id) do update set
       current = case when streaks.last_day = current_date then streaks.current
                      when streaks.last_day = current_date - 1 then streaks.current + 1 else 1 end,
       best = greatest(streaks.best, case when streaks.last_day = current_date then streaks.current
                      when streaks.last_day = current_date - 1 then streaks.current + 1 else 1 end),
-      last_day = current_date`;
+      last_day = current_date
+    returning current`;
+  for (const [days, coins] of STREAK_COINS) {
+    // One payout per milestone per streak run (the ref carries the run's start day).
+    if (s?.current === days) await grantBonus(userId, coins, 'streak', `${days}d-${new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10)}`);
+  }
 }
 
 export async function streakOf(userId: string) {

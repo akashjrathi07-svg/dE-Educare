@@ -3,8 +3,10 @@ import { revalidatePath } from 'next/cache';
 import crypto from 'node:crypto';
 import { currentUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
+import { grantBonus } from '@/lib/server/coins';
+import { XP_PER_COIN } from '@/lib/economy';
 
-/** Spends XP in the rewards store. Grants a test credit, a personal coupon or Guru credits. */
+/** Spends XP in the rewards store: bonus Guru coins, a capped discount coupon or a free mock. */
 export async function redeem(rewardId: string) {
   const u = await currentUser();
   if (!u) return { ok: false, message: 'Please sign in again.' };
@@ -21,16 +23,38 @@ export async function redeem(rewardId: string) {
       message = `${r.name}: open any locked ${g.test_credit === 'mock' ? 'mock' : 'sectional'} and choose “Use a free credit”.`;
     } else if (g.coupon_flat || g.coupon_percent) {
       const code = 'XP' + crypto.randomBytes(3).toString('hex').toUpperCase();
-      const [c] = await tx`insert into coupons (code, kind, value, max_uses, user_id, valid_till) values (${code}, ${g.coupon_flat ? 'flat' : 'percent'}, ${(g.coupon_flat ?? g.coupon_percent) as number}, 1, ${u.id}, current_date + 90) returning id`;
+      const [c] = await tx`insert into coupons (code, kind, value, max_uses, user_id, valid_till, max_discount_paise, category)
+        values (${code}, ${g.coupon_flat ? 'flat' : 'percent'}, ${(g.coupon_flat ?? g.coupon_percent) as number}, 1, ${u.id}, current_date + 90, ${(g.cap_paise as number) ?? null}, ${(g.category as string) ?? null}) returning id`;
       couponId = c.id;
       message = `Your coupon ${code} is ready. Use it at checkout within 90 days.`;
-    } else if (g.guru_credits) {
-      await tx`update users set guru_credits = guru_credits + ${g.guru_credits as number} where id = ${u.id}`;
+    } else if (g.bonus_coins || g.guru_credits) {
+      await grantBonus(u.id, Number(g.bonus_coins ?? g.guru_credits), 'reward', 'reward-' + crypto.randomUUID(), tx);
+      message = `${Number(g.bonus_coins ?? g.guru_credits)} bonus coins added. They never expire.`;
     }
     await tx`insert into redemptions (user_id, reward_id, coupon_id) values (${u.id}, ${r.id}, ${couponId})`;
     await tx`insert into xp_events (user_id, kind, xp) values (${u.id}, 'redeem', ${-r.cost_xp})`;
     revalidatePath('/profile');
     return { ok: true, message };
+  });
+}
+
+/** Turns XP into bonus Guru coins at 100 XP = 1 coin. */
+export async function convertXp(coins: number) {
+  const u = await currentUser();
+  if (!u) return { ok: false, message: 'Please sign in again.' };
+  const n = Math.round(coins);
+  if (!(n >= 1 && n <= 1000)) return { ok: false, message: 'Pick between 1 and 1,000 coins.' };
+  return sql.begin(async tx => {
+    await tx`select pg_advisory_xact_lock(hashtext(${u.id}))`;
+    const [{ bal }] = await tx`select coalesce(sum(xp), 0)::int as bal from xp_events where user_id = ${u.id}`;
+    const cost = n * XP_PER_COIN;
+    if (bal < cost) return { ok: false, message: `${n} coins need ${cost.toLocaleString('en-IN')} XP. You have ${bal.toLocaleString('en-IN')}.` };
+    const ref = 'xp-' + crypto.randomUUID();
+    await tx`insert into xp_events (user_id, kind, xp, ref) values (${u.id}, 'xp_convert', ${-cost}, ${ref})`;
+    await grantBonus(u.id, n, 'xp_convert', ref, tx);
+    revalidatePath('/profile');
+    revalidatePath('/', 'layout');
+    return { ok: true, message: `${n} bonus coins added for ${cost.toLocaleString('en-IN')} XP.` };
   });
 }
 

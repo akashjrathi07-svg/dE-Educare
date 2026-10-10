@@ -49,7 +49,7 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId }: 
               <div key={k} className="card" style={{ padding: 12, background: 'var(--sunk)' }}><div className="eyebrow">{k}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{v}</div></div>
             ))}
           </div>
-          <div className="note">Plans: <b>{open.plans}</b> · Extra Guru credits: <b>{open.credits}</b></div>
+          <div className="note">Plans: <b>{open.plans}</b> · Bonus Guru coins: <b>{open.credits}</b></div>
           <Field label="Preparing for">
             <select className="input" value={form.exam} onChange={e => set({ exam: e.target.value })}>{!form.exam && <option value="">Not set</option>}{exams.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
           </Field>
@@ -64,7 +64,7 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId }: 
             <select className="input" value={form.batchId} onChange={e => set({ batchId: e.target.value })}><option value="none">None</option>{batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select>
           </Field>
           {canGrant && (
-            <Field label="Add Guru credits" hint="Extra AI questions on top of the plan quota">
+            <Field label="Add bonus Guru coins" hint="Never expire; used after the daily coins">
               <input className="input" type="number" min={0} max={1000} value={form.credits} onChange={e => set({ credits: Number(e.target.value) })} />
             </Field>
           )}

@@ -12,14 +12,19 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const pct = (n: number | null) => (n == null ? '—' : n + '%');
 
 /** Plain-language verdict from the percentile. */
-function verdict(p: number) {
+function verdict(p: number, practice: boolean) {
+  if (practice) {
+    if (p >= 85) return ['Strong practice', 'Most answers were right. Move to a harder level or a timed sectional on this topic.', 'ok'];
+    if (p >= 60) return ['Good practice', 'Review the wrong ones in Time & solutions, then build another set on the same topic.', 'mid'];
+    return ['Keep practising', 'Read the solutions below first, then try an easy-level set on this topic before moving on.', 'bad'];
+  }
   if (p >= 95) return ['Excellent attempt', 'You are in the top 5%. Keep the mock rhythm and polish the few gaps below.', 'ok'];
   if (p >= 85) return ['Strong attempt', 'Top 15%. A few fixes in the topics below can move you into the 95+ band.', 'ok'];
   if (p >= 70) return ['On track', 'Solid base. Most of your lost marks are in a handful of topics; fix those first.', 'mid'];
   return ['Building up', 'This is a starting point. Work on the three topics below with topic tests before your next mock.', 'bad'];
 }
 
-export function ResultTabs({ data, solutionsOpen, percentile }: { data: Analysis; solutionsOpen: boolean; percentile: number }) {
+export function ResultTabs({ data, solutionsOpen, percentile, practice = false }: { data: Analysis; solutionsOpen: boolean; percentile: number; practice?: boolean }) {
   const [tab, setTab] = useState<(typeof TABS)[number][0]>('overview');
   const [open, setOpen] = useState<number | null>(null);
   const peerWord = data.peersReady ? 'Peers' : 'Ideal';
@@ -32,7 +37,7 @@ export function ResultTabs({ data, solutionsOpen, percentile }: { data: Analysis
       {!data.peersReady && <p className="note" style={{ marginTop: -10 }}>Peer times and accuracy appear once 50 students have answered a question. Until then we compare with the ideal time set by faculty.</p>}
 
       {tab === 'overview' && (() => {
-        const [title, line, tone] = verdict(percentile);
+        const [title, line, tone] = verdict(percentile, practice);
         const tot = data.sections.reduce((a, x) => ({ c: a.c + x.c, w: a.w + x.w, skip: a.skip + x.skip, n: a.n + x.n }), { c: 0, w: 0, skip: 0, n: 0 });
         const lost = data.timeRows.filter(r => r.marks < 0).reduce((a, r) => a + r.marks, 0);
         const fixes = data.topics.filter(t => t.status === 'Weak').slice(0, 3);

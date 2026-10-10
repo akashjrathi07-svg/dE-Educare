@@ -13,7 +13,7 @@ export default async function Tests({ searchParams }: { searchParams: Promise<SP
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const status = ['live', 'draft', 'archived', 'scheduled'].includes(sp.status ?? '') ? sp.status! : null;
-  const where = sql`where true ${sp.exam ? sql`and e.code = ${sp.exam}` : sql``} ${sp.q ? sql`and t.name ilike ${'%' + sp.q + '%'}` : sql``}
+  const where = sql`where t.owner_id is null ${sp.exam ? sql`and e.code = ${sp.exam}` : sql``} ${sp.q ? sql`and t.name ilike ${'%' + sp.q + '%'}` : sql``}
     ${status === 'scheduled' ? sql`and t.status = 'live' and t.live_from > now()` : status === 'live' ? sql`and t.status = 'live' and (t.live_from is null or t.live_from <= now())` : status ? sql`and t.status = ${status}` : sql``}`;
   const [exams, rows, [{ total }], pool, topicPool, courses, nodes] = await Promise.all([
     examRefs(),

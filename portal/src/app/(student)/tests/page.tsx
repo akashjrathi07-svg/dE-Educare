@@ -53,9 +53,12 @@ export default async function Tests({ searchParams }: { searchParams: Promise<{ 
           </span>
         ))}
       </nav>
-      <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
-        <h1 className="h1">{node.name}</h1>
-        <div className="sub">{node.sub}</div>
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
+          <h1 className="h1">{node.name}</h1>
+          <div className="sub">{node.sub}</div>
+        </div>
+        <Link href="/practice" className="btn soft">Build a practice set</Link>
       </div>
 
       {soon && !children.length && !tests.length && (

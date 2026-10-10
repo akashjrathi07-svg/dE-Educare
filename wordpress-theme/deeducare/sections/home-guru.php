@@ -10,8 +10,8 @@ defined( 'ABSPATH' ) || exit;
 $feats = array(
 	array( '01', 'Reads your mocks.', 'Topic accuracy, time sinks and skipped-set choices.' ),
 	array( '02', 'Solves from a photo.', 'Snap any question from any book.' ),
-	array( '03', 'Builds custom tests.', 'From your weakest topics, in seconds.' ),
-	array( '04', 'Talks.', 'Voice mode for doubts on the go.' ),
+	array( '03', 'Builds practice sets.', 'From your weakest topics, with questions you haven’t seen.' ),
+	array( '04', 'Teaches by voice.', 'Explains a concept step by step, like a tutor beside you.' ),
 );
 $sugg  = array( 'How should I start CAT prep?', 'Is 85 enough for 99 %ile?', 'CAT or CET first?' );
 ?>
@@ -25,7 +25,7 @@ $sugg  = array( 'How should I start CAT prep?', 'Is 85 enough for 99 %ile?', 'CA
 					<li><span class="de-guru__n"><?php de_e( $f[0] ); ?></span><span><b><?php de_e( $f[1] ); ?></b> <span class="de-guru__fd"><?php de_e( $f[2] ); ?></span></span></li>
 				<?php endforeach; ?>
 			</ul>
-			<span class="de-guru__note">10 free questions a day with a free account. Unlimited on paid plans.</span>
+			<span class="de-guru__note">10 free Guru coins a day · 50 on test series · unlimited on coaching.</span>
 		</div>
 		<div class="de-chat" data-guru data-signup="<?php echo esc_url( de_signup_url() ); ?>">
 			<div class="de-chat__head"><span class="de-orb" aria-hidden="true"></span><span class="de-chat__name">Guru</span><span class="de-chat__left" data-guru-left>3 FREE PREVIEW QUESTIONS</span></div>

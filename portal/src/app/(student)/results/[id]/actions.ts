@@ -2,14 +2,22 @@
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
-import { askClaude } from '@/lib/server/guru';
+import { askClaude, consumeGuru } from '@/lib/server/guru';
+import { refundCoins } from '@/lib/server/coins';
+import { analysisCost } from '@/lib/economy';
 
-/** Guru's written analysis (ANALYSIS_LOGIC.md · Guru AI analysis). Cached on the attempt. */
-export async function generateAiAnalysis(attemptId: string) {
+/**
+ * Guru's written analysis with a next-step plan (ANALYSIS_LOGIC.md · Guru AI analysis).
+ * Costs 1 coin for topic/daily tests, 2 for sectionals, 3 for mocks; cached on the attempt.
+ */
+export async function generateAiAnalysis(attemptId: string): Promise<{ ok: boolean; message: string }> {
   const u = await currentUser();
-  if (!u) return;
-  const [a] = await sql`select a.*, t.name, e.code from attempts a join tests t on t.id = a.test_id join exams e on e.id = t.exam_id where a.id = ${attemptId} and a.user_id = ${u.id} and a.status = 'submitted'`;
-  if (!a || a.ai_analysis) return;
+  if (!u) return { ok: false, message: 'Please sign in again.' };
+  const [a] = await sql`select a.*, t.name, t.type, e.code from attempts a join tests t on t.id = a.test_id join exams e on e.id = t.exam_id where a.id = ${attemptId} and a.user_id = ${u.id} and a.status = 'submitted'`;
+  if (!a) return { ok: false, message: 'Result not found.' };
+  if (a.ai_analysis) return { ok: true, message: '' };
+  const pay = await consumeGuru(u.id, analysisCost(a.type), 'analysis', attemptId);
+  if (!pay.ok) return { ok: false, message: pay.message };
   const secs = await sql`select s.name, r.correct, r.correct + r.wrong + r.skipped as n from attempt_section_results r join sections s on s.id = r.section_id where r.attempt_id = ${attemptId} order by s.sort`;
   const topics = await sql`
     select tp.name, aa.answer is null as skipped from attempt_answers aa join questions q on q.id = aa.question_id left join topics tp on tp.id = q.topic_id
@@ -26,10 +34,17 @@ export async function generateAiAnalysis(attemptId: string) {
   const text = await askClaude(
     'You are Guru, the AI mentor on the DE Educare test portal. Write exactly 4 numbered lines: 1) what went well, 2) what cost marks and why, 3) one time-management tip, 4) the next 2 DE Educare tests to take, named as topic tests or sectionals. Under 110 words, plain text, no markdown.',
     [{ role: 'user', content: `A student just finished "${a.name}" (${a.code}). Score ${a.score}/${a.max_score}, accuracy ${a.accuracy}%, ${a.skipped} skipped, estimated ${Number(a.percentile).toFixed(1)} percentile. Sections: ${secs.map(s => `${s.name} ${s.correct}/${s.n}`).join(', ')}. Wrong topics: ${wrong.join(', ') || 'none'}. Skipped topics: ${skipped.join(', ') || 'none'}.` }],
-    fallback, { maxTokens: 3000, effort: 'low' },
+    '', { maxTokens: 3000, effort: 'low' },
   );
-  await sql`update attempts set ai_analysis = ${text}, ai_generated_at = now() where id = ${attemptId}`;
+  if (!text) {
+    // No AI answer: refund and show the rule-based summary instead.
+    await refundCoins(u.id, pay.spent, 'analysis');
+    await sql`update attempts set ai_analysis = ${fallback}, ai_generated_at = now() where id = ${attemptId}`;
+  } else {
+    await sql`update attempts set ai_analysis = ${text}, ai_generated_at = now() where id = ${attemptId}`;
+  }
   revalidatePath(`/results/${attemptId}`);
+  return { ok: true, message: '' };
 }
 
 /** "Report a problem" on a solution. Shows up in Admin → Question bank. One open report per student per question. */

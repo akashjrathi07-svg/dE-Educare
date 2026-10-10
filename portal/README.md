@@ -47,6 +47,17 @@ Checks: `npm run typecheck`, `npm test`, `npm run build`.
 - **Classes:** schedule a class for a batch, or as an open class for an exam group. Add the recording link afterwards; it also appears in the Library.
 - **Exam interfaces:** rules such as the calculator, palette and language apply to an exam's tests straight away. Section timers apply to tests built after the change.
 
+## Guru coins and XP
+
+All numbers live in `src/lib/economy.ts`.
+
+- **Daily coins:** 10 on a free account, 50 on any mock or test series plan, unlimited on coaching (grant the coaching plan from Admin → Students after enrolment). They refill at midnight IST and do not carry forward.
+- **Bonus coins** never expire and are used after the daily coins: from XP (100 XP = 1 coin), streaks (7, 30, 100 days), monthly prizes, the rewards store and staff grants (Admin → Students).
+- **Costs:** chat 1 · voice tutor reply 3 · photo doubt 2 · test analysis 1 (topic/daily), 2 (sectional), 3 (mock) · practice set 1 per 10 questions · full progress report 5 (≤10 tests) or 10. Coins are refunded if the AI can't answer.
+- **XP:** topic/daily/practice test 2 · sectional 20 · mock 100, ×3 at 95%+ accuracy, ×2 at 85%+, ×1.5 at 70%+, plus 100/200 for a 95/99+ percentile mock. Planner task 5, helpful community answer 20.
+- **Rewards store (XP):** bonus coins, a free mock, and capped coupons (5%/10% off a test series, 5%/10% off coaching).
+- **Monthly prizes:** paid on the 1st by the cron in `vercel.json`. Set `CRON_SECRET` in Vercel → Settings → Environment Variables for it to run.
+
 ## Notes
 
 - Percentiles are estimated from a score curve until a test has 200 attempts. After that they come from real scores. Peer time and accuracy appear once a question has 50 attempts.

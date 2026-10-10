@@ -1,4 +1,5 @@
 'use server';
+import { XP_OTHER } from '@/lib/economy';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { currentUser } from '@/lib/server/auth';
@@ -45,6 +46,6 @@ export async function markHelpful(answerId: string) {
     update community_answers ca set helpful = true from community_posts p
     where ca.id = ${answerId} and p.id = ca.post_id and p.user_id = ${u.id} and ca.user_id <> ${u.id} and not ca.helpful
     returning ca.user_id, ca.post_id`;
-  if (a) await awardXp(a.user_id, 'helpful_answer', 20, answerId);
+  if (a) await awardXp(a.user_id, 'helpful_answer', XP_OTHER.helpful_answer, answerId);
   if (a) revalidatePath(`/community/${a.post_id}`);
 }
