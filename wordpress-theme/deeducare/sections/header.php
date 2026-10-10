@@ -62,14 +62,7 @@ $mega = array(
 
 <header class="de-header" data-header>
 	<div class="de-wrap de-header__in">
-		<a class="de-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="<?php esc_attr_e( 'DE Educare home', 'deeducare' ); ?>">
-			<?php if ( has_custom_logo() ) : ?>
-				<?php echo wp_get_attachment_image( get_theme_mod( 'custom_logo' ), 'thumbnail', false, array( 'class' => 'de-logo__img', 'alt' => '' ) ); ?>
-			<?php else : ?>
-				<span class="de-logo__mark" aria-hidden="true">DE</span>
-			<?php endif; ?>
-			<span class="de-logo__text">DE Educare</span>
-		</a>
+		<?php de_logo(); ?>
 
 		<nav class="de-nav" aria-label="<?php esc_attr_e( 'Main', 'deeducare' ); ?>">
 			<button type="button" class="de-nav__link" aria-expanded="false" aria-controls="de-mega" data-mega-toggle>Exams <span aria-hidden="true">▾</span></button>
@@ -100,7 +93,7 @@ $mega = array(
 						<a class="de-mega__item" href="<?php echo esc_url( $mi[3] ); ?>">
 							<span class="de-mono-badge de-mono-badge--<?php echo esc_attr( $mi[4] ? $mi[4] : 'blue' ); ?>"><?php de_e( $mi[0] ); ?></span>
 							<span class="de-mega__txt">
-								<span class="de-mega__t"><?php de_e( $mi[1] ); ?><?php if ( 'soon' === $mi[4] ) : ?><span class="de-soon">SOON</span><?php endif; ?></span>
+								<span class="de-mega__t"><?php de_e( $mi[1] ); ?><?php if ( 'soon' === $mi[4] ) : ?> <span class="de-soon" aria-label="coming soon">SOON</span><?php endif; ?></span>
 								<span class="de-mega__d"><?php de_e( $mi[2] ); ?></span>
 							</span>
 						</a>

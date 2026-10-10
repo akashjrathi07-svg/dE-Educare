@@ -12,7 +12,7 @@ $sets  = de_free_questions();
 $today = wp_date( 'Ymd' );
 $label = wp_date( 'j M' );
 $res   = array(
-	array( 'PDF', 'Quant formula sheet', 'Arithmetic, algebra, geometry', de_portal( 'library' ) ),
+	array( 'PDF', 'Formula sheets and notes', 'Read in the portal · free sign-in', '#notes' ),
 	array( '2017–25', 'CAT previous papers', 'Attempt in the exam interface', '#free-tests' ),
 	array( 'CET', 'MBA-CET sample paper', '200 Q · 150 min', de_test_url( 'cet-pyq-0' ) ),
 	array( 'XAT', 'Decision making sets', 'With explanations', de_page_url( 'omet' ) . '?exam=xat' ),
@@ -34,7 +34,7 @@ $free_tests = array(
 	</div>
 
 	<div class="de-free__grid">
-		<div class="de-fq" data-fq>
+		<div class="de-fq de-anchor" id="free-questions" data-fq>
 			<div class="de-fq__head">
 				<h2 class="de-fq__title">Free questions</h2>
 				<div class="de-fq__tabs" role="tablist">
@@ -97,22 +97,7 @@ $free_tests = array(
 		</div>
 	</div>
 
-	<div class="de-pred de-anchor" id="predictor" data-predictor data-table="<?php echo esc_attr( wp_json_encode( de_percentile_table() ) ); ?>">
-		<div class="de-stack-14">
-			<span class="de-eyebrow de-eyebrow--muted">TOOL</span>
-			<h2 class="de-pred__h">CAT percentile predictor</h2>
-			<div class="de-pred__inputs">
-				<?php foreach ( array( array( 'VARC', 'va', 30 ), array( 'DILR', 'dl', 18 ), array( 'Quant', 'qa', 26 ) ) as $in ) : ?>
-					<label><?php de_e( $in[0] ); ?><input type="number" inputmode="numeric" min="-30" max="102" value="<?php echo (int) $in[2]; ?>" data-pred-input></label>
-				<?php endforeach; ?>
-			</div>
-			<span class="de-note de-note--xs">Rough estimate from recent score vs percentile trends.</span>
-		</div>
-		<div class="de-pred__out" aria-live="polite">
-			<div><span class="de-pred__k">Score / 204</span><span class="de-pred__v" data-pred-score>74</span></div>
-			<div><span class="de-pred__k">Estimated percentile</span><span class="de-pred__v de-pred__v--amber" data-pred-pct>97.6</span></div>
-		</div>
-	</div>
+	<?php de_predictors( 'predictor' ); ?>
 
 	<div class="de-stack-14 de-narrow-left" data-reveal>
 		<span class="de-eyebrow de-eyebrow--muted">FAQS</span>

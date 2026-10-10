@@ -8,8 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 $cols = array(
+	'COACHING'     => array( array( 'CAT Coaching 2027', home_url( '/#coaching' ) ), array( 'CET Coaching 2028', home_url( '/#coaching' ) ), array( 'MBA+ (CAT + CET + OMET)', home_url( '/#coaching' ) ), array( 'Enquire now', '#enquire' ) ),
 	'MBA ENTRANCE' => array( array( 'CAT Test Series', de_page_url( 'cat' ) ), array( '10 CAT Mocks', de_page_url( 'cat' ) . '#plans' ), array( 'MBA-CET', de_page_url( 'mba-cet' ) ), array( 'OMETs', de_page_url( 'omet' ) ) ),
-	'FREE'         => array( array( 'Daily free test', de_daily_url( 'cat' ) ), array( 'Free questions', de_page_url( 'free-resources' ) ), array( 'Percentile predictor', de_page_url( 'free-resources' ) . '#predictor' ), array( 'Previous papers', de_page_url( 'free-resources' ) . '#free-tests' ) ),
+	'FREE'         => array( array( 'Daily free test', de_daily_url( 'cat' ) ), array( 'Free questions', de_page_url( 'free-resources' ) ), array( 'Percentile & college predictor', de_page_url( 'free-resources' ) . '#predictor' ), array( 'Previous papers', de_page_url( 'free-resources' ) . '#free-tests' ) ),
 	'STUDENTS'     => array_values( array_filter( array( array( 'Sign in', de_login_url() ), array( 'Web portal', de_portal() ), de_setting( 'app_url' ) ? array( 'Mobile app', de_setting( 'app_url' ) ) : null, array( 'Contact us', de_page_url( 'contact' ) ) ) ) ),
 );
 
@@ -23,8 +24,15 @@ foreach ( array( 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'youtube'
 <footer class="de-footer">
 	<div class="de-wrap de-footer__in">
 		<div class="de-footer__cta">
-			<p class="de-footer__h">Your next mock starts in under a minute.</p>
-			<a class="de-btn de-btn--amber de-btn--lg" href="<?php echo esc_url( de_signup_url() ); ?>">Create free DE Educare ID</a>
+			<div class="de-stack-20">
+				<?php de_logo( 'de-logo de-logo--footer' ); ?>
+				<p class="de-footer__h">Your next mock starts in under a minute.</p>
+				<div class="de-row">
+					<a class="de-btn de-btn--amber de-btn--lg" href="<?php echo esc_url( de_signup_url() ); ?>">Create free DE Educare ID</a>
+					<a class="de-btn de-btn--line-light de-btn--lg" href="#enquire" data-lead="counselling">Talk to a counsellor</a>
+				</div>
+			</div>
+			<img class="de-footer__art" src="<?php echo esc_url( de_asset_img( 'footer-cta.webp' ) ); ?>" width="900" height="700" alt="Mock progress tracker on the DE Educare student portal" loading="lazy" decoding="async">
 		</div>
 		<div class="de-footer__cols">
 			<?php foreach ( $cols as $h => $items ) : ?>

@@ -23,6 +23,7 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 				'hours'      => array( __( 'Office hours', 'deeducare' ), 'text', '' ),
 				'city'       => array( __( 'Location', 'deeducare' ), 'text', '' ),
 				'contact_to' => array( __( 'Send call-back requests to', 'deeducare' ), 'email', __( 'Leave empty to use the site admin email.', 'deeducare' ) ),
+				'lead_webhook' => array( __( 'CRM webhook for enquiries (n8n)', 'deeducare' ), 'url', __( 'Every coaching enquiry and call-back request is POSTed here as JSON, and also emailed.', 'deeducare' ) ),
 				'cat_date'   => array( __( 'CAT exam date (YYYY-MM-DD)', 'deeducare' ), 'text', __( 'Drives the countdown in the top strip.', 'deeducare' ) ),
 			),
 		),
@@ -37,7 +38,7 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 			),
 		),
 		'de_images'  => array(
-			'title'  => __( 'Exam banner photos', 'deeducare' ),
+			'title'  => __( 'Exam banners and share image', 'deeducare' ),
 			'fields' => array(
 				'img_cat'  => array( __( 'CAT banner', 'deeducare' ), 'image', '' ),
 				'img_cet'  => array( __( 'MBA-CET banner', 'deeducare' ), 'image', '' ),
@@ -46,6 +47,7 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 				'img_bank' => array( __( 'Bank PO card', 'deeducare' ), 'image', '' ),
 				'img_rbi'  => array( __( 'RBI card', 'deeducare' ), 'image', '' ),
 				'img_upsc' => array( __( 'UPSC card', 'deeducare' ), 'image', '' ),
+				'img_share' => array( __( 'Share image for links (1200×630)', 'deeducare' ), 'image', '' ),
 			),
 		),
 	);
