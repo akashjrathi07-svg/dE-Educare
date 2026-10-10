@@ -318,3 +318,6 @@ button.tr:hover, a.tr:hover { background: var(--sunk); color: var(--ink); }
 .comm-grid { display: grid; gap: 16px; grid-template-columns: 170px minmax(0, 1fr); align-items: start; }
 .comm-ch { display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 760px) { .comm-grid { grid-template-columns: 1fr; } .comm-ch { flex-direction: row; overflow-x: auto; scrollbar-width: none; } .comm-ch > * { flex: none; } }
+.skel { border-radius: 16px; background: linear-gradient(90deg, var(--chip) 0%, var(--line2) 50%, var(--chip) 100%); background-size: 200% 100%; animation: skel 1.2s ease-in-out infinite; }
+@keyframes skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }

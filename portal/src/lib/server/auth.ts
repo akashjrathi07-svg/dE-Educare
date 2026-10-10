@@ -2,6 +2,7 @@ import 'server-only';
 import crypto from 'node:crypto';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import { sql } from './db';
 import { sendOtpSms } from './sms';
 
@@ -101,7 +102,8 @@ export async function signOut() {
 }
 
 /** The signed-in user, or null. */
-export async function currentUser(): Promise<User | null> {
+/** Signed-in user for this request. Cached per request, so layouts and pages share one lookup. */
+export const currentUser = cache(async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const [row] = await sql<User[]>`
@@ -110,7 +112,7 @@ export async function currentUser(): Promise<User | null> {
   if (!row) return null;
   sql`update users set last_active_at = now() where id = ${row.id} and (last_active_at is null or last_active_at < now() - interval '5 minutes')`.catch(() => {});
   return row;
-}
+});
 
 /** For pages: signed-in user, else redirect to login and come back. */
 export async function requireUser(next?: string): Promise<User> {

@@ -30,7 +30,7 @@ function de_topics() {
  * shows a notice instead of going to checkout. Set real prices here.
  */
 function de_plans() {
-	return array(
+	return de_apply_portal_prices( array(
 		'cat'  => array(
 			array( 'id' => 'cat-free', 'name' => 'Daily Free Test', 'price' => 'Free', 'amount' => 0, 'desc' => 'A fresh test every day across VARC, DILR and Quant, free forever.', 'feat' => array( 'One new test every day', 'CAT-style interface', 'Instant scorecard' ), 'best' => 'For building a daily habit.', 'cta' => 'Start today’s test', 'free' => true ),
 			array( 'id' => 'cat-10', 'name' => '10 CAT Mocks', 'tag' => 'RECOMMENDED', 'price' => '₹1,200', 'amount' => 1200, 'desc' => 'Full-length mocks plus previous year papers as mocks, at real exam difficulty and length.', 'feat' => array( '10 full-length CAT mocks', 'All-India percentile', 'Worked solutions', 'Performance scorecard' ), 'best' => 'For students who know the syllabus and want volume.', 'cta' => 'Buy 10 Mocks' ),
@@ -46,7 +46,7 @@ function de_plans() {
 			array( 'id' => 'om-pack', 'name' => 'OMET Mock Pack', 'tag' => 'ALL 4 EXAMS', 'price' => '₹ —', 'desc' => 'Mocks for SNAP, NMAT, XAT and CMAT, each in its own pattern and timing.', 'feat' => array( 'SNAP, NMAT, XAT, CMAT mocks', 'Exam-specific interfaces', 'XAT essay scored by Guru' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Pack', 'dark' => true ),
 			array( 'id' => 'om-single', 'name' => 'Single-exam pack', 'price' => '₹ —', 'desc' => 'Mocks and sectionals for one OMET of your choice.', 'feat' => array( 'Full-length mocks', 'Sectional tests', 'All-India percentile' ), 'best' => 'For a single target exam.', 'cta' => 'Choose exam' ),
 		),
-	);
+	) );
 }
 
 /** Exam page content for CAT and MBA-CET (OMETs are in de_omets()). */

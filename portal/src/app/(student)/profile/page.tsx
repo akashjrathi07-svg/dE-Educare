@@ -15,16 +15,16 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   const u = await requireUser('/profile');
   const sp = await searchParams;
   const board: Board = sp.board === 'month' || sp.board === 'all' ? sp.board : 'week';
-  const [xp, streak, top, me, credits, store, exams] = await Promise.all([
+  const [xp, streak, top, me, credits, store, exams, [stats], [{ helpful }], orders, coupons] = await Promise.all([
     xpTotals(u.id), streakOf(u.id), leaderboard(board, u.exam_group, 5), myRank(u.id, board, u.exam_group), availableCredits(u.id),
     sql`select * from reward_items where active order by sort`, sql`select code, name from exams order by sort`,
+    sql`
+      select count(*) filter (where t.type in ('full_mock','pyq'))::int as mocks, coalesce(max(a.percentile) filter (where t.type in ('full_mock','pyq')), 0)::float as best
+      from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'submitted'`,
+    sql`select count(*)::int as helpful from community_answers where user_id = ${u.id} and helpful`,
+    sql`select o.invoice_no, o.amount_paise, o.paid_at, c.name from orders o join courses c on c.id = o.course_id where o.user_id = ${u.id} and o.status = 'paid' order by o.paid_at desc`,
+    sql`select code, kind, value, valid_till from coupons where user_id = ${u.id} and active and used < coalesce(max_uses, 1) and (valid_till is null or valid_till >= current_date)`,
   ]);
-  const [stats] = await sql`
-    select count(*) filter (where t.type in ('full_mock','pyq'))::int as mocks, coalesce(max(a.percentile) filter (where t.type in ('full_mock','pyq')), 0)::float as best
-    from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'submitted'`;
-  const [{ helpful }] = await sql`select count(*)::int as helpful from community_answers where user_id = ${u.id} and helpful`;
-  const orders = await sql`select o.invoice_no, o.amount_paise, o.paid_at, c.name from orders o join courses c on c.id = o.course_id where o.user_id = ${u.id} and o.status = 'paid' order by o.paid_at desc`;
-  const coupons = await sql`select code, kind, value, valid_till from coupons where user_id = ${u.id} and active and used < coalesce(max_uses, 1) and (valid_till is null or valid_till >= current_date)`;
   const lv = levelFor(xp.earned);
   const nextFreeAt = (Math.floor(xp.earned / 1000) + 1) * 1000;
   const badges = [

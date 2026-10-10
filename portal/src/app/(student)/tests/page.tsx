@@ -12,30 +12,35 @@ export default async function Tests({ searchParams }: { searchParams: Promise<{ 
   const u = await requireUser('/tests');
   const { node: nodeParam } = await searchParams;
   const id = nodeParam || u.exam_group;
-  const [node] = await sql`select n.*, e.status as exam_status from catalog_nodes n left join exams e on e.id = n.exam_id where n.id = ${id}`;
+  const [[node], path, children, tests] = await Promise.all([
+    sql`select n.*, e.status as exam_status from catalog_nodes n left join exams e on e.id = n.exam_id where n.id = ${id}`,
+    sql`
+      with recursive up as (select id, parent_id, name, 0 as d from catalog_nodes where id = ${id}
+        union all select c.id, c.parent_id, c.name, up.d + 1 from catalog_nodes c join up on c.id = up.parent_id)
+      select id, name from up order by d desc`,
+    sql`
+      select n.id, n.name, n.sub, n.is_free,
+        (select count(*) from catalog_nodes c where c.parent_id = n.id)::int as kids,
+        (select count(*) from tests t where t.node_id = n.id and t.status = 'live' and (t.live_from is null or t.live_from <= now()))::int as tests
+      from catalog_nodes n where n.parent_id = ${id} order by n.sort`,
+    sql`
+      select t.id, t.slug, t.name, t.type, t.duration_min, t.is_free,
+        (select count(*) from test_questions q where q.test_id = t.id)::int as q
+      from tests t where t.node_id = ${id} and t.status = 'live' and (t.live_from is null or t.live_from <= now())
+      order by t.sort limit 200`,
+  ]);
   if (!node) return <div className="empty">That section was not found. <Link href="/tests">Back to tests</Link></div>;
 
-  const path = await sql`
-    with recursive up as (select id, parent_id, name, 0 as d from catalog_nodes where id = ${id}
-      union all select c.id, c.parent_id, c.name, up.d + 1 from catalog_nodes c join up on c.id = up.parent_id)
-    select id, name from up order by d desc`;
-  const children = await sql`
-    select n.id, n.name, n.sub, n.is_free,
-      (select count(*) from catalog_nodes c where c.parent_id = n.id)::int as kids,
-      (select count(*) from tests t where t.node_id = n.id and t.status = 'live' and (t.live_from is null or t.live_from <= now()))::int as tests
-    from catalog_nodes n where n.parent_id = ${id} order by n.sort`;
-  const tests = await sql`
-    select t.id, t.slug, t.name, t.type, t.duration_min, t.is_free,
-      (select count(*) from test_questions q where q.test_id = t.id)::int as q
-    from tests t where t.node_id = ${id} and t.status = 'live' and (t.live_from is null or t.live_from <= now())
-    order by t.sort limit 200`;
-  const { open, plans } = await testAccessMap(u.id, tests.map(t => t.id));
-  const attempts = tests.length ? await sql`
-    select distinct on (test_id) test_id, id, status, score::float, max_score::float, percentile::float
-    from attempts where user_id = ${u.id} and test_id = any(${tests.map(t => t.id)})
-    order by test_id, (status = 'in_progress') desc, submitted_at desc` : [];
+  const ids = tests.map(t => t.id);
+  const [{ open, plans }, attempts, credits] = await Promise.all([
+    testAccessMap(u.id, ids),
+    ids.length ? sql`
+      select distinct on (test_id) test_id, id, status, score::float, max_score::float, percentile::float
+      from attempts where user_id = ${u.id} and test_id = any(${ids})
+      order by test_id, (status = 'in_progress') desc, submitted_at desc` : Promise.resolve([]),
+    ids.length ? availableCredits(u.id) : Promise.resolve({ mock: 0, sectional: 0 }),
+  ]);
   const byTest = new Map(attempts.map(a => [a.test_id, a]));
-  const credits = tests.length ? await availableCredits(u.id) : { mock: 0, sectional: 0 };
   const soon = node.exam_status === 'soon';
 
   return (

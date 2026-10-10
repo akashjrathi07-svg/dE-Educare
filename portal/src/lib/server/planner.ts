@@ -23,10 +23,14 @@ export async function ensureWeek(userId: string, group: string, variant = 0) {
   const [have] = await sql`select 1 from planner_tasks where user_id = ${userId} and day >= ${start}::date and day < ${start}::date + 7 limit 1`;
   if (have) return;
   const tb = TASKS[group] ?? TASKS.mba;
+  // One insert for the whole week (28 rows) instead of 28 round trips.
+  const rows: { user_id: string; day: string; title: string; meta: string; tag: string; sort: number }[] = [];
+  const base = new Date(start + 'T00:00:00Z');
   for (let d = 0; d < 7; d++) for (let k = 0; k < 4; k++) {
     const [title, meta, tag] = tb[(d + k + variant * 2) % tb.length];
-    await sql`insert into planner_tasks (user_id, day, title, meta, tag, sort) values (${userId}, ${start}::date + ${d}::int, ${title}, ${meta}, ${tag}, ${k})`;
+    rows.push({ user_id: userId, day: new Date(base.getTime() + d * 86400000).toISOString().slice(0, 10), title, meta, tag, sort: k });
   }
+  await sql`insert into planner_tasks ${sql(rows)}`;
 }
 
 export async function weekTasks(userId: string) {

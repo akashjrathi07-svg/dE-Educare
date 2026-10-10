@@ -140,6 +140,54 @@ function de_faq_list( $faqs, $class = '' ) {
 	echo '</div>';
 }
 
+/**
+ * Live plan prices from the portal (Admin → Courses & plans), cached for 10 minutes.
+ * Returns [] when the portal can't be reached, so the prices typed in content.php are used.
+ */
+function de_portal_plans() {
+	$cached = get_transient( 'de_portal_plans' );
+	if ( false !== $cached ) {
+		return $cached;
+	}
+	$res   = wp_remote_get( de_portal( 'api/public/plans' ), array( 'timeout' => 3 ) );
+	$plans = array();
+	if ( ! is_wp_error( $res ) && 200 === wp_remote_retrieve_response_code( $res ) ) {
+		$data = json_decode( wp_remote_retrieve_body( $res ), true );
+		foreach ( ( $data['plans'] ?? array() ) as $p ) {
+			if ( ! empty( $p['id'] ) ) {
+				$plans[ $p['id'] ] = $p;
+			}
+		}
+	}
+	// On failure, retry in 2 minutes instead of hammering the portal on every page view.
+	set_transient( 'de_portal_plans', $plans, $plans ? 10 * MINUTE_IN_SECONDS : 2 * MINUTE_IN_SECONDS );
+	return $plans;
+}
+
+/** Puts the portal's live price on each paid plan; plans that are draft in the portal show "₹ —". */
+function de_apply_portal_prices( $by_exam ) {
+	$live = de_portal_plans();
+	if ( ! $live ) {
+		return $by_exam;
+	}
+	foreach ( $by_exam as $exam => $plans ) {
+		foreach ( $plans as $i => $p ) {
+			if ( ! empty( $p['free'] ) || empty( $live[ $p['id'] ] ) ) {
+				continue;
+			}
+			$lp = $live[ $p['id'] ];
+			if ( ! empty( $lp['live'] ) && $lp['amount'] > 0 ) {
+				$by_exam[ $exam ][ $i ]['price']  = '₹' . number_format_i18n( $lp['amount'] );
+				$by_exam[ $exam ][ $i ]['amount'] = (int) $lp['amount'];
+			} else {
+				$by_exam[ $exam ][ $i ]['price'] = '₹ —';
+				unset( $by_exam[ $exam ][ $i ]['amount'] );
+			}
+		}
+	}
+	return $by_exam;
+}
+
 /** Returns the plan by id from any exam. */
 function de_plan( $id ) {
 	foreach ( de_plans() as $plans ) {

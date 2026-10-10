@@ -6,7 +6,7 @@ import { examRefs, istTimestamp } from '@/lib/server/admin';
 import { slugify } from '@/lib/slug';
 
 export type TestInput = {
-  name: string; type: 'full_mock' | 'sectional' | 'topic' | 'daily' | 'pyq'; exam: string; sections: { code: string; count: number; ids: string }[]; topic: string;
+  name: string; slug?: string; type: 'full_mock' | 'sectional' | 'topic' | 'daily' | 'pyq'; exam: string; sections: { code: string; count: number; ids: string }[]; topic: string;
   mode: 'auto' | 'manual'; easy: number; medium: number; hard: number; minutes: number; free: boolean; courses: string[];
   solutions: 'after_submit' | 'after_window'; windowEnd: string; ranking: 'all_india' | 'batch' | 'none'; publish: 'now' | 'schedule' | 'draft'; date: string; time: string; nodeId: string;
 };
@@ -71,9 +71,18 @@ export async function createTest(t: TestInput) {
   const status = t.publish === 'draft' ? 'draft' : 'live';
   const liveFrom = t.publish === 'schedule' ? istTimestamp(t.date, t.time || '09:00') : null;
   const windowEnd = t.solutions === 'after_window' ? istTimestamp(t.windowEnd, '23:59') : null;
-  const base = slugify(exam.code + '-' + name);
-  let slug = base, n = 1;
-  while ((await sql`select 1 from tests where slug = ${slug}`).length) slug = base + '-' + ++n;
+  // The test ID is the link the website uses (portal.deeducare.com/test/<id>), e.g. cat-m-1.
+  let slug: string;
+  const wantedId = (t.slug ?? '').trim().toLowerCase();
+  if (wantedId) {
+    if (!/^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$/.test(wantedId)) return { ok: false, message: 'Test ID can use small letters, numbers and dashes, e.g. cat-m-11' };
+    if ((await sql`select 1 from tests where slug = ${wantedId}`).length) return { ok: false, message: `Test ID ${wantedId} is already used by another test` };
+    slug = wantedId;
+  } else {
+    const base = slugify(exam.code + '-' + name);
+    slug = base;
+    for (let n = 2; (await sql`select 1 from tests where slug = ${slug}`).length; n++) slug = base + '-' + n;
+  }
 
   await sql.begin(async tx => {
     const [test] = await tx`
