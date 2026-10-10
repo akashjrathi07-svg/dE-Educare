@@ -1,0 +1,21 @@
+-- Indexes for the lookups that grow with students and questions (Supabase performance advisor).
+create index if not exists test_sections_test_idx on test_sections (test_id);
+create index if not exists test_questions_section_idx on test_questions (test_section_id);
+create index if not exists test_questions_question_idx on test_questions (question_id);
+create index if not exists attempt_answers_question_idx on attempt_answers (question_id);
+create index if not exists catalog_nodes_parent_idx on catalog_nodes (parent_id, sort);
+create index if not exists questions_topic_idx on questions (topic_id);
+create index if not exists questions_set_idx on questions (set_id);
+create index if not exists question_reports_question_idx on question_reports (question_id, status);
+create index if not exists course_tests_test_idx on course_tests (test_id);
+create index if not exists tests_exam_idx on tests (exam_id);
+create index if not exists entitlements_course_idx on entitlements (course_id);
+create index if not exists orders_user_idx on orders (user_id);
+create index if not exists payments_order_idx on payments (order_id);
+create index if not exists sessions_user_idx on sessions (user_id);
+create index if not exists batch_members_user_idx on batch_members (user_id);
+create index if not exists live_messages_class_idx on live_messages (class_id, id);
+create index if not exists community_answers_post_idx on community_answers (post_id);
+create index if not exists community_posts_group_idx on community_posts (exam_group, created_at desc);
+create index if not exists live_classes_group_idx on live_classes (exam_group, starts_at);
+create index if not exists users_role_idx on users (role, created_at desc);

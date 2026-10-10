@@ -79,8 +79,8 @@ $mega = array(
 		</nav>
 
 		<div class="de-header__actions">
-			<a class="de-btn de-btn--ghost de-hide-sm" href="<?php echo esc_url( de_login_url() ); ?>">Sign in</a>
-			<a class="de-btn de-btn--primary" href="<?php echo esc_url( de_signup_url() ); ?>">Join free</a>
+			<a class="de-btn de-btn--ghost de-hide-sm" href="<?php echo esc_url( de_login_url() ); ?>" data-de-auth="signin">Sign in</a>
+			<a class="de-btn de-btn--primary" href="<?php echo esc_url( de_signup_url() ); ?>" data-de-auth="join">Join free</a>
 			<button type="button" class="de-burger" aria-expanded="false" aria-controls="de-mega" aria-label="<?php esc_attr_e( 'Menu', 'deeducare' ); ?>" data-mega-toggle>☰</button>
 		</div>
 	</div>
@@ -91,7 +91,7 @@ $mega = array(
 				<?php foreach ( $nav as $n ) : ?>
 					<a href="<?php echo esc_url( $n[1] ); ?>"><?php de_e( $n[0] ); ?></a>
 				<?php endforeach; ?>
-				<a href="<?php echo esc_url( de_login_url() ); ?>">Sign in</a>
+				<a href="<?php echo esc_url( de_login_url() ); ?>" data-de-auth="signin">Sign in</a>
 			</nav>
 			<?php foreach ( $mega as $heading => $items ) : ?>
 				<div class="de-mega__col">

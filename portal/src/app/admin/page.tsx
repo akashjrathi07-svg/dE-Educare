@@ -7,7 +7,7 @@ import { Head, Status } from './ui';
 
 export default async function Overview() {
   const u = await requireStaff('overview');
-  const [k] = await sql`
+  const [[k], [full], classes, recent] = await Promise.all([sql`
     select
       (select count(*)::int from users where role = 'student') as students,
       (select count(*)::int from users where role = 'student' and created_at > now() - interval '7 days') as week,
@@ -17,17 +17,17 @@ export default async function Overview() {
       (select count(*)::int from attempts a join tests t on t.id = a.test_id where t.type = 'daily' and a.started_at >= (now() at time zone 'Asia/Kolkata')::date at time zone 'Asia/Kolkata') as daily,
       (select count(*)::int from question_reports where status = 'open') as reports,
       (select count(*)::int from tests where status = 'draft') as drafts,
-      (select count(*)::int from questions where coalesce(solution_text, '') = '') as nosol`;
-  const [full] = await sql`
+      (select count(*)::int from questions where coalesce(solution_text, '') = '') as nosol`,
+  sql`
     select b.name, round(100.0 * count(m.user_id) / greatest(b.capacity, 1))::int as fill
-    from batches b left join batch_members m on m.batch_id = b.id group by b.id order by fill desc limit 1`;
-  const classes = await sql`
+    from batches b left join batch_members m on m.batch_id = b.id group by b.id order by fill desc limit 1`,
+  sql`
     select c.*, b.name as batch from live_classes c left join batches b on b.id = c.batch_id
-    where (c.starts_at at time zone 'Asia/Kolkata')::date = (now() at time zone 'Asia/Kolkata')::date order by c.starts_at`;
-  const recent = await sql`
+    where (c.starts_at at time zone 'Asia/Kolkata')::date = (now() at time zone 'Asia/Kolkata')::date order by c.starts_at`,
+  sql`
     select u.id, u.name, u.phone, u.target_exam, u.created_at,
       (select c.name from entitlements e join courses c on c.id = e.course_id where e.user_id = u.id and (e.ends_at is null or e.ends_at > now()) order by c.price_paise desc limit 1) as plan
-    from users u where role = 'student' order by created_at desc limit 5`;
+    from users u where role = 'student' order by created_at desc limit 5`]);
 
   const month = new Date().toLocaleDateString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' });
   const rev = Number(k.revenue) / 100;

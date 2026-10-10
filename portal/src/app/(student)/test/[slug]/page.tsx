@@ -17,12 +17,16 @@ export default async function TestLaunch({ params, searchParams }: { params: Pro
   const u = await requireUser(`/test/${slug}`);
   const [t] = await sql`select id from tests where slug = ${slug} and status = 'live'`;
   if (!t) return <div className="empty">This test isn’t available yet. <Link href="/tests">Browse tests</Link></div>;
-  const b = (await loadTest(t.id))!;
-  const [open] = await sql`select id from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'in_progress'`;
+  const [b0, [open], last, access, allCredits] = await Promise.all([
+    loadTest(t.id),
+    sql`select id from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'in_progress'`,
+    sql`select id, score::float, max_score::float, percentile::float, submitted_at from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'submitted' order by submitted_at desc limit 3`,
+    canTakeTest(u.id, t.id),
+    availableCredits(u.id),
+  ]);
   if (open) redirect(`/exam/${open.id}`);
-  const last = await sql`select id, score::float, max_score::float, percentile::float, submitted_at from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'submitted' order by submitted_at desc limit 3`;
-  const access = await canTakeTest(u.id, t.id);
-  const credits = access.allowed ? null : await availableCredits(u.id);
+  const b = b0!;
+  const credits = access.allowed ? null : allCredits;
   const creditOk = credits && ((b.test.type === 'full_mock' && credits.mock > 0) || (b.test.type === 'sectional' && credits.sectional + credits.mock > 0));
   const sectional = isSectional(b.rules, b.sections.map(s => s.duration_min));
   const counts = b.sections.map(s => b.questions.filter(q => q.test_section_id === s.id).length);

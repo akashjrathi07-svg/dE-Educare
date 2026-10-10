@@ -31,7 +31,7 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
     const s = exam.sections.find(x => x.code === sec) ?? exam.sections[0];
     const p = plan(exam, type, s.code);
     return {
-      name: prev?.name ?? '', type, exam: exam.code, sections: p.secs.map(x => ({ ...x, ids: '' })), topic: type === 'topic' ? (s.topics[0] ?? '') : '', mode: prev?.mode ?? 'auto',
+      name: prev?.name ?? '', slug: prev?.slug ?? '', type, exam: exam.code, sections: p.secs.map(x => ({ ...x, ids: '' })), topic: type === 'topic' ? (s.topics[0] ?? '') : '', mode: prev?.mode ?? 'auto',
       easy: prev?.easy ?? 30, medium: prev?.medium ?? 50, hard: prev?.hard ?? 20, minutes: p.minutes, free: type === 'daily' || type === 'pyq' ? true : prev?.free ?? false,
       courses: exam.code === prev?.exam ? prev.courses : [], solutions: prev?.solutions ?? 'after_submit', windowEnd: prev?.windowEnd ?? '', ranking: prev?.ranking ?? 'all_india',
       publish: prev?.publish ?? 'now', date: prev?.date ?? '', time: prev?.time ?? '09:00', nodeId: exam.code === prev?.exam ? prev.nodeId : '',
@@ -55,7 +55,10 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
       <div className="card pad stack" style={{ '--gap': '16px' } as React.CSSProperties}>
         <div className="row" style={{ justifyContent: 'space-between' }}><b style={{ fontSize: 17 }}>New test</b><Link className="btn ghost sm" href={closeHref}>Close</Link></div>
         <div className="form-grid">
-          <Field label="Test name" req span><input className="input" value={f.name} placeholder="CAT Mock 11" onChange={e => set({ name: e.target.value })} /></Field>
+          <Field label="Test name" req><input className="input" value={f.name} placeholder="CAT Mock 11" onChange={e => set({ name: e.target.value })} /></Field>
+          <Field label="Test ID (website link)" hint="Must match the website's link for this test, e.g. cat-m-1. Leave blank to make one.">
+            <input className="input mono" value={f.slug ?? ''} placeholder="cat-m-11" onChange={e => set({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} />
+          </Field>
           <Field label="Test type" group span><Chips options={Object.keys(TYPES) as TestInput['type'][]} labels={TYPES} value={f.type} onChange={v => setF(init(f.exam, v as TestInput['type'], secCode, f))} /></Field>
           <Field label="Exam interface" hint="Sets sections, timers and marking">
             <select className="input" value={f.exam} onChange={e => setF(init(e.target.value, f.type, '', f))}>{exams.map(e => <option key={e.code} value={e.code}>{e.name}</option>)}</select>

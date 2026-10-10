@@ -10,30 +10,33 @@ export const metadata = { title: 'Dashboard' };
 
 export default async function Dashboard() {
   const u = await requireUser('/');
-  const exam = (await sql`select code, name, exam_date, status from exams where code = ${u.target_exam ?? 'CAT'}`)[0];
+  // All dashboard queries in one parallel round (each sequential query is a network hop).
+  const [[exam], [last], [avg], streak, rank, courses, inProgress, [weak], [live], today] = await Promise.all([
+    sql`select code, name, exam_date, status from exams where code = ${u.target_exam ?? 'CAT'}`,
+    sql`
+      select a.id, a.score::float, a.max_score::float, a.percentile::float, t.name from attempts a join tests t on t.id = a.test_id
+      where a.user_id = ${u.id} and a.status = 'submitted' and t.type in ('full_mock','pyq') order by a.submitted_at desc limit 1`,
+    sql`select avg(a.percentile)::float as p, count(*)::int as n from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'submitted' and t.type in ('full_mock','pyq')`,
+    streakOf(u.id),
+    myRank(u.id, 'week', u.exam_group),
+    activeCourseIds(u.id),
+    sql`
+      select a.id, t.name, t.slug, (select count(*) from test_questions where test_id = t.id)::int as total,
+        (select count(*) from attempt_answers where attempt_id = a.id and answer is not null)::int as answered
+      from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'in_progress' order by a.started_at desc limit 3`,
+    // Recommendation: the topic test for the student's most recent wrong topic.
+    sql`
+      select tp.name as topic, t.slug, t.name from attempt_answers aa join attempts a on a.id = aa.attempt_id
+      join questions q on q.id = aa.question_id join topics tp on tp.id = q.topic_id
+      join tests t on t.type = 'topic' and t.name like tp.name || ' · Test%' and t.status = 'live'
+      where a.user_id = ${u.id} and aa.is_correct = false order by a.submitted_at desc, t.sort limit 1`,
+    sql`
+      select id, title, faculty_name, starts_at, duration_min, starts_at <= now() as on_air from live_classes
+      where exam_group = ${u.exam_group} and not cancelled and starts_at + (duration_min || ' minutes')::interval > now() order by starts_at limit 1`,
+    ensureWeek(u.id, u.exam_group).then(() => sql`select id, title, meta, tag, done from planner_tasks where user_id = ${u.id} and day = ${todayIST()}::date order by sort`),
+  ]);
   const days = exam?.exam_date ? Math.max(0, Math.ceil((new Date(exam.exam_date).getTime() - Date.now()) / 86400000)) : null;
-  const [last] = await sql`
-    select a.id, a.score::float, a.max_score::float, a.percentile::float, t.name from attempts a join tests t on t.id = a.test_id
-    where a.user_id = ${u.id} and a.status = 'submitted' and t.type in ('full_mock','pyq') order by a.submitted_at desc limit 1`;
-  const [avg] = await sql`select avg(a.percentile)::float as p, count(*)::int as n from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'submitted' and t.type in ('full_mock','pyq')`;
-  const streak = await streakOf(u.id);
-  const rank = await myRank(u.id, 'week', u.exam_group);
-  const paid = (await activeCourseIds(u.id)).length > 0;
-  const inProgress = await sql`
-    select a.id, t.name, t.slug, (select count(*) from test_questions where test_id = t.id)::int as total,
-      (select count(*) from attempt_answers where attempt_id = a.id and answer is not null)::int as answered
-    from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'in_progress' order by a.started_at desc limit 3`;
-  // Recommendation: the topic test for the student's most recent wrong topic.
-  const [weak] = await sql`
-    select tp.name as topic, t.slug, t.name from attempt_answers aa join attempts a on a.id = aa.attempt_id
-    join questions q on q.id = aa.question_id join topics tp on tp.id = q.topic_id
-    join tests t on t.type = 'topic' and t.name like tp.name || ' · Test%' and t.status = 'live'
-    where a.user_id = ${u.id} and aa.is_correct = false order by a.submitted_at desc, t.sort limit 1`;
-  const [live] = await sql`
-    select id, title, faculty_name, starts_at, duration_min, starts_at <= now() as on_air from live_classes
-    where exam_group = ${u.exam_group} and not cancelled and starts_at + (duration_min || ' minutes')::interval > now() order by starts_at limit 1`;
-  await ensureWeek(u.id, u.exam_group);
-  const today = await sql`select id, title, meta, tag, done from planner_tasks where user_id = ${u.id} and day = ${todayIST()}::date order by sort`;
+  const paid = courses.length > 0;
 
   const hour = new Date(Date.now() + 5.5 * 3600_000).getUTCHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';

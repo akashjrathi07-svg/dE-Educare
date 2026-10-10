@@ -291,6 +291,25 @@
 		$$( '[data-guru-ask]', guru ).forEach( function ( b ) { b.addEventListener( 'click', function () { ask( b.getAttribute( 'data-guru-ask' ) ); } ); } );
 	}
 
+	/* ---------- Shared login: show "Hi Akash · Dashboard" when signed in on the portal ---------- */
+	// The portal's de_session cookie is shared across *.deeducare.com; the portal answers with a first name only.
+	if ( CFG.portal && window.fetch ) {
+		fetch( CFG.portal + '/api/public/me', { credentials: 'include' } )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( me ) {
+				if ( ! me || ! me.signedIn ) { return; }
+				$$( '[data-de-auth="signin"]' ).forEach( function ( a ) {
+					a.textContent = 'Hi ' + me.firstName;
+					a.href = CFG.portal + '/profile';
+				} );
+				$$( '[data-de-auth="join"]' ).forEach( function ( a ) {
+					a.textContent = 'Go to dashboard';
+					a.href = CFG.portal + '/';
+				} );
+			} )
+			.catch( function () {} );
+	}
+
 	/* ---------- Scroll reveal: fade up 22px over 650ms. Content is never hidden before this runs. ---------- */
 	if ( ! reduceMotion && 'IntersectionObserver' in window ) {
 		var io = new IntersectionObserver( function ( entries ) {

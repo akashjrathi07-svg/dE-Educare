@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '1.0.0' );
+define( 'DE_THEME_VERSION', '1.1.0' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
@@ -48,5 +48,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		'guruUrl'   => esc_url_raw( rest_url( 'deeducare/v1/guru' ) ),
 		'examDate'  => de_setting( 'cat_date' ),
 		'fallback'  => DE_GURU_FALLBACK,
+		'portal'    => untrailingslashit( de_portal() ),
 	) );
 } );
