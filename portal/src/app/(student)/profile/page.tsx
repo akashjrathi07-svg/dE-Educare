@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { xpTotals, streakOf, leaderboard, myRank, type Board } from '@/lib/server/xp';
 import { availableCredits } from '@/lib/server/access';
-import { levelOf, COIN_COST, XP_BASE, XP_PER_COIN, MONTHLY_PRIZES, STREAK_COINS, DAILY_COINS, COIN_LABEL } from '@/lib/economy';
+import { levelOf, COIN_COST, XP_BASE, XP_PER_COIN, STREAK_COINS, DAILY_COINS, COIN_LABEL } from '@/lib/economy';
 import { wallet, coinHistory } from '@/lib/server/coins';
 import { initials, rupees } from '@/lib/server/shell';
 import { logoutAction } from '@/app/login/actions';
@@ -138,10 +138,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
               <span className="mono muted" style={{ fontSize: 13 }}>{me.xp.toLocaleString('en-IN')} XP</span>
             </div>
           )}
-          <div className="stack" style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)', '--gap': '3px' } as React.CSSProperties}>
-            <span>Monthly prizes, by XP earned in the month:</span>
-            {MONTHLY_PRIZES.map(p => <span key={p.from}>#{p.from}{p.to > p.from ? '–' + p.to : ''}: {p.coins} bonus coins{p.coupon ? ` + ${p.coupon.percent}% off ${p.coupon.category === 'coaching' ? 'coaching' : 'a test series'}` : ''}{p.note ? ' + ' + p.note : ''}</span>)}
-          </div>
+          <div style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)' }}>Climb the board with tests and good scores. Every 100 XP is worth 1 bonus Guru coin.</div>
         </section>
 
         <section className="list">
