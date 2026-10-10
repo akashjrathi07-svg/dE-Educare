@@ -134,61 +134,77 @@ function de_lead_button( $interest, $label = 'Enquire now', $class = 'de-btn de-
 	printf( '<a class="%s" href="#enquire" data-lead="%s">%s</a>', esc_attr( $class ), esc_attr( $interest ), esc_html( $label ) );
 }
 
-/** The enquiry form, printed once per page in the footer. */
+/**
+ * The enquiry form fields and buttons. Used in the dialog and inline on exam pages.
+ *
+ * @param string $interest Programme picked by default.
+ * @param bool   $inline   Inline version (no close button, its own heading).
+ */
+function de_lead_form( $interest = '', $inline = false ) {
+	$sent = isset( $_GET['lead'] ) ? sanitize_key( wp_unslash( $_GET['lead'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$hid  = $inline ? 'de-lead-h-inline' : 'de-lead-h';
+	?>
+	<form class="de-enq__form<?php echo $inline ? ' de-enq__form--inline' : ''; ?>" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" aria-labelledby="<?php echo esc_attr( $hid ); ?>" data-lead-form>
+		<div class="de-enq__head">
+			<div class="de-stack-6">
+				<span class="de-eyebrow de-eyebrow--blue">COACHING ENQUIRY</span>
+				<h2 class="de-enq__h" id="<?php echo esc_attr( $hid ); ?>">Get batch dates and a free counselling call</h2>
+			</div>
+			<?php if ( ! $inline ) : ?>
+				<button type="button" class="de-enq__x" data-lead-close aria-label="Close">×</button>
+			<?php endif; ?>
+		</div>
+		<?php if ( ! $inline && 'sent' === $sent ) : ?>
+			<p class="de-alert de-alert--ok" role="status">Thanks! Our team will call you within one working day.</p>
+		<?php elseif ( ! $inline && 'error' === $sent ) : ?>
+			<p class="de-alert de-alert--err" role="alert">Please enter your name and a 10-digit mobile number.</p>
+		<?php endif; ?>
+		<input type="hidden" name="action" value="de_lead">
+		<input type="hidden" name="page" value="" data-lead-page>
+		<label class="de-hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+		<div class="de-enq__grid">
+			<label class="de-field">Full name<input name="name" required autocomplete="name" maxlength="80"></label>
+			<label class="de-field">Mobile number<input name="phone" type="tel" required inputmode="tel" autocomplete="tel" pattern="[0-9+ \-]{10,16}" maxlength="16" placeholder="10-digit mobile"></label>
+			<label class="de-field">Email <span class="de-opt">(optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>
+			<label class="de-field">City<input name="city" autocomplete="address-level2" maxlength="60"></label>
+			<label class="de-field de-field--span">Interested in
+				<select name="interest" data-lead-interest>
+					<?php foreach ( de_lead_interests() as $id => $label ) : ?>
+						<option value="<?php echo esc_attr( $id ); ?>"<?php selected( $id, $interest ); ?>><?php de_e( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+			<label class="de-field">I am
+				<select name="status">
+					<option>In college (final year)</option>
+					<option>In college</option>
+					<option>Graduate</option>
+					<option>Working professional</option>
+				</select>
+			</label>
+			<label class="de-field">Preferred mode
+				<select name="mode">
+					<option>Online (live)</option>
+					<option>Classroom, Mumbai</option>
+					<option>Either</option>
+				</select>
+			</label>
+			<label class="de-field de-field--span">Anything we should know? <span class="de-opt">(optional)</span><textarea name="message" rows="2" maxlength="600"></textarea></label>
+		</div>
+		<p class="de-alert de-alert--err" role="alert" hidden data-lead-err></p>
+		<p class="de-alert de-alert--ok" role="status" hidden data-lead-ok>Thanks! Our team will call you within one working day. You can also <a href="<?php echo esc_url( de_whatsapp_url() ); ?>">WhatsApp us</a>.</p>
+		<button class="de-btn de-btn--primary de-btn--lg de-btn--block" type="submit" data-lead-submit>Send enquiry</button>
+		<span class="de-note de-note--xs">By sending, you agree to a call or WhatsApp from DE Educare about coaching. No spam.</span>
+	</form>
+	<?php
+}
+
+/** The enquiry dialog, printed once per page in the footer. */
 function de_lead_dialog() {
 	$sent = isset( $_GET['lead'] ) ? sanitize_key( wp_unslash( $_GET['lead'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	?>
 	<dialog class="de-enq" id="enquire" aria-labelledby="de-lead-h" data-lead-dialog<?php echo $sent ? ' data-open' : ''; ?>>
-		<form class="de-enq__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-lead-form>
-			<div class="de-enq__head">
-				<div class="de-stack-6">
-					<span class="de-eyebrow de-eyebrow--blue">COACHING ENQUIRY</span>
-					<h2 class="de-enq__h" id="de-lead-h">Get batch dates and a free counselling call</h2>
-				</div>
-				<button type="button" class="de-enq__x" data-lead-close aria-label="Close">×</button>
-			</div>
-			<?php if ( 'sent' === $sent ) : ?>
-				<p class="de-alert de-alert--ok" role="status">Thanks! Our team will call you within one working day.</p>
-			<?php elseif ( 'error' === $sent ) : ?>
-				<p class="de-alert de-alert--err" role="alert">Please enter your name and a 10-digit mobile number.</p>
-			<?php endif; ?>
-			<input type="hidden" name="action" value="de_lead">
-			<input type="hidden" name="page" value="" data-lead-page>
-			<label class="de-hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-			<div class="de-enq__grid">
-				<label class="de-field">Full name<input name="name" required autocomplete="name" maxlength="80"></label>
-				<label class="de-field">Mobile number<input name="phone" type="tel" required inputmode="tel" autocomplete="tel" pattern="[0-9+ \-]{10,16}" maxlength="16" placeholder="10-digit mobile"></label>
-				<label class="de-field">Email <span class="de-opt">(optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>
-				<label class="de-field">City<input name="city" autocomplete="address-level2" maxlength="60"></label>
-				<label class="de-field de-field--span">Interested in
-					<select name="interest" data-lead-interest>
-						<?php foreach ( de_lead_interests() as $id => $label ) : ?>
-							<option value="<?php echo esc_attr( $id ); ?>"><?php de_e( $label ); ?></option>
-						<?php endforeach; ?>
-					</select>
-				</label>
-				<label class="de-field">I am
-					<select name="status">
-						<option>In college (final year)</option>
-						<option>In college</option>
-						<option>Graduate</option>
-						<option>Working professional</option>
-					</select>
-				</label>
-				<label class="de-field">Preferred mode
-					<select name="mode">
-						<option>Online (live)</option>
-						<option>Classroom, Mumbai</option>
-						<option>Either</option>
-					</select>
-				</label>
-				<label class="de-field de-field--span">Anything we should know? <span class="de-opt">(optional)</span><textarea name="message" rows="2" maxlength="600"></textarea></label>
-			</div>
-			<p class="de-enq__err de-alert de-alert--err" role="alert" hidden data-lead-err></p>
-			<p class="de-enq__ok de-alert de-alert--ok" role="status" hidden data-lead-ok>Thanks! Our team will call you within one working day. You can also <a href="<?php echo esc_url( de_whatsapp_url() ); ?>">WhatsApp us</a>.</p>
-			<button class="de-btn de-btn--primary de-btn--lg de-btn--block" type="submit" data-lead-submit>Send enquiry</button>
-			<span class="de-note de-note--xs">By sending, you agree to a call or WhatsApp from DE Educare about coaching. No spam.</span>
-		</form>
+		<?php de_lead_form(); ?>
 	</dialog>
 	<?php
 }

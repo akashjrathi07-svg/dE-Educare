@@ -606,6 +606,15 @@ body.admin-bar .de-secnav { top: 99px; }
 .de-related { padding: 11px 16px; border-radius: 12px; background: #fff; border: 1px solid var(--de-line); font-size: 14px; font-weight: 800; color: var(--de-ink); }
 .de-related:hover { border-color: var(--de-blue); color: var(--de-blue); }
 
+.de-coach { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .de-coach { grid-template-columns: 1fr; } }
+.de-coach__plans { display: flex; flex-direction: column; gap: 12px; }
+.de-coach__form { padding: 0; overflow: hidden; }
+.de-enq__form--inline .de-enq__h { font-size: 21px; }
+.de-plan__was { font-size: .45em; font-weight: 700; letter-spacing: 0; opacity: .6; }
+.de-test--daily { border: 2px solid var(--de-blue); }
+.de-price-card.de-price-card--coach { background: #fff; color: var(--de-ink); border: 2px solid var(--de-blue); }
+.de-price-card.de-price-card--coach .de-price-card__note { color: var(--de-faint); }
 .de-price-card { background: var(--de-ink); color: #fff; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .de-price-card__name { font: 800 22px/1.15 var(--de-sans); letter-spacing: -.02em; }
 .de-price-card__price { font: 800 42px/1 var(--de-sans); letter-spacing: -.04em; }
@@ -645,6 +654,7 @@ body.admin-bar .de-secnav { top: 99px; }
 .de-fq__opt.is-wrong { border-color: var(--de-red); background: oklch(0.96 0.03 28); }
 .de-fq__opt.is-wrong .de-fq__l { background: var(--de-red); color: #fff; }
 .de-fq__sol { background: var(--de-chip-2); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.de-fq__sol summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--de-blue); }
 .de-fq__sol p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--de-text-2); white-space: pre-wrap; }
 .de-fq__verdict { font-size: 13px; font-weight: 800; }
 .de-fq__verdict.is-right { color: var(--de-green); }
@@ -782,6 +792,11 @@ body.admin-bar .de-secnav { top: 99px; }
 	.de-dates__d { width: 80px; }
 	.de-plan__price { font-size: 34px; }
 	.de-free { padding-top: 28px; }
+	.de-tests { grid-template-columns: 1fr 1fr; gap: 8px; }
+	.de-test { padding: 12px; gap: 8px; border-radius: 14px; }
+	.de-test__name { font-size: 14px; }
+	.de-test__status { font-size: 12px; }
+	.de-test__meta { font-size: 10px; }
 	.de-fq__set { padding: 16px; }
 	.de-fq__text { font-size: 16px; }
 	.de-contact { padding: 28px 16px 60px; }

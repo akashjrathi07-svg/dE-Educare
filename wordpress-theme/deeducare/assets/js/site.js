@@ -203,7 +203,7 @@
 					var ok = picked === right;
 					v.textContent = ok ? 'Correct' : 'Not quite. Correct answer: ' + 'ABCD'.charAt( right );
 					v.className = 'de-fq__verdict ' + ( ok ? 'is-right' : 'is-wrong' );
-					$( '[data-fq-sol]', q ).hidden = false;
+					$( '[data-fq-sol]', q ).open = true;
 					answered++;
 					if ( ok ) { correct++; }
 					updateScore();
@@ -284,7 +284,6 @@
 	/* ---------- Coaching enquiry form ---------- */
 	var lead = $( '[data-lead-dialog]' );
 	if ( lead ) {
-		var lform = $( '[data-lead-form]', lead );
 		var openLead = function ( interest ) {
 			if ( interest ) { $( '[data-lead-interest]', lead ).value = interest; }
 			$( '[data-lead-page]', lead ).value = window.location.href.split( '#' )[ 0 ];
@@ -300,10 +299,14 @@
 		$( '[data-lead-close]', lead ).addEventListener( 'click', closeLead );
 		lead.addEventListener( 'click', function ( e ) { if ( e.target === lead ) { closeLead(); } } );
 		if ( lead.hasAttribute( 'data-open' ) || window.location.hash === '#enquire' ) { openLead( '' ); }
+	}
+	$$( '[data-lead-form]' ).forEach( function ( lform ) {
+		var pageIn = $( '[data-lead-page]', lform );
+		if ( pageIn && ! pageIn.value ) { pageIn.value = window.location.href.split( '#' )[ 0 ]; }
 		lform.addEventListener( 'submit', function ( e ) {
 			if ( ! window.fetch || ! window.FormData ) { return; } // plain POST fallback
 			e.preventDefault();
-			var err = $( '[data-lead-err]', lead ), ok = $( '[data-lead-ok]', lead ), btn = $( '[data-lead-submit]', lead );
+			var err = $( '[data-lead-err]', lform ), ok = $( '[data-lead-ok]', lform ), btn = $( '[data-lead-submit]', lform );
 			err.hidden = true;
 			var body = {};
 			new FormData( lform ).forEach( function ( v, k ) { body[ k ] = v; } );
@@ -317,12 +320,12 @@
 					if ( ! res.ok ) { throw new Error( ( res.d && res.d.message ) || 'Please check the form and try again.' ); }
 					ok.hidden = false;
 					btn.hidden = true;
-					$$( '.de-enq__grid', lead ).forEach( function ( g ) { g.hidden = true; } );
+					$$( '.de-enq__grid', lform ).forEach( function ( g ) { g.hidden = true; } );
 				} )
 				.catch( function ( x ) { err.textContent = x.message || 'Could not send. Please WhatsApp us instead.'; err.hidden = false; } )
 				.then( function () { btn.disabled = false; btn.textContent = 'Send enquiry'; } );
 		} );
-	}
+	} );
 
 	/* ---------- Reviews filter ---------- */
 	var rv = $( '[data-reviews]' );
