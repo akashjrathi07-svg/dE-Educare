@@ -5,14 +5,27 @@ import { fmt, type Analysis } from '@/lib/analysis';
 import { askGuru } from '@/components/guru';
 import { ReportQuestion } from './report-question';
 
-const TABS = [['time', 'Time & solutions'], ['section', 'Section-wise'], ['topic', 'Topic-wise'], ['difficulty', 'Difficulty'], ['swot', 'SWOT']] as const;
+const TABS = [['overview', 'Overview'], ['time', 'Time & solutions'], ['section', 'Section-wise'], ['topic', 'Topic-wise'], ['difficulty', 'Difficulty'], ['swot', 'SWOT']] as const;
 const DIFF: Record<string, string> = { easy: 'ok', medium: 'mid', hard: 'bad' };
 const RES = { ok: ['Correct', 'var(--ok)'], bad: ['Wrong', 'var(--bad)'], skip: ['Skipped', 'var(--muted)'] } as const;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const pct = (n: number | null) => (n == null ? '—' : n + '%');
 
-export function ResultTabs({ data, solutionsOpen }: { data: Analysis; solutionsOpen: boolean }) {
-  const [tab, setTab] = useState<(typeof TABS)[number][0]>('time');
+/** Plain-language verdict from the percentile. */
+function verdict(p: number, practice: boolean) {
+  if (practice) {
+    if (p >= 85) return ['Strong practice', 'Most answers were right. Move to a harder level or a timed sectional on this topic.', 'ok'];
+    if (p >= 60) return ['Good practice', 'Review the wrong ones in Time & solutions, then build another set on the same topic.', 'mid'];
+    return ['Keep practising', 'Read the solutions below first, then try an easy-level set on this topic before moving on.', 'bad'];
+  }
+  if (p >= 95) return ['Excellent attempt', 'You are in the top 5%. Keep the mock rhythm and polish the few gaps below.', 'ok'];
+  if (p >= 85) return ['Strong attempt', 'Top 15%. A few fixes in the topics below can move you into the 95+ band.', 'ok'];
+  if (p >= 70) return ['On track', 'Solid base. Most of your lost marks are in a handful of topics; fix those first.', 'mid'];
+  return ['Building up', 'This is a starting point. Work on the three topics below with topic tests before your next mock.', 'bad'];
+}
+
+export function ResultTabs({ data, solutionsOpen, percentile, practice = false }: { data: Analysis; solutionsOpen: boolean; percentile: number; practice?: boolean }) {
+  const [tab, setTab] = useState<(typeof TABS)[number][0]>('overview');
   const [open, setOpen] = useState<number | null>(null);
   const peerWord = data.peersReady ? 'Peers' : 'Ideal';
 
@@ -22,6 +35,57 @@ export function ResultTabs({ data, solutionsOpen }: { data: Analysis; solutionsO
         {TABS.map(([id, t]) => <button key={id} type="button" role="tab" aria-current={tab === id} onClick={() => setTab(id)}>{t}</button>)}
       </div>
       {!data.peersReady && <p className="note" style={{ marginTop: -10 }}>Peer times and accuracy appear once 50 students have answered a question. Until then we compare with the ideal time set by faculty.</p>}
+
+      {tab === 'overview' && (() => {
+        const [title, line, tone] = verdict(percentile, practice);
+        const tot = data.sections.reduce((a, x) => ({ c: a.c + x.c, w: a.w + x.w, skip: a.skip + x.skip, n: a.n + x.n }), { c: 0, w: 0, skip: 0, n: 0 });
+        const lost = data.timeRows.filter(r => r.marks < 0).reduce((a, r) => a + r.marks, 0);
+        const fixes = data.topics.filter(t => t.status === 'Weak').slice(0, 3);
+        return (
+          <div className="stack" style={{ '--gap': '16px' } as React.CSSProperties}>
+            <div className={'card pad stack ov-verdict ' + tone} style={{ '--gap': '4px' } as React.CSSProperties}>
+              <b style={{ fontSize: 20 }}>{title}</b>
+              <span style={{ fontSize: 14, lineHeight: 1.5 }}>{line}</span>
+            </div>
+            <div className="grid" style={{ '--min': '260px', '--gap': '12px' } as React.CSSProperties}>
+              <div className="card pad stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+                <span className="eyebrow">Section by section</span>
+                {data.sections.map(x => (
+                  <div key={x.sectionId} className="stack" style={{ '--gap': '5px' } as React.CSSProperties}>
+                    <div className="row" style={{ justifyContent: 'space-between', fontSize: 13, fontWeight: 800 }}><span>{x.name}</span><span>{x.score} marks · {x.acc}% accurate</span></div>
+                    <div className="bar"><i style={{ width: Math.max(3, x.acc) + '%', background: x.acc >= 75 ? 'var(--ok-solid)' : x.acc >= 50 ? 'var(--amber)' : 'var(--bad-solid)' }} /></div>
+                    <span className="muted" style={{ fontSize: 12 }}>{x.c} right · {x.w} wrong · {x.skip} skipped</span>
+                  </div>
+                ))}
+              </div>
+              <div className="card pad stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+                <span className="eyebrow">Where your marks went</span>
+                <div className="ov-split" aria-label={`${tot.c} correct, ${tot.w} wrong, ${tot.skip} skipped`}>
+                  <i style={{ flex: tot.c, background: 'var(--ok-solid)' }} /><i style={{ flex: tot.w, background: 'var(--bad-solid)' }} /><i style={{ flex: tot.skip, background: 'var(--line)' }} />
+                </div>
+                <div className="row" style={{ fontSize: 13, fontWeight: 700 }}>
+                  <span><b style={{ color: 'var(--ok)' }}>{tot.c}</b> correct</span><span><b style={{ color: 'var(--bad)' }}>{tot.w}</b> wrong</span><span><b>{tot.skip}</b> skipped</span>
+                </div>
+                <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                  {lost < 0 ? `Wrong answers cost you ${Math.abs(lost)} mark${lost === -1 ? '' : 's'} in negative marking. ` : 'No marks lost to negative marking. '}
+                  {data.timeStats.find(t => t.k === 'Time sinks')?.v !== '0' ? `${data.timeStats.find(t => t.k === 'Time sinks')?.v} question(s) took far longer than they should.` : 'Your pacing was steady.'}
+                </span>
+              </div>
+            </div>
+            <div className="card pad stack" style={{ '--gap': '10px' } as React.CSSProperties}>
+              <span className="eyebrow">Fix these first</span>
+              {fixes.length === 0 && <span className="muted" style={{ fontSize: 14 }}>No weak topics in this test. Try a harder sectional next.</span>}
+              {fixes.map((t, i) => (
+                <div key={t.topic} className="row" style={{ justifyContent: 'space-between', '--gap': '10px' } as React.CSSProperties}>
+                  <span className="row" style={{ '--gap': '10px', flexWrap: 'nowrap' } as React.CSSProperties}><span className="ov-n">{i + 1}</span><span className="stack" style={{ '--gap': '1px' } as React.CSSProperties}><b style={{ fontSize: 14 }}>{t.topic}</b><span className="muted" style={{ fontSize: 12 }}>{t.section} · {t.verdict}{t.hist != null ? ` · ${t.hist}% over your last 5 tests` : ''}</span></span></span>
+                  {t.node ? <Link href={`/tests?node=${t.node}`} className="btn sm">Topic test</Link> : <button type="button" className="btn ghost sm" onClick={() => askGuru(`Explain ${t.topic} and give me 3 practice questions.`)}>Ask Guru</button>}
+                </div>
+              ))}
+            </div>
+            <p className="note">Want the full picture? Open <b>Time & solutions</b> for every question, or <b>Topic-wise</b> and <b>SWOT</b> for the in-depth analysis.</p>
+          </div>
+        );
+      })()}
 
       {tab === 'time' && (
         <div className="stack" style={{ '--gap': '14px' } as React.CSSProperties}>

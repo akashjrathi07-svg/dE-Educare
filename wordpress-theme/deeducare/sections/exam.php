@@ -31,8 +31,15 @@ foreach ( $plans as $p ) {
 		break;
 	}
 }
+$coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-coaching-2028', 'omet' => 'mba-plus' )[ $exam ];
+$coach    = null;
+foreach ( de_coaching() as $c ) {
+	if ( $c['id'] === $coach_id ) {
+		$coach = $c;
+	}
+}
 $daily   = de_daily_url( $exam );
-$sec_nav = array( array( 'tests', 'Tests' ), array( 'overview', 'Overview' ), array( 'pattern', 'Exam pattern' ), array( 'syllabus', 'Syllabus' ), array( 'plans', 'Plans' ), array( 'facts', 'Eligibility & dates' ), array( 'colleges', 'Colleges' ), array( 'strategy', 'Preparation' ), array( 'faq', 'FAQs' ) );
+$sec_nav = array( array( 'coaching', 'Coaching' ), array( 'free', 'Free tests' ), array( 'tests', 'Test series' ), array( 'overview', 'Overview' ), array( 'pattern', 'Exam pattern' ), array( 'syllabus', 'Syllabus' ), array( 'plans', 'Plans' ), array( 'facts', 'Eligibility & dates' ), array( 'colleges', 'Colleges' ), array( 'strategy', 'Preparation' ), array( 'faq', 'FAQs' ) );
 $related = array();
 foreach ( array( 'cat' => 'CAT Test Series', 'cet' => 'MBA-CET', 'omet' => 'OMETs' ) as $id => $label ) {
 	if ( $id !== $exam ) {
@@ -58,12 +65,13 @@ $related[] = array( 'Talk to a counsellor', de_page_url( 'contact' ) );
 			<h1 class="de-exam-hero__h"><?php de_e( $E['title'] ); ?></h1>
 			<p class="de-lead"><?php de_e( $E['intro'] ); ?></p>
 			<div class="de-row">
-				<a class="de-btn de-btn--primary de-btn--lg" href="<?php echo esc_url( $daily ); ?>"><?php de_e( $E['freeCta'] ); ?></a>
-				<a class="de-btn de-btn--outline de-btn--lg" href="#tests" data-scroll-link>Browse all tests</a>
+				<?php de_lead_button( $coach_id, 'Enquire for coaching', 'de-btn de-btn--primary de-btn--lg' ); ?>
+				<a class="de-btn de-btn--outline de-btn--lg" href="<?php echo esc_url( $daily ); ?>"><?php de_e( $E['freeCta'] ); ?></a>
+				<a class="de-btn de-btn--ghost de-btn--lg" href="#plans">Test series from <?php de_e( $top['price'] ); ?></a>
 			</div>
 		</div>
 		<div class="de-exam-hero__img" style="background:<?php echo esc_attr( $E['tone'] ); ?>">
-			<?php de_image( $E['img'], $E['name'] . ' banner photo', 'de-img de-img--cover' ); ?>
+			<?php de_image( $E['img'], $E['name'] . ' coaching and mock tests by DE Educare', 'de-img de-img--cover', true ); ?>
 		</div>
 	</div>
 	<?php foreach ( $views as $k => $v ) : ?>
@@ -85,6 +93,8 @@ $related[] = array( 'Talk to a counsellor', de_page_url( 'contact' ) );
 
 <section class="de-wrap de-exam-body">
 	<div class="de-exam-main">
+		<?php de_render_coaching( $exam ); ?>
+
 		<?php if ( $is_omet ) : ?>
 			<div class="de-stack-8">
 				<span class="de-eyebrow de-eyebrow--muted">CHOOSE YOUR OMET</span>
@@ -121,10 +131,17 @@ $related[] = array( 'Talk to a counsellor', de_page_url( 'contact' ) );
 	</div>
 
 	<aside class="de-exam-aside">
+		<div class="de-price-card de-price-card--coach">
+			<span class="de-eyebrow de-eyebrow--sm de-blue">COACHING</span>
+			<span class="de-price-card__name"><?php de_e( $coach['name'] ); ?></span>
+			<span class="de-price-card__price"><?php de_e( de_rupees( $coach['fee'] ) ); ?></span>
+			<?php de_lead_button( $coach['id'], 'Enquire now', 'de-btn de-btn--primary de-btn--block de-btn--lg' ); ?>
+			<span class="de-price-card__note">Batch dates and a free counselling call.</span>
+		</div>
 		<div class="de-price-card">
-			<span class="de-eyebrow de-eyebrow--amber de-eyebrow--sm">MOST POPULAR</span>
+			<span class="de-eyebrow de-eyebrow--amber de-eyebrow--sm">TEST SERIES · MOST POPULAR</span>
 			<span class="de-price-card__name"><?php de_e( $top['name'] ); ?></span>
-			<span class="de-price-card__price"><?php de_e( $top['price'] ); ?></span>
+			<span class="de-price-card__price"><?php de_e( $top['price'] ); ?><?php if ( ! empty( $top['mrp'] ) && ! empty( $top['amount'] ) && $top['mrp'] > $top['amount'] ) : ?> <s class="de-plan__was"><span class="screen-reader-text">was </span><?php de_e( de_rupees( $top['mrp'] ) ); ?></s><?php endif; ?></span>
 			<ul>
 				<?php foreach ( array_slice( $top['feat'], 0, 4 ) as $f ) : ?>
 					<li><span aria-hidden="true">✓</span><?php de_e( $f ); ?></li>

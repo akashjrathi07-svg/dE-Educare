@@ -34,8 +34,8 @@ export async function facultyList() {
 }
 
 export const VALIDITY: Record<string, string> = { till_exam: 'Till exam date', '6m': '6 months', '12m': '12 months' };
-export const GURU: Record<string, string> = { '10/day': '10 a day', '50/day': '50 a day', unlimited: 'Unlimited' };
-export const TEST_TYPES: Record<string, string> = { full_mock: 'Full mock', sectional: 'Sectional', topic: 'Topic test', daily: 'Daily free', pyq: 'Previous paper', custom: 'Custom' };
+export const GURU: Record<string, string> = { '10/day': '10 coins a day', '50/day': '50 coins a day', unlimited: 'Unlimited coins' };
+export const TEST_TYPES: Record<string, string> = { full_mock: 'Full mock', sectional: 'Sectional', topic: 'Topic test', daily: 'Daily free', pyq: 'Previous paper', custom: 'Custom', practice: 'Practice set' };
 
 /** Date + time typed in IST → timestamptz string. */
 export const istTimestamp = (date: string, time: string) => `${date}T${time || '00:00'}:00+05:30`;

@@ -203,7 +203,7 @@
 					var ok = picked === right;
 					v.textContent = ok ? 'Correct' : 'Not quite. Correct answer: ' + 'ABCD'.charAt( right );
 					v.className = 'de-fq__verdict ' + ( ok ? 'is-right' : 'is-wrong' );
-					$( '[data-fq-sol]', q ).hidden = false;
+					$( '[data-fq-sol]', q ).open = true;
 					answered++;
 					if ( ok ) { correct++; }
 					updateScore();
@@ -221,24 +221,130 @@
 		} );
 	} );
 
-	/* ---------- Percentile predictor ---------- */
-	var pred = $( '[data-predictor]' );
-	if ( pred ) {
-		var table = JSON.parse( pred.getAttribute( 'data-table' ) );
-		var inputs = $$( '[data-pred-input]', pred );
-		var calc = function () {
-			var score = inputs.reduce( function ( s, el ) { return s + ( parseFloat( el.value ) || 0 ); }, 0 );
-			var pct = 20;
+	/* ---------- Percentile predictor → college predictor ---------- */
+	$$( '[data-predict]' ).forEach( function ( box ) {
+		var table = JSON.parse( box.getAttribute( 'data-table' ) );
+		var data = JSON.parse( box.getAttribute( 'data-colleges' ) );
+		var inputs = $$( '[data-pred-input]', box );
+		var cpPct = $( '[data-cp-pct]', box );
+		var cpExam = $( '[data-cp-exam]', box );
+		var touched = false; // stop syncing once the student types their own percentile
+		var toPct = function ( score ) {
 			for ( var k = 0; k < table.length - 1; k++ ) {
 				var hs = table[ k ][ 0 ], hp = table[ k ][ 1 ], ls = table[ k + 1 ][ 0 ], lp = table[ k + 1 ][ 1 ];
-				if ( score >= hs ) { pct = hp; break; }
-				if ( score >= ls ) { pct = lp + ( ( score - ls ) / ( hs - ls ) ) * ( hp - lp ); break; }
+				if ( score >= hs ) { return hp; }
+				if ( score >= ls ) { return lp + ( ( score - ls ) / ( hs - ls ) ) * ( hp - lp ); }
 			}
-			$( '[data-pred-score]', pred ).textContent = String( Math.round( score * 100 ) / 100 );
-			$( '[data-pred-pct]', pred ).textContent = pct.toFixed( 1 );
+			return table[ table.length - 1 ][ 1 ];
+		};
+		var fill = function ( ul, list ) {
+			ul.innerHTML = '';
+			if ( ! list.length ) { var e = document.createElement( 'li' ); e.className = 'is-empty'; e.textContent = '—'; ul.appendChild( e ); }
+			list.forEach( function ( c ) {
+				var li = document.createElement( 'li' );
+				var n = document.createElement( 'span' ); n.textContent = c[ 0 ];
+				var v = document.createElement( 'span' ); v.className = 'de-cp__cut'; v.textContent = c[ 3 ].toFixed( c[ 3 ] % 1 ? 1 : 0 ) + '+';
+				li.appendChild( n ); li.appendChild( v ); ul.appendChild( li );
+			} );
+		};
+		var colleges = function () {
+			var exam = cpExam.value;
+			var pct = Math.min( 100, Math.max( 0, parseFloat( cpPct.value ) || 0 ) );
+			var relax = data.relax[ $( '[data-cp-cat]', box ).value ] || 0;
+			var acad = $$( '[data-cp-acad]', box ).map( function ( el ) { return parseFloat( el.value ) || 0; } );
+			var avg = acad.reduce( function ( a, b ) { return a + b; }, 0 ) / acad.length;
+			var wx = parseFloat( $( '[data-cp-wx]', box ).value ) || 0;
+			// Profile adjustment for colleges that weigh academics and work experience (IIMs, SPJIMR, MDI…).
+			var prof = ( avg >= 90 ? 0.4 : avg >= 80 ? 0 : avg >= 70 ? -0.6 : -1.2 ) + ( wx >= 12 && wx <= 36 ? 0.3 : wx > 36 ? 0.1 : 0 );
+			var good = [], mid = [], reach = [];
+			( data[ exam ] || [] ).forEach( function ( c ) {
+				var cut = Math.max( 50, c[ 1 ] - relax );
+				var diff = pct + ( c[ 2 ] ? prof : 0 ) - cut;
+				var row = [ c[ 0 ], c[ 1 ], c[ 2 ], cut ];
+				if ( diff >= 0.5 ) { good.push( row ); } else if ( diff >= -0.8 ) { mid.push( row ); } else { reach.push( row ); }
+			} );
+			fill( $( '[data-cp-good]', box ), good.slice( 0, 6 ) );
+			fill( $( '[data-cp-mid]', box ), mid.slice( 0, 5 ) );
+			fill( $( '[data-cp-reach]', box ), reach.slice( -3 ).reverse() );
+		};
+		var calc = function () {
+			var score = inputs.reduce( function ( s, el ) { return s + ( parseFloat( el.value ) || 0 ); }, 0 );
+			var pct = toPct( score );
+			$( '[data-pred-score]', box ).textContent = String( Math.round( score * 100 ) / 100 );
+			$( '[data-pred-pct]', box ).textContent = pct.toFixed( 1 );
+			if ( ! touched && cpExam.value === 'cat' ) { cpPct.value = pct.toFixed( 1 ); }
+			colleges();
 		};
 		inputs.forEach( function ( el ) { el.addEventListener( 'input', calc ); } );
+		cpPct.addEventListener( 'input', function () { touched = true; } );
+		$$( 'input, select', $( '[data-cp]', box ) ).forEach( function ( el ) { el.addEventListener( 'input', colleges ); el.addEventListener( 'change', colleges ); } );
 		calc();
+	} );
+
+	/* ---------- Coaching enquiry form ---------- */
+	var lead = $( '[data-lead-dialog]' );
+	if ( lead ) {
+		var openLead = function ( interest ) {
+			if ( interest ) { $( '[data-lead-interest]', lead ).value = interest; }
+			$( '[data-lead-page]', lead ).value = window.location.href.split( '#' )[ 0 ];
+			if ( lead.showModal ) { if ( ! lead.open ) { lead.showModal(); } } else { lead.setAttribute( 'open', '' ); }
+			var first = $( 'input[name="name"]', lead );
+			if ( first ) { first.focus(); }
+		};
+		var closeLead = function () { if ( lead.close ) { lead.close(); } else { lead.removeAttribute( 'open' ); } };
+		document.addEventListener( 'click', function ( e ) {
+			var b = e.target.closest( '[data-lead]' );
+			if ( b ) { e.preventDefault(); openLead( b.getAttribute( 'data-lead' ) ); }
+		} );
+		$( '[data-lead-close]', lead ).addEventListener( 'click', closeLead );
+		lead.addEventListener( 'click', function ( e ) { if ( e.target === lead ) { closeLead(); } } );
+		if ( lead.hasAttribute( 'data-open' ) || window.location.hash === '#enquire' ) { openLead( '' ); }
+	}
+	$$( '[data-lead-form]' ).forEach( function ( lform ) {
+		var pageIn = $( '[data-lead-page]', lform );
+		if ( pageIn && ! pageIn.value ) { pageIn.value = window.location.href.split( '#' )[ 0 ]; }
+		lform.addEventListener( 'submit', function ( e ) {
+			if ( ! window.fetch || ! window.FormData ) { return; } // plain POST fallback
+			e.preventDefault();
+			var err = $( '[data-lead-err]', lform ), ok = $( '[data-lead-ok]', lform ), btn = $( '[data-lead-submit]', lform );
+			err.hidden = true;
+			var body = {};
+			new FormData( lform ).forEach( function ( v, k ) { body[ k ] = v; } );
+			var qs = new URLSearchParams( window.location.search );
+			[ 'utm_source', 'utm_medium', 'utm_campaign' ].forEach( function ( k ) { if ( qs.get( k ) ) { body[ k ] = qs.get( k ); } } );
+			btn.disabled = true;
+			btn.textContent = 'Sending…';
+			fetch( CFG.leadUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( body ) } )
+				.then( function ( r ) { return r.json().then( function ( d ) { return { ok: r.ok, d: d }; } ); } )
+				.then( function ( res ) {
+					if ( ! res.ok ) { throw new Error( ( res.d && res.d.message ) || 'Please check the form and try again.' ); }
+					ok.hidden = false;
+					btn.hidden = true;
+					$$( '.de-enq__grid', lform ).forEach( function ( g ) { g.hidden = true; } );
+				} )
+				.catch( function ( x ) { err.textContent = x.message || 'Could not send. Please WhatsApp us instead.'; err.hidden = false; } )
+				.then( function () { btn.disabled = false; btn.textContent = 'Send enquiry'; } );
+		} );
+	} );
+
+	/* ---------- Reviews filter ---------- */
+	var rv = $( '[data-reviews]' );
+	if ( rv ) {
+		var showAll = $( '[data-rv-all]', rv );
+		$$( '[data-rv-filter]', rv ).forEach( function ( b ) {
+			b.addEventListener( 'click', function () {
+				var k = b.getAttribute( 'data-rv-filter' );
+				$$( '[data-rv-filter]', rv ).forEach( function ( x ) { x.setAttribute( 'aria-pressed', x === b ? 'true' : 'false' ); } );
+				$$( '[data-rv]', rv ).forEach( function ( c ) { c.hidden = k ? c.getAttribute( 'data-rv' ) !== k : c.hasAttribute( 'data-rv-more' ) && !! showAll; } );
+			} );
+		} );
+		if ( showAll ) {
+			showAll.addEventListener( 'click', function () {
+				$$( '[data-rv-more]', rv ).forEach( function ( c ) { c.hidden = false; c.removeAttribute( 'data-rv-more' ); } );
+				showAll.remove();
+				showAll = null;
+			} );
+		}
 	}
 
 	/* ---------- Guru preview chat ---------- */

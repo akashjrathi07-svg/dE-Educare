@@ -19,6 +19,7 @@ const NAV: [area: string, href: string, mark: string, label: string][] = [
   ['overview', '/admin', 'OV', 'Overview'], ['courses', '/admin/courses', 'CP', 'Courses & plans'], ['batches', '/admin/batches', 'BT', 'Batches'],
   ['students', '/admin/students', 'ST', 'Students'], ['classes', '/admin/classes', 'LC', 'Live classes'], ['bank', '/admin/bank', 'QB', 'Question bank'],
   ['tests', '/admin/tests', 'TS', 'Tests'], ['iface', '/admin/interfaces', 'EI', 'Exam interfaces'],
+  ['resources', '/admin/resources', 'FR', 'Free resources'], ['reviews', '/admin/reviews', 'RV', 'Reviews'],
 ];
 
 export function AdminNav({ areas, badges }: { areas: string[]; badges: Record<string, string> }) {

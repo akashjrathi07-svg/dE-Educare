@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '1.1.0' );
+define( 'DE_THEME_VERSION', '2.0.0' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
@@ -19,6 +19,9 @@ require DE_THEME_DIR . '/inc/blocks.php';
 require DE_THEME_DIR . '/inc/seo.php';
 require DE_THEME_DIR . '/inc/guru.php';
 require DE_THEME_DIR . '/inc/contact.php';
+require DE_THEME_DIR . '/inc/lead.php';
+require DE_THEME_DIR . '/inc/reviews.php';
+require DE_THEME_DIR . '/inc/predict.php';
 require DE_THEME_DIR . '/inc/setup.php';
 
 add_action( 'after_setup_theme', function () {
@@ -46,6 +49,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_script( 'deeducare', DE_THEME_URI . '/assets/js/site.js', array(), DE_THEME_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 	wp_localize_script( 'deeducare', 'DE_SITE', array(
 		'guruUrl'   => esc_url_raw( rest_url( 'deeducare/v1/guru' ) ),
+		'leadUrl'   => esc_url_raw( rest_url( 'deeducare/v1/lead' ) ),
 		'examDate'  => de_setting( 'cat_date' ),
 		'fallback'  => DE_GURU_FALLBACK,
 		'portal'    => untrailingslashit( de_portal() ),

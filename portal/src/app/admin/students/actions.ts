@@ -1,7 +1,9 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { staffOrThrow } from '@/lib/server/auth';
+import crypto from 'node:crypto';
 import { sql } from '@/lib/server/db';
+import { grantBonus } from '@/lib/server/coins';
 
 export type StudentUpdate = { userId: string; exam: string; grant: string; batchId: string; credits: number; role: string };
 
@@ -43,8 +45,8 @@ export async function updateStudent(s: StudentUpdate) {
     }
     const credits = Math.round(s.credits);
     if (canGrant && credits > 0 && credits <= 1000) {
-      await tx`update users set guru_credits = guru_credits + ${credits} where id = ${u.id}`;
-      done.push(`${credits} Guru credits added`);
+      await grantBonus(u.id, credits, 'grant', 'grant-' + crypto.randomUUID(), tx);
+      done.push(`${credits} bonus Guru coins added`);
     }
     if (me.role === 'admin' && s.role && s.role !== u.role && ['student', 'faculty', 'content', 'support', 'admin'].includes(s.role)) {
       if (u.id === me.id) throw new Error('You cannot change your own role');

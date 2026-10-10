@@ -42,7 +42,7 @@ function de_guru_answer( WP_REST_Request $req ) {
 	$ip_key = 'de_guru_' . md5( ( $_SERVER['REMOTE_ADDR'] ?? '' ) . wp_date( 'Ymd' ) );
 	$used   = (int) get_transient( $ip_key );
 	if ( $used >= DE_GURU_FREE_PREVIEWS ) {
-		return array( 'answer' => 'That’s the end of the preview. Create a free DE Educare ID for 10 Guru questions a day.', 'left' => 0, 'done' => true );
+		return array( 'answer' => 'That’s the end of the preview. Create a free DE Educare ID for 10 Guru coins a day.', 'left' => 0, 'done' => true );
 	}
 	set_transient( $ip_key, $used + 1, DAY_IN_SECONDS );
 

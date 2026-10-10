@@ -11,7 +11,10 @@ const ROLE: Record<string, string> = { admin: 'Super admin', content: 'Content t
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const u = await requireStaff('overview');
   const areas = (Object.keys(STAFF_AREAS) as StaffArea[]).filter(a => canAccess(u.role, a));
-  const [{ n }] = await sql`select count(*)::int as n from questions`;
+  const [[{ n }], [{ pending }]] = await Promise.all([
+    sql`select count(*)::int as n from questions`,
+    sql`select count(*)::int as pending from reviews where status = 'pending'`,
+  ]);
   return (
     <div className="admin" data-theme="light">
       <aside className="admin-side">
@@ -22,7 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <span style={{ font: '600 10px var(--mono)', letterSpacing: '.08em', color: '#FFC44D' }}>ADMIN</span>
           </div>
         </div>
-        <AdminNav areas={areas} badges={{ bank: n.toLocaleString('en-IN') }} />
+        <AdminNav areas={areas} badges={{ bank: n.toLocaleString('en-IN'), ...(pending ? { reviews: String(pending) } : {}) }} />
         <div className="stack" style={{ marginTop: 'auto', '--gap': '10px' } as React.CSSProperties}>
           <Link href="/" className="wide-only" style={{ color: 'rgba(255,255,255,.7)', fontSize: 13, fontWeight: 700, padding: '0 6px' }}>← Student app</Link>
           <div className="row" style={{ gap: 10, padding: '12px 6px 0', borderTop: '1px solid rgba(255,255,255,.12)', flexWrap: 'nowrap' }}>

@@ -7,10 +7,10 @@ import type { shellData } from '@/lib/server/shell';
 
 type Data = Awaited<ReturnType<typeof shellData>>;
 
-const NAV: [href: string, mark: string, label: string][] = [
-  ['/', 'HM', 'Dashboard'], ['/tests', 'TS', 'Tests'], ['/results', 'RS', 'Results'], ['/live', 'LV', 'Live classes'],
-  ['/planner', 'PL', 'Study planner'], ['/library', 'LB', 'Library'], ['/doubts', 'DS', 'Doubt solver'],
-  ['/community', 'CM', 'Community'], ['/profile', 'PR', 'Profile & rewards'],
+const NAV: [href: string, mark: string, label: string, short: string][] = [
+  ['/', 'HM', 'Dashboard', 'Home'], ['/tests', 'TS', 'Tests', 'Tests'], ['/results', 'RS', 'Results', 'Results'], ['/live', 'LV', 'Live classes', 'Live'],
+  ['/planner', 'PL', 'Study planner', 'Planner'], ['/library', 'LB', 'Library', 'Library'], ['/doubts', 'DS', 'Doubt solver', 'Doubts'],
+  ['/community', 'CM', 'Community', 'Community'], ['/profile', 'PR', 'Profile & rewards', 'Profile'],
 ];
 const GROUPS = [['mba', 'MBA'], ['upsc', 'UPSC'], ['bank', 'Bank PO'], ['ug', 'Undergrad']];
 
@@ -33,15 +33,16 @@ export function Sidebar({ data }: { data: Data }) {
         </div>
       </div>
       <nav className="nav" aria-label="Main">
-        {NAV.map(([href, mark, label]) => (
+        {NAV.map(([href, mark, label, short]) => (
           <Link key={href} href={href} className="nav-item" aria-current={active(href) ? 'page' : undefined} title={label}>
             <span className="nav-mark">{mark}</span>
             <span className="nav-label wide-only">{label}</span>
+            <span className="nav-short" aria-hidden="true">{short}</span>
             {href === '/live' && data.liveNow && <span className="badge-live wide-only">LIVE</span>}
           </Link>
         ))}
         {['admin', 'content', 'faculty', 'support'].includes(data.user.role) && (
-          <Link href="/admin" className="nav-item" title="Admin"><span className="nav-mark">AD</span><span className="nav-label wide-only">Admin</span></Link>
+          <Link href="/admin" className="nav-item" title="Admin"><span className="nav-mark">AD</span><span className="nav-label wide-only">Admin</span><span className="nav-short" aria-hidden="true">Admin</span></Link>
         )}
       </nav>
       <div className="side-foot">

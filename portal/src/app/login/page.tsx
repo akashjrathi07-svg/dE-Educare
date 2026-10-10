@@ -17,6 +17,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <span className="eyebrow" style={{ color: '#FFC44D', fontSize: 11 }}>ONE DE EDUCARE ID</span>
             <span style={{ font: '800 30px/1.1 var(--sans)', letterSpacing: '-.03em' }}>One login for the website, the portal and the app.</span>
           </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/footer-cta.webp" alt="" width={900} height={700} className="auth-art" />
           <div className="stack">
             {perks.map(p => <div key={p} className="row" style={{ fontSize: 14, fontWeight: 600, flexWrap: 'nowrap' }}><span style={{ color: '#FFC44D' }}>✓</span>{p}</div>)}
           </div>

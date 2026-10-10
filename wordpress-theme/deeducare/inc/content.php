@@ -34,17 +34,16 @@ function de_plans() {
 		'cat'  => array(
 			array( 'id' => 'cat-free', 'name' => 'Daily Free Test', 'price' => 'Free', 'amount' => 0, 'desc' => 'A fresh test every day across VARC, DILR and Quant, free forever.', 'feat' => array( 'One new test every day', 'CAT-style interface', 'Instant scorecard' ), 'best' => 'For building a daily habit.', 'cta' => 'Start today’s test', 'free' => true ),
 			array( 'id' => 'cat-10', 'name' => '10 CAT Mocks', 'tag' => 'RECOMMENDED', 'price' => '₹1,200', 'amount' => 1200, 'desc' => 'Full-length mocks plus previous year papers as mocks, at real exam difficulty and length.', 'feat' => array( '10 full-length CAT mocks', 'All-India percentile', 'Worked solutions', 'Performance scorecard' ), 'best' => 'For students who know the syllabus and want volume.', 'cta' => 'Buy 10 Mocks' ),
-			array( 'id' => 'cat-ts', 'name' => 'CAT Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹2,500', 'amount' => 2500, 'desc' => '20 full-length mocks, 10 sectionals per section, 3 topic tests per topic, PYQs as mocks.', 'feat' => array( '20 mocks, 30 sectionals', '3 topic tests per topic', 'Topic-wise analytics', 'Unlimited Guru', 'New tests added through the year' ), 'best' => 'For structured practice at every level.', 'cta' => 'Get the Test Series', 'dark' => true ),
+			array( 'id' => 'cat-ts', 'name' => 'CAT Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹2,500', 'amount' => 2500, 'mrp' => 3000, 'desc' => '20 full-length mocks, 10 sectionals per section, 3 topic tests per topic, PYQs as mocks.', 'feat' => array( '20 mocks, 30 sectionals', '3 topic tests per topic', 'Topic-wise analytics', '50 Guru coins a day', 'New tests added through the year' ), 'best' => 'For structured practice at every level.', 'cta' => 'Get the Test Series', 'dark' => true ),
 		),
 		'cet'  => array(
 			array( 'id' => 'cet-free', 'name' => 'Daily Free Test', 'price' => 'Free', 'amount' => 0, 'desc' => 'A fresh CET-pattern test every day across LR, AR, QA and VA.', 'feat' => array( 'New test daily', 'Instant scorecard' ), 'best' => 'For a daily practice habit from day one.', 'cta' => 'Start free', 'free' => true ),
 			array( 'id' => 'cet-mock', 'name' => 'CET Mock Series', 'price' => '₹ —', 'desc' => 'Full-length mocks that match the real exam’s speed. CET rewards quick, accurate attempts with no penalty for guessing.', 'feat' => array( 'Full-length CET mocks', 'Speed tracking per section' ), 'best' => 'For high-volume, realistic mock practice.', 'cta' => 'Buy Mock Series' ),
-			array( 'id' => 'cet-ts', 'name' => 'CET Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹ —', 'desc' => 'Full mocks, sectional tests and topic tests across all four CET sections with section-wise analysis.', 'feat' => array( 'Mocks + sectionals + topic tests', 'Section-wise analysis', 'Unlimited Guru' ), 'best' => 'From foundation to exam-ready.', 'cta' => 'Get the Test Series', 'dark' => true ),
-			array( 'id' => 'cet-crash', 'name' => 'CET Crash Course', 'price' => '₹ —', 'desc' => 'Guided lectures across all four sections with the full Test Series, week by week to exam day.', 'feat' => array( 'Weekly lectures', 'Full Test Series included' ), 'best' => 'For students who want teaching, not only practice.', 'cta' => 'Join Crash Course' ),
+			array( 'id' => 'cet-ts', 'name' => 'CET Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹1,800', 'amount' => 1800, 'mrp' => 2500, 'desc' => '30 full-length mocks, 40 sectionals (10 per section) and 3 topic tests for every topic, with section-wise analysis.', 'feat' => array( '30 mocks, 40 sectionals', '3 topic tests per topic', 'Section-wise speed analysis', '50 Guru coins a day' ), 'best' => 'From foundation to exam-ready.', 'cta' => 'Get the Test Series', 'dark' => true ),
 		),
 		'omet' => array(
-			array( 'id' => 'om-pack', 'name' => 'OMET Mock Pack', 'tag' => 'ALL 4 EXAMS', 'price' => '₹ —', 'desc' => 'Mocks for SNAP, NMAT, XAT and CMAT, each in its own pattern and timing.', 'feat' => array( 'SNAP, NMAT, XAT, CMAT mocks', 'Exam-specific interfaces', 'XAT essay scored by Guru' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Pack', 'dark' => true ),
-			array( 'id' => 'om-single', 'name' => 'Single-exam pack', 'price' => '₹ —', 'desc' => 'Mocks and sectionals for one OMET of your choice.', 'feat' => array( 'Full-length mocks', 'Sectional tests', 'All-India percentile' ), 'best' => 'For a single target exam.', 'cta' => 'Choose exam' ),
+			array( 'id' => 'om-pack', 'name' => 'OMET Combo', 'tag' => 'ALL 4 EXAMS', 'price' => '₹3,000', 'amount' => 3000, 'mrp' => 4500, 'desc' => '15 mocks each for SNAP, NMAT, XAT and CMAT, sectionals for every section and 3 topic tests per topic, each in its own pattern and timing.', 'feat' => array( '15 mocks per exam (60 in all)', 'Sectionals for every section', '3 topic tests per topic', 'Exam-specific interfaces' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Combo', 'dark' => true ),
+			array( 'id' => 'om-single', 'name' => 'Individual OMET', 'price' => '₹1,000', 'amount' => 1000, 'mrp' => 1500, 'desc' => '15 mocks, sectionals and topic tests for one OMET of your choice.', 'feat' => array( '15 full-length mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For a single target exam.', 'cta' => 'Choose exam' ),
 		),
 	) );
 }
@@ -57,8 +56,8 @@ function de_exams() {
 			'name'    => 'CAT',
 			'slug'    => 'cat',
 			'eyebrow' => 'COMMON ADMISSION TEST · IIMs',
-			'title'   => 'CAT mocks that feel like the slot you’ll actually sit.',
-			'intro'   => 'Full-length mocks, sectional tests for Quant, DILR and VARC, and topic tests down to each Arithmetic, Algebra and Geometry chapter.',
+			'title'   => 'CAT Coaching 2027 and CAT Mock Test Series',
+			'intro'   => 'Live classes, mentors and books for CAT 2027, plus mocks that feel like the slot you’ll actually sit: 20 full-length mocks, 30 sectionals for Quant, DILR and VARC, and 3 topic tests for every chapter.',
 			'freeCta' => 'Take today’s free CAT test',
 			'img'     => 'img_cat',
 			'tone'    => '#1F3A8A',
@@ -101,10 +100,11 @@ function de_exams() {
 				),
 			),
 			'faq'     => array(
+				array( 'Do you offer CAT coaching for 2027?', 'Yes. CAT Coaching 2027 costs ₹40,000 and includes live lectures for Quant, DILR and VARC, a recording of every class, the CAT Test Series, books, one-on-one mentorship, GD-PI-WAT preparation and admission guidance. Classes run online and in Mumbai.' ),
 				array( 'How many mocks should I take before CAT?', 'Most 99 percentilers take 25 to 40 full mocks. Start with one a week from August and move to two a week in the last month. The CAT Test Series has 20 mocks, and the 10 CAT Mocks pack adds 10 more.' ),
 				array( 'How close are DE Educare mocks to the real CAT?', 'They follow the current pattern: three sections with a 40-minute section lock, MCQ and TITA questions, and the same on-screen palette and calculator.' ),
 				array( 'What does the AI analysis show after a test?', 'Section scores, accuracy, time per question, topics that cost marks, and a written plan from Guru with the next tests to take.' ),
-				array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 CAT Mocks is full-length practice only. The Test Series adds 20 more mocks, 30 sectionals, three topic tests for every topic and unlimited Guru.' ),
+				array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 CAT Mocks is full-length practice only. The Test Series adds 20 more mocks, 30 sectionals, three topic tests for every topic and 50 Guru coins a day.' ),
 				array( 'Are topic tests available for every chapter?', 'Yes. Every Quant, DILR and VARC topic has three topic tests of 10 questions each, from Percentages to Para Jumbles.' ),
 				array( 'Is there negative marking in CAT?', 'Yes. A wrong MCQ costs 1 mark. TITA questions have no negative marking.' ),
 				array( 'What score do I need for 99 percentile?', 'In recent years it has been roughly 85 out of 204, though it varies by slot and year. Use the percentile predictor on Free resources for an estimate.' ),
@@ -131,8 +131,8 @@ function de_exams() {
 			'name'    => 'MBA-CET',
 			'slug'    => 'mba-cet',
 			'eyebrow' => 'MAH MBA CET · MAHARASHTRA',
-			'title'   => 'MBA-CET is a speed test. Train for the speed.',
-			'intro'   => '200 questions in 150 minutes with no negative marking. Our mocks and section drills are built to raise your attempts without losing accuracy.',
+			'title'   => 'MBA-CET Coaching 2028 and MAH-CET Mock Tests',
+			'intro'   => 'MBA-CET is a speed test: 200 questions in 150 minutes, no negative marking. Our coaching and 30 full mocks with 40 sectionals are built to raise your attempts without losing accuracy.',
 			'freeCta' => 'Take a free CET test',
 			'img'     => 'img_cet',
 			'tone'    => '#2C3FA8',
@@ -175,9 +175,11 @@ function de_exams() {
 				),
 			),
 			'faq'     => array(
+				array( 'Do you offer MBA-CET coaching for 2028?', 'Yes. CET Coaching 2028 costs ₹30,000 and includes live lectures for LR, AR, QA and VA, recordings, the CET Test Series (30 mocks, 40 sectionals), books, one-on-one mentorship and CAP round guidance.' ),
+				array( 'What MAH-CET percentile do I need for JBIMS?', 'In recent CAP rounds JBIMS has closed at about 99.9 percentile for Maharashtra open-category candidates, Sydenham at about 99.5 and PUMBA at about 98. Cutoffs vary by category and year; try the college predictor on Free resources.' ),
 				array( 'Is there negative marking in MBA-CET?', 'No. Every question carries one mark and wrong answers cost nothing, so attempt every question.' ),
 				array( 'Which sections matter most in CET?', 'Logical Reasoning has 75 of 200 questions and Abstract Reasoning 25, so reasoning speed has the biggest effect on your score.' ),
-				array( 'How many CET mocks should I take?', 'Aim for 15 to 20 full mocks, with two a week in the final month.' ),
+				array( 'How many CET mocks should I take?', 'Aim for 15 to 20 full mocks, with two a week in the final month. The CET Test Series has 30 full mocks and 40 sectionals for ₹1,800.' ),
 				array( 'When is MBA-CET held?', 'Usually in March, over several days. Check the State CET Cell website for the official dates.' ),
 				array( 'Can I prepare for CAT and CET together?', 'Yes. Concepts overlap. Add CET-specific mocks after CAT to build speed in LR and AR.' ),
 				array( 'Which colleges can I get through CET?', 'JBIMS, Sydenham, K J Somaiya, PUMBA, Welingkar and many more through the CAP rounds.' ),
@@ -190,9 +192,9 @@ function de_exams() {
 				'tabs'       => array( 'CET Mocks', 'CET Test Series' ),
 				'mocks'      => array( 'n' => 10, 'prefix' => 'MBA-CET Mock', 'q' => 200, 'mins' => 150 ),
 				'mockPlan'   => array( 'cet-mock', 'cet-ts' ),
-				'sm'         => array( 'n' => 15, 'prefix' => 'Test Series Mock' ),
+				'sm'         => array( 'n' => 30, 'prefix' => 'Test Series Mock' ),
 				'secs'       => array( array( 'LR', 'Logical Reasoning', 75 ), array( 'AR', 'Abstract Reasoning', 25 ), array( 'QA', 'Quant', 50 ), array( 'VA', 'Verbal & RC', 50 ) ),
-				'secN'       => 5,
+				'secN'       => 10,
 				'secMins'    => 30,
 				'seriesPlan' => array( 'cet-ts' ),
 				'pyq'        => array( array( 'MAH-CET 2025 · memory-based paper', 200, 150 ) ),
@@ -202,8 +204,8 @@ function de_exams() {
 			'name'    => 'OMETs',
 			'slug'    => 'omet',
 			'eyebrow' => 'SNAP · NMAT · XAT · CMAT',
-			'title'   => 'One place for every other MBA entrance.',
-			'intro'   => 'Each OMET has its own rules: SNAP’s speed, NMAT’s section order, XAT’s decision making, CMAT’s innovation section. Pick an exam to see its pattern and plans.',
+			'title'   => 'OMET Mock Tests 2026–27: SNAP, NMAT, XAT and CMAT',
+			'intro'   => 'Each OMET has its own rules: SNAP’s speed, NMAT’s section order, XAT’s decision making, CMAT’s innovation section. 15 mocks per exam in its own pattern, with sectionals and topic tests. Pick an exam to see its pattern and plans.',
 			'freeCta' => 'Take a free OMET test',
 			'img'     => 'img_omet',
 			'tone'    => 'oklch(0.42 0.12 280)',
@@ -333,7 +335,7 @@ function de_omet_view( $key ) {
 			array( 'How many attempts does ' . $name . ' allow?', $attempts . '.' ),
 			array( 'How is ' . $name . ' different from CAT?', $o['ov'] ),
 			array( 'Which colleges accept ' . $name . '?', implode( ', ', $o['colleges'] ) . ', and more.' ),
-			array( 'Do I need separate packs for each OMET?', 'No. The OMET Mock Pack covers SNAP, NMAT, XAT and CMAT. Single-exam packs are also available.' ),
+			array( 'Do I need separate packs for each OMET?', 'No. The OMET Combo (₹3,000) covers SNAP, NMAT, XAT and CMAT with 15 mocks each. An individual OMET pack is ₹1,000.' ),
 			array( 'Can I use CAT mocks to prepare for OMETs?', 'Yes for concepts, but each OMET has its own timing and marking. Take at least three exam-specific mocks before your test.' ),
 			array( 'Do ' . $name . ' tests get AI analysis?', 'Yes. Every attempt gets section scores, time per question and a written plan from Guru.' ),
 		),
@@ -341,7 +343,7 @@ function de_omet_view( $key ) {
 			'pfx'        => 'om-' . $key,
 			'label'      => $name,
 			'tabs'       => array( $name . ' Mocks', $name . ' Sectionals & topics' ),
-			'mocks'      => array( 'n' => 8, 'prefix' => $name . ' Mock', 'q' => $o['q'], 'mins' => $o['mins'] ),
+			'mocks'      => array( 'n' => 15, 'prefix' => $name . ' Mock', 'q' => $o['q'], 'mins' => $o['mins'] ),
 			'mockPlan'   => array( 'om-single', 'om-pack' ),
 			'sm'         => null,
 			'secs'       => $secs,
@@ -357,10 +359,12 @@ function de_home_faqs() {
 	return array(
 		array( 'Is the same login used on the app and the website?', 'Yes. Your DE Educare ID is your mobile number. Log in on the website, the student portal or the app to see the same purchases, scores and Guru history.' ),
 		array( 'Which exams does DE Educare cover?', 'CAT, MBA-CET and OMETs (SNAP, NMAT, XAT, CMAT) today. Bank PO, RBI and UPSC test series are launching soon.' ),
-		array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 Mocks is full-length practice. The Test Series adds sectionals, topic tests, analytics and unlimited Guru.' ),
-		array( 'What is Guru?', 'Guru is the AI mentor built into the portal. It analyses every attempt, solves doubts from a photo, builds custom tests and talks you through a plan by chat or voice.' ),
+		array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 Mocks is full-length practice. The Test Series adds sectionals, topic tests, analytics and 50 Guru coins a day.' ),
+		array( 'Do you offer coaching classes?', 'Yes. CAT Coaching 2027 (₹40,000), CET Coaching 2028 (₹30,000) and MBA+ for CAT, CET and OMETs together (₹60,000) include live lectures, recorded sessions, mocks, books, one-on-one mentorship and admission guidance. Send an enquiry for batch dates.' ),
+		array( 'What is Guru?', 'Guru is the AI mentor built into the portal. It analyses every attempt, solves doubts from a photo, builds practice sets and teaches by chat or voice.' ),
+		array( 'How do Guru coins work?', 'Guru uses coins: 1 for a chat message, 3 for a voice tutor reply, 2 for a photo doubt, 1–3 for a test analysis and 1 per 10 questions for a practice set. You get 10 coins a day free, 50 on a test series and unlimited on coaching. Daily coins refill at midnight; bonus coins earned from XP never expire.' ),
 		array( 'Is the daily free test really free?', 'Yes, always. A new test is added every day with an instant scorecard and AI analysis.' ),
-		array( 'Do I need to pay to use the portal?', 'No. A free account gets the daily test, previous papers, free questions and 10 Guru questions a day.' ),
+		array( 'Do I need to pay to use the portal?', 'No. A free account gets the daily test, previous papers, free questions and 10 Guru coins a day.' ),
 		array( 'How do I pay?', 'UPI, cards, netbanking and EMI through a secure payment gateway. Your plan unlocks instantly on web and app.' ),
 		array( 'When do Bank PO, RBI and UPSC launch?', 'Government exam test series are launching soon. Tap Notify me to hear first.' ),
 	);
@@ -373,7 +377,8 @@ function de_free_faqs() {
 		array( 'Do I need to sign in?', 'You can practise free questions without signing in. Sign in free to take tests and save your attempts.' ),
 		array( 'How often are new free questions added?', 'A new daily test is added every morning across VARC, DILR and Quant.' ),
 		array( 'How accurate is the percentile predictor?', 'It is a rough estimate from recent score vs percentile trends. Real percentiles vary by slot and year.' ),
-		array( 'Can I download the formula sheets?', 'Yes. PDFs download directly and also appear in your library in the app.' ),
+		array( 'Can I download the formula sheets?', 'Formula sheets and notes open inside the student portal after you sign in free. They are view-only, so you always read the latest version.' ),
+		array( 'Is there a free SNAP or MBA-CET test?', 'Yes. There is a free daily test for CAT, MBA-CET and SNAP. Each takes about 15 minutes and includes AI analysis.' ),
 	);
 }
 
@@ -415,11 +420,99 @@ function de_percentile_table() {
 	return array( array( 133, 99.99 ), array( 111, 99.9 ), array( 93, 99.5 ), array( 85, 99 ), array( 76, 98 ), array( 62, 95 ), array( 52, 90 ), array( 44, 85 ), array( 38, 80 ), array( 26, 60 ), array( 0, 20 ) );
 }
 
-/** Sample quotes. Replace with real reviews before launch. */
-function de_voices() {
+/**
+ * Coaching programmes. "Enquire" opens the lead form; leads go to the CRM
+ * (n8n webhook in Customize → DE Educare → Portal and contact) and by email.
+ */
+function de_coaching() {
 	return array(
-		array( 'The sectional timer finally made me stop over-investing in one DILR set.', 'Student name', 'Student, CAT 2026' ),
-		array( 'Free daily tests kept me going on days I had only 15 minutes after work.', 'Student name', 'Working professional, CET' ),
-		array( 'Guru’s mock summary told me exactly which three topics to fix. Saved me hours.', 'Student name', 'Student, CAT 2026' ),
+		array(
+			'id'    => 'cat-coaching-2027',
+			'name'  => 'CAT Coaching 2027',
+			'for'   => 'For CAT 2027 · IIMs and top B-schools',
+			'fee'   => 40000,
+			'tag'   => 'MOST POPULAR',
+			'dark'  => true,
+			'feat'  => array( 'Live lectures for Quant, DILR and VARC', 'Recorded session of every class', 'CAT Test Series: mocks, sectionals, topic tests', 'Books and study material', 'One-on-one mentorship', 'GD, PI and WAT preparation', 'Admission guidance', 'Unlimited Guru, the AI mentor' ),
+		),
+		array(
+			'id'    => 'cet-coaching-2028',
+			'name'  => 'CET Coaching 2028',
+			'for'   => 'For MAH MBA-CET 2028 · JBIMS, Sydenham, PUMBA',
+			'fee'   => 30000,
+			'feat'  => array( 'Live lectures for LR, AR, QA and VA', 'Recorded session of every class', 'CET Test Series: 30 mocks, 40 sectionals', 'Books and study material', 'One-on-one mentorship', 'CAP round admission guidance', 'Unlimited Guru, the AI mentor' ),
+		),
+		array(
+			'id'    => 'mba-plus',
+			'name'  => 'MBA+ (CAT + CET + OMET)',
+			'for'   => 'One programme for every MBA entrance',
+			'fee'   => 60000,
+			'tag'   => 'BEST VALUE',
+			'feat'  => array( 'Everything in CAT and CET Coaching', 'OMET Combo: SNAP, NMAT, XAT, CMAT', 'GD, PI and WAT preparation', 'Admission guidance across all exams', 'Unlimited Guru, the AI mentor' ),
+		),
+	);
+}
+
+/** Rows of the coaching comparison on the home page: label, then CAT, CET, MBA+. */
+function de_coaching_rows() {
+	return array(
+		array( 'Exam year', 'CAT 2027', 'MBA-CET 2028', 'CAT 2027 + CET 2028 + OMETs' ),
+		array( 'Live lectures', 'Quant, DILR, VARC', 'LR, AR, QA, VA', 'All CAT and CET sections' ),
+		array( 'Recorded sessions', '✓', '✓', '✓' ),
+		array( 'Mocks and test series', 'CAT Test Series', 'CET Test Series', 'CAT + CET + OMET Combo' ),
+		array( 'Books and study material', '✓', '✓', '✓' ),
+		array( 'One-on-one mentorship', '✓', '✓', '✓' ),
+		array( 'GD, PI and WAT preparation', '✓', '—', '✓' ),
+		array( 'Admission guidance', 'IIMs and top B-schools', 'CAP rounds', 'All exams' ),
+		array( 'Guru AI mentor', 'Unlimited', 'Unlimited', 'Unlimited' ),
+	);
+}
+
+/**
+ * Test series cards in the home hero. Prices come from de_plans(), so the
+ * portal's live price (Admin → Courses & plans) shows here too.
+ */
+function de_test_series() {
+	return array(
+		array( 'plan' => 'cat-ts', 'exam' => 'cat', 'name' => 'CAT Test Series', 'counts' => array( array( '20', 'Mocks' ), array( '30', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'cat' ) . '#plans' ),
+		array( 'plan' => 'cet-ts', 'exam' => 'cet', 'name' => 'CET Test Series', 'counts' => array( array( '30', 'Mocks' ), array( '40', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'mba-cet' ) . '#plans' ),
+		array( 'plan' => 'om-pack', 'exam' => 'omet', 'name' => 'OMET Combo', 'counts' => array( array( '15', 'Mocks per exam' ), array( 'All', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
+		array( 'plan' => 'om-single', 'exam' => 'omet', 'name' => 'Individual OMET', 'counts' => array( array( '15', 'Mocks' ), array( '✓', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
+	);
+}
+
+/** Free daily tests (portal /daily/{exam}). */
+function de_free_daily() {
+	return array(
+		array( 'cat', 'CAT', 'VARC, DILR and Quant mix', 'icon-target.webp' ),
+		array( 'cet', 'MBA-CET', 'LR, AR, QA and VA at CET speed', 'icon-checklist.webp' ),
+		array( 'snap', 'SNAP', '60-question speed format', 'icon-interface.webp' ),
+	);
+}
+
+/**
+ * College predictor data. Cutoffs are indicative overall percentiles for the
+ * General category from recent cycles; 'p' marks colleges that weigh
+ * academics and work experience heavily. Edit here as new cutoffs come out.
+ */
+function de_college_data() {
+	return array(
+		'cat' => array(
+			array( 'IIM Ahmedabad', 99.5, 1 ), array( 'IIM Bangalore', 99.4, 1 ), array( 'IIM Calcutta', 99.3, 1 ),
+			array( 'FMS Delhi', 98.8, 0 ), array( 'IIM Lucknow', 98, 1 ), array( 'IIM Kozhikode', 97.5, 1 ),
+			array( 'IIM Indore', 97.5, 1 ), array( 'IIM Mumbai (NITIE)', 97, 1 ), array( 'SPJIMR Mumbai', 96, 1 ),
+			array( 'MDI Gurgaon', 96, 1 ), array( 'IIT Bombay SJMSOM', 96, 1 ), array( 'IIFT Delhi', 95, 0 ),
+			array( 'IIM Shillong', 95, 1 ), array( 'IIM Udaipur / Trichy / Ranchi', 94, 1 ), array( 'Newer IIMs', 92, 1 ),
+			array( 'IMT Ghaziabad', 90, 0 ), array( 'IMI New Delhi', 88, 0 ), array( 'K J Somaiya (SIMSR)', 85, 0 ),
+			array( 'Great Lakes Chennai', 85, 0 ), array( 'TAPMI Manipal', 82, 0 ),
+		),
+		'cet' => array(
+			array( 'JBIMS Mumbai', 99.9, 0 ), array( 'Sydenham (SIMSREE)', 99.5, 0 ), array( 'PUMBA Pune', 98.5, 0 ),
+			array( 'K J Somaiya (SIMSR)', 98.5, 0 ), array( 'Welingkar (WeSchool)', 98, 0 ), array( 'NL Dalmia', 97, 0 ),
+			array( 'Chetana’s IMR', 96, 0 ), array( 'MET Institute', 96, 0 ), array( 'IES MCRC', 94, 0 ),
+			array( 'Lala Lajpat Rai Institute', 93, 0 ), array( 'VESIM Mumbai', 92, 0 ), array( 'Pillai Institute', 88, 0 ),
+		),
+		// Percentile points a category's cutoff is lower by, roughly.
+		'relax' => array( 'general' => 0, 'ews' => 3, 'obc' => 6, 'sc' => 15, 'st' => 25 ),
 	);
 }

@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 /** Default values for every theme setting (Appearance → Customize → DE Educare). */
 function de_setting_defaults() {
-	$up = 'https://deeducare.com/wp-content/uploads/';
+	$img = DE_THEME_URI . '/assets/img/';
 	return array(
 		'portal_url'     => 'https://portal.deeducare.com',
 		'app_url'        => '',
@@ -20,18 +20,20 @@ function de_setting_defaults() {
 		'city'           => 'Mumbai, India',
 		'cat_date'       => '2026-11-29',
 		'contact_to'     => '',
+		'lead_webhook'   => '',
 		'whatsapp_group' => '',
 		'telegram'       => '',
 		'youtube'        => '',
 		'instagram'      => '',
 		'facebook'       => '',
-		'img_cat'        => $up . '2026/08/WhatsApp-Image-2026-09-03-at-1.17.23-PM.jpeg',
-		'img_cet'        => $up . '2026/09/MAH-MBA-CET-Exam-1-1024x683.jpeg',
-		'img_omet'       => $up . '2026/08/WhatsApp-Image-2026-09-03-at-1.13.57-PM.jpeg',
-		'img_govt'       => $up . '2026/08/Admin.png',
-		'img_bank'       => $up . '2026/09/2EE6AA28-FB2D-4D85-AB0C-41D777BF8E2A.png',
-		'img_rbi'        => $up . '2026/08/WhatsApp-Image-2026-09-03-at-1.08.04-PM.jpeg',
-		'img_upsc'       => $up . '2026/08/WhatsApp-Image-2026-09-03-at-1.10.49-PM.jpeg',
+		'img_cat'        => $img . 'cat-mock-test-series-de-educare.webp',
+		'img_cet'        => $img . 'mba-cet-mock-test-de-educare.webp',
+		'img_omet'       => $img . 'omet-mock-tests-de-educare.webp',
+		'img_govt'       => $img . 'bank-po-test-series-de-educare.webp',
+		'img_bank'       => $img . 'bank-po-test-series-de-educare.webp',
+		'img_rbi'        => $img . 'rbi-grade-b-test-series-de-educare.webp',
+		'img_upsc'       => $img . 'upsc-prelims-test-series-de-educare.webp',
+		'img_share'      => $img . 'de-educare-share.jpg',
 	);
 }
 
@@ -117,13 +119,42 @@ function de_e( $text ) {
  * Image box. Shows the configured photo, or the striped placeholder from
  * the design when no photo is set.
  */
-function de_image( $setting_or_url, $label, $class = 'de-img' ) {
+function de_image( $setting_or_url, $label, $class = 'de-img', $eager = false ) {
 	$src = $setting_or_url && 0 === strpos( $setting_or_url, 'img_' ) ? de_setting( $setting_or_url ) : $setting_or_url;
 	if ( $src ) {
-		printf( '<img class="%s" src="%s" alt="%s" loading="lazy" decoding="async">', esc_attr( $class ), esc_url( $src ), esc_attr( $label ) );
+		printf( '<img class="%s" src="%s" alt="%s" %s decoding="async">', esc_attr( $class ), esc_url( $src ), esc_attr( $label ), $eager ? 'fetchpriority="high"' : 'loading="lazy"' );
 		return;
 	}
 	printf( '<span class="%s de-img--empty" role="img" aria-label="%s"><span>%s</span></span>', esc_attr( $class ), esc_attr( $label ), esc_html( $label ) );
+}
+
+/**
+ * Site logo: the image from Customize → Site Identity → Logo when set,
+ * otherwise the "DE" mark. Used in the header and footer.
+ */
+function de_logo( $class = 'de-logo' ) {
+	echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( home_url( '/' ) ) . '" aria-label="DE Educare home">';
+	if ( has_custom_logo() ) {
+		echo wp_get_attachment_image( get_theme_mod( 'custom_logo' ), 'medium', false, array( 'class' => 'de-logo__img', 'alt' => 'DE Educare logo' ) );
+	} else {
+		echo '<span class="de-logo__mark" aria-hidden="true">DE</span>';
+	}
+	echo '<span class="de-logo__text">DE Educare</span></a>';
+}
+
+/** URL of an image bundled with the theme (assets/img). */
+function de_asset_img( $file ) {
+	return DE_THEME_URI . '/assets/img/' . $file;
+}
+
+/** Bundled illustration with fixed size, so the layout doesn't shift while it loads. */
+function de_icon_img( $file, $alt = '', $size = 56 ) {
+	printf( '<img class="de-ico" src="%s" alt="%s" width="%d" height="%d" loading="lazy" decoding="async">', esc_url( de_asset_img( $file ) ), esc_attr( $alt ), (int) $size, (int) $size );
+}
+
+/** "₹2,500" from 2500. */
+function de_rupees( $amount ) {
+	return '₹' . number_format_i18n( (int) $amount );
 }
 
 /** FAQ list as native <details>, so answers are in the HTML for search engines. */
@@ -179,6 +210,11 @@ function de_apply_portal_prices( $by_exam ) {
 			if ( ! empty( $lp['live'] ) && $lp['amount'] > 0 ) {
 				$by_exam[ $exam ][ $i ]['price']  = '₹' . number_format_i18n( $lp['amount'] );
 				$by_exam[ $exam ][ $i ]['amount'] = (int) $lp['amount'];
+				if ( ! empty( $lp['mrp'] ) && $lp['mrp'] > $lp['amount'] ) {
+					$by_exam[ $exam ][ $i ]['mrp'] = (int) $lp['mrp'];
+				} else {
+					unset( $by_exam[ $exam ][ $i ]['mrp'] );
+				}
 			} else {
 				$by_exam[ $exam ][ $i ]['price'] = '₹ —';
 				unset( $by_exam[ $exam ][ $i ]['amount'] );

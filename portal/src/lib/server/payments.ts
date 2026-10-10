@@ -14,16 +14,18 @@ export const testModeAllowed = () => !razorpayConfigured() && (process.env.NODE_
 export type Quote = { course: { id: string; slug: string; name: string; price_paise: number; mrp_paise: number; validity: string; exam_id: string | null }; coupon: { id: string; code: string } | null; discount: number; total: number; couponError?: string };
 
 export async function quote(courseSlug: string, couponCode: string | null, userId: string): Promise<Quote | null> {
-  const [course] = await sql`select id, slug, name, price_paise, mrp_paise, validity, exam_id from courses where slug = ${courseSlug} and status = 'live'`;
+  const [course] = await sql`select id, slug, name, price_paise, mrp_paise, validity, exam_id, category from courses where slug = ${courseSlug} and status = 'live'`;
   if (!course || course.price_paise <= 0) return null;
   const q: Quote = { course: course as Quote['course'], coupon: null, discount: 0, total: course.price_paise };
   const code = (couponCode ?? '').trim().toUpperCase();
   if (!code) return q;
   const [c] = await sql`
     select * from coupons where upper(code) = ${code} and active and (valid_till is null or valid_till >= current_date)
-      and (max_uses is null or used < max_uses) and (course_ids is null or ${course.id} = any(course_ids)) and (user_id is null or user_id = ${userId})`;
+      and (max_uses is null or used < max_uses) and (course_ids is null or ${course.id} = any(course_ids)) and (user_id is null or user_id = ${userId})
+      and (category is null or category = ${course.category})`;
   if (!c) return { ...q, couponError: 'That code is not valid for this plan.' };
-  const discount = Math.min(course.price_paise, c.kind === 'flat' ? Number(c.value) : Math.round((course.price_paise * Number(c.value)) / 100));
+  const raw = c.kind === 'flat' ? Number(c.value) : Math.round((course.price_paise * Number(c.value)) / 100);
+  const discount = Math.min(course.price_paise, c.max_discount_paise ? Math.min(raw, c.max_discount_paise) : raw);
   return { ...q, coupon: { id: c.id, code: c.code }, discount, total: course.price_paise - discount };
 }
 

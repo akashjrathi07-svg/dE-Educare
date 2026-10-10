@@ -3,11 +3,12 @@ import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { xpTotals, streakOf, leaderboard, myRank, type Board } from '@/lib/server/xp';
 import { availableCredits } from '@/lib/server/access';
-import { levelFor } from '@/lib/exam-logic';
+import { levelOf, COIN_COST, XP_BASE, XP_PER_COIN, MONTHLY_PRIZES, STREAK_COINS, DAILY_COINS, COIN_LABEL } from '@/lib/economy';
+import { wallet, coinHistory } from '@/lib/server/coins';
 import { initials, rupees } from '@/lib/server/shell';
 import { logoutAction } from '@/app/login/actions';
 import { updateProfile } from './actions';
-import { RedeemButton } from './redeem-button';
+import { ConvertXp, RedeemButton } from './redeem-button';
 
 export const metadata = { title: 'Profile & rewards' };
 
@@ -15,7 +16,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
   const u = await requireUser('/profile');
   const sp = await searchParams;
   const board: Board = sp.board === 'month' || sp.board === 'all' ? sp.board : 'week';
-  const [xp, streak, top, me, credits, store, exams, [stats], [{ helpful }], orders, coupons] = await Promise.all([
+  const [xp, streak, top, me, credits, store, exams, [stats], [{ helpful }], orders, coupons, coins, history] = await Promise.all([
     xpTotals(u.id), streakOf(u.id), leaderboard(board, u.exam_group, 5), myRank(u.id, board, u.exam_group), availableCredits(u.id),
     sql`select * from reward_items where active order by sort`, sql`select code, name from exams order by sort`,
     sql`
@@ -23,10 +24,10 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
       from attempts a join tests t on t.id = a.test_id where a.user_id = ${u.id} and a.status = 'submitted'`,
     sql`select count(*)::int as helpful from community_answers where user_id = ${u.id} and helpful`,
     sql`select o.invoice_no, o.amount_paise, o.paid_at, c.name from orders o join courses c on c.id = o.course_id where o.user_id = ${u.id} and o.status = 'paid' order by o.paid_at desc`,
-    sql`select code, kind, value, valid_till from coupons where user_id = ${u.id} and active and used < coalesce(max_uses, 1) and (valid_till is null or valid_till >= current_date)`,
+    sql`select code, kind, value, valid_till, max_discount_paise, category from coupons where user_id = ${u.id} and active and used < coalesce(max_uses, 1) and (valid_till is null or valid_till >= current_date)`,
+    wallet(u.id), coinHistory(u.id, 8),
   ]);
-  const lv = levelFor(xp.earned);
-  const nextFreeAt = (Math.floor(xp.earned / 1000) + 1) * 1000;
+  const lv = levelOf(xp.earned);
   const badges = [
     [String(streak.best), `${streak.best}-day streak`, `Current ${streak.current}`, 'oklch(0.65 0.19 45)', streak.best >= 7],
     ['90', '90+ percentile', stats.best >= 90 ? `Best ${stats.best.toFixed(1)}` : 'Not yet', 'var(--pri)', stats.best >= 90],
@@ -46,11 +47,65 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
               <div style={{ font: '800 26px var(--sans)', letterSpacing: '-.02em' }}>{u.name}</div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>{u.target_exam ?? 'CAT'}{u.city ? ' · ' + u.city : ''} · joined {joined} · {u.de_id}</div>
             </div>
-            <div className="mono" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--amber)' }}>Level {lv.level} · {xp.earned.toLocaleString('en-IN')} XP</div>
+            <div className="mono" style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--amber)' }}>{lv.name} · {xp.earned.toLocaleString('en-IN')} XP earned</div>
           </div>
-          <div className="bar" style={{ background: 'rgba(255,255,255,.18)' }}><i style={{ width: lv.into / 10 + '%', background: 'var(--amber)' }} /></div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 700 }}>{lv.toNext.toLocaleString('en-IN')} XP to level {lv.level + 1}</div>
+          <div className="bar" style={{ background: 'rgba(255,255,255,.18)' }}><i style={{ width: lv.progress + '%', background: 'var(--amber)' }} /></div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 700 }}>{lv.next ? `${(lv.next.at - xp.earned).toLocaleString('en-IN')} XP to ${lv.next.name}` : 'Top level reached'}</div>
         </div>
+      </div>
+      <Link href="/review" className="card pad row" style={{ justifyContent: 'space-between', color: 'var(--ink)', '--gap': '12px' } as React.CSSProperties}>
+        <span className="stack" style={{ '--gap': '2px' } as React.CSSProperties}><b style={{ fontSize: 15 }}>Write a review</b><span className="muted" style={{ fontSize: 13 }}>Tell other students how DE Educare works for you. Approved reviews show on deeducare.com.</span></span>
+        <span style={{ color: '#F2A900', fontSize: 20, letterSpacing: 1 }} aria-hidden="true">★★★★★</span>
+      </Link>
+
+      <div className="grid" style={{ '--min': '300px', '--gap': '16px', alignItems: 'start' } as React.CSSProperties}>
+        <section className="card pad stack" id="coins" style={{ '--gap': '14px' } as React.CSSProperties}>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <h2 className="h2" style={{ fontSize: 16 }}>Guru coins</h2>
+            <span className="note">Daily coins refill at midnight</span>
+          </div>
+          <div className="grid" style={{ '--min': '120px', '--gap': '10px' } as React.CSSProperties}>
+            <div className="coin-box"><span className="coin-v">{coins.dailyLeft == null ? '∞' : coins.dailyLeft}</span><span className="coin-k">{coins.limit == null ? 'Unlimited today' : `of ${coins.limit} left today`}</span></div>
+            <div className="coin-box bonus"><span className="coin-v">{coins.bonus.toLocaleString('en-IN')}</span><span className="coin-k">bonus coins · never expire</span></div>
+          </div>
+          <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
+            <span className="label">Turn XP into bonus coins · {XP_PER_COIN} XP = 1 coin · you have {xp.balance.toLocaleString('en-IN')} XP</span>
+            <ConvertXp balance={xp.balance} />
+          </div>
+          <details className="coin-rules">
+            <summary>What things cost and how to earn</summary>
+            <div className="grid" style={{ '--min': '200px', '--gap': '12px' } as React.CSSProperties}>
+              <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
+                <b style={{ fontSize: 13 }}>Spend coins</b>
+                {[['Chat with Guru', COIN_COST.chat], ['Voice tutor reply', COIN_COST.voice], ['Doubt from a photo', COIN_COST.doubt], ['Topic or daily test analysis', COIN_COST.analysis.topic], ['Sectional analysis', COIN_COST.analysis.sectional], ['Full mock analysis + plan', COIN_COST.analysis.full_mock], ['Practice set (per 10 questions)', COIN_COST.practicePer10], ['Full progress report', `${COIN_COST.reportSmall}–${COIN_COST.reportLarge}`]].map(([k, v]) => (
+                  <div key={k} className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>{k}</span><b>{v}</b></div>
+                ))}
+              </div>
+              <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
+                <b style={{ fontSize: 13 }}>Daily coins by plan</b>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Free account</span><b>{DAILY_COINS.free}</b></div>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Mock or test series plan</span><b>{DAILY_COINS.test_series}</b></div>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Coaching</span><b>Unlimited</b></div>
+                <b style={{ fontSize: 13, marginTop: 8 }}>Earn XP</b>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Daily or topic test</span><b>{XP_BASE.topic}</b></div>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Sectional</span><b>{XP_BASE.sectional}</b></div>
+                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Full mock</span><b>{XP_BASE.full_mock}</b></div>
+                <span className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>Accuracy 95%+ triples it, 85%+ doubles it, 70%+ adds half. A 95+ percentile mock adds 100 XP, 99+ adds 200. Streaks of {STREAK_COINS.map(s => `${s[0]} days`).join(', ')} pay {STREAK_COINS.map(s => s[1]).join(', ')} bonus coins.</span>
+              </div>
+            </div>
+          </details>
+          {history.length > 0 && (
+            <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
+              <span className="label">Recent</span>
+              {history.map((h, i) => (
+                <div key={i} className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}>
+                  <span>{COIN_LABEL[h.kind] ?? h.kind}{h.pool === 'bonus' && h.coins < 0 ? ' · bonus' : ''}</span>
+                  <span className="mono" style={{ color: h.coins > 0 ? 'var(--ok)' : 'var(--muted)' }}>{h.pool === 'unlimited' ? 'included' : (h.coins > 0 ? '+' : '') + h.coins}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
       <div className="grid" style={{ '--min': '130px', '--gap': '10px' } as React.CSSProperties}>
@@ -83,7 +138,10 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
               <span className="mono muted" style={{ fontSize: 13 }}>{me.xp.toLocaleString('en-IN')} XP</span>
             </div>
           )}
-          <div style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)' }}>Monthly top 25 get a free 1:1 mentorship call with faculty.</div>
+          <div className="stack" style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)', '--gap': '3px' } as React.CSSProperties}>
+            <span>Monthly prizes, by XP earned in the month:</span>
+            {MONTHLY_PRIZES.map(p => <span key={p.from}>#{p.from}{p.to > p.from ? '–' + p.to : ''}: {p.coins} bonus coins{p.coupon ? ` + ${p.coupon.percent}% off ${p.coupon.category === 'coaching' ? 'coaching' : 'a test series'}` : ''}{p.note ? ' + ' + p.note : ''}</span>)}
+          </div>
         </section>
 
         <section className="list">
@@ -92,8 +150,6 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
             <span className="mono" style={{ fontSize: 12, color: 'var(--pri)' }}>{xp.balance.toLocaleString('en-IN')} XP to spend</span>
           </div>
           <div className="stack" style={{ padding: '0 16px 14px', '--gap': '6px', borderTop: 0 } as React.CSSProperties}>
-            <div className="row" style={{ justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}><span>Next free mock auto-unlocks at {nextFreeAt.toLocaleString('en-IN')} XP</span><span>{Math.round(lv.into / 10)}%</span></div>
-            <div className="bar thin"><i style={{ width: lv.into / 10 + '%', background: 'oklch(0.75 0.15 75)' }} /></div>
             {(credits.mock > 0 || credits.sectional > 0) && <div className="alert ok" style={{ fontSize: 12 }}>You have {credits.mock ? `${credits.mock} free mock credit${credits.mock > 1 ? 's' : ''}` : ''}{credits.mock && credits.sectional ? ' and ' : ''}{credits.sectional ? `${credits.sectional} free sectional credit${credits.sectional > 1 ? 's' : ''}` : ''}. Open any locked test to use one.</div>}
           </div>
           {store.map(s => (
@@ -110,7 +166,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           {coupons.length > 0 && (
             <section className="list">
               <div style={{ padding: '14px 16px', fontWeight: 800 }}>Your coupons</div>
-              {coupons.map(c => <div key={c.code} className="row" style={{ padding: '11px 16px', justifyContent: 'space-between' }}><span className="mono" style={{ fontWeight: 700 }}>{c.code}</span><span className="muted" style={{ fontSize: 13 }}>{c.kind === 'flat' ? rupees(Number(c.value)) + ' off' : c.value + '% off'} · till {new Date(c.valid_till).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span></div>)}
+              {coupons.map(c => <div key={c.code} className="row" style={{ padding: '11px 16px', justifyContent: 'space-between' }}><span className="mono" style={{ fontWeight: 700 }}>{c.code}</span><span className="muted" style={{ fontSize: 13 }}>{c.kind === 'flat' ? rupees(Number(c.value)) + ' off' : c.value + '% off'}{c.max_discount_paise ? ' (up to ' + rupees(c.max_discount_paise) + ')' : ''}{c.category ? ' · ' + (c.category === 'coaching' ? 'coaching' : 'test series') : ''} · till {new Date(c.valid_till).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span></div>)}
             </section>
           )}
           {orders.length > 0 && (

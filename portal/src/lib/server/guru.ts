@@ -2,7 +2,7 @@ import 'server-only';
 import Anthropic from '@anthropic-ai/sdk';
 import { sql } from './db';
 import type { User } from './auth';
-import { dailyGuruLimit } from './access';
+import { spendCoins } from './coins';
 
 const MODEL = process.env.GURU_MODEL || 'claude-opus-5-5';
 let client: Anthropic | null = null;
@@ -66,25 +66,11 @@ function logApiError(e: unknown) {
   else console.error('[guru]', e);
 }
 
-/**
- * Uses one Guru question from today's quota (10 free a day, more on paid plans,
- * unlimited on Test Series). Extra credits granted by staff or rewards are used after that.
- */
-export async function consumeGuru(userId: string): Promise<{ ok: true; left: number | null } | { ok: false; message: string }> {
-  const limit = await dailyGuruLimit(userId);
-  if (limit === null) return { ok: true, left: null };
-  return sql.begin(async tx => {
-    const [u] = await tx`
-      insert into guru_usage (user_id, day, used) values (${userId}, (now() at time zone 'Asia/Kolkata')::date, 0)
-      on conflict (user_id, day) do update set used = guru_usage.used returning used`;
-    if (u.used < limit) {
-      await tx`update guru_usage set used = used + 1 where user_id = ${userId} and day = (now() at time zone 'Asia/Kolkata')::date`;
-      return { ok: true as const, left: limit - u.used - 1 };
-    }
-    const [c] = await tx`update users set guru_credits = guru_credits - 1 where id = ${userId} and guru_credits > 0 returning guru_credits`;
-    if (c) return { ok: true as const, left: 0 };
-    return { ok: false as const, message: `You've used today's ${limit} free Guru questions. Upgrade for unlimited, or come back tomorrow.` };
-  });
+/** Spends Guru coins for an action (see lib/economy.ts for costs). */
+export async function consumeGuru(userId: string, cost = 1, kind = 'chat', ref: string | null = null) {
+  const r = await spendCoins(userId, cost, kind, ref);
+  if (!r.ok) return { ok: false as const, message: r.message };
+  return { ok: true as const, left: r.wallet.dailyLeft, bonus: r.wallet.bonus, spent: r.spent };
 }
 
 /** What Guru knows about the student: exam, days left, recent attempts. */

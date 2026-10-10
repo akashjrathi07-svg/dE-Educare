@@ -1,4 +1,5 @@
 'use server';
+import { XP_OTHER } from '@/lib/economy';
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
@@ -11,7 +12,7 @@ export async function togglePlannerTask(id: string) {
   if (!u) return;
   const [t] = await sql`update planner_tasks set done = not done where id = ${id} and user_id = ${u.id} and day >= ${todayIST()}::date returning done`;
   if (!t) return;
-  if (t.done) await awardXp(u.id, 'planner_task', 10, id);
+  if (t.done) await awardXp(u.id, 'planner_task', XP_OTHER.planner_task, id);
   else await revokeXp(u.id, 'planner_task', id);
   revalidatePath('/planner');
   revalidatePath('/');

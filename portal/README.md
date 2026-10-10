@@ -40,9 +40,23 @@ Checks: `npm run typecheck`, `npm test`, `npm run build`.
 
 - **Questions:** Question bank → Bulk import takes `public/question-import-template.csv`. Every row is checked first and problems are listed with row numbers (for example, "Did you mean …?"). Then the valid rows are imported. Filling `question_id` updates an existing question.
 - **Tests:** Tests → New test. Pick the type and exam. The auto blueprint draws questions by difficulty % from live questions, or you can list question IDs yourself. Choose who can take the test (Free and/or plans) and where it appears on the Tests screen. Then publish, schedule or save it as a draft.
-- **Plans:** Courses & plans. The id in the table is what the website's checkout links use (`/checkout?plan=cat-ts`). Prices on the WordPress pages are text, so update them there too.
+- **Plans:** Courses & plans. The id in the table is what the website's checkout links use (`/checkout?plan=cat-ts`). The website reads live prices and MRPs from here every 10 minutes.
+- **Free tests:** any live test marked **Free** (except daily tests) is listed on the website's Free resources page under its exam (CAT, MBA-CET, SNAP …).
+- **Free resources:** upload PDFs (up to 30 MB). Students read them view-only in Library → Notes, with their DE ID watermarked on every page. Tick "List on deeducare.com" to show one on the website's Free resources page.
+- **Reviews:** students write reviews at `/review` (linked from Profile and the website). Approve them in Reviews; approved ones appear on the home page within 10 minutes.
 - **Classes:** schedule a class for a batch, or as an open class for an exam group. Add the recording link afterwards; it also appears in the Library.
 - **Exam interfaces:** rules such as the calculator, palette and language apply to an exam's tests straight away. Section timers apply to tests built after the change.
+
+## Guru coins and XP
+
+All numbers live in `src/lib/economy.ts`.
+
+- **Daily coins:** 10 on a free account, 50 on any mock or test series plan, unlimited on coaching (grant the coaching plan from Admin → Students after enrolment). They refill at midnight IST and do not carry forward.
+- **Bonus coins** never expire and are used after the daily coins: from XP (100 XP = 1 coin), streaks (7, 30, 100 days), monthly prizes, the rewards store and staff grants (Admin → Students).
+- **Costs:** chat 1 · voice tutor reply 3 · photo doubt 2 · test analysis 1 (topic/daily), 2 (sectional), 3 (mock) · practice set 1 per 10 questions · full progress report 5 (≤10 tests) or 10. Coins are refunded if the AI can't answer.
+- **XP:** topic/daily/practice test 2 · sectional 20 · mock 100, ×3 at 95%+ accuracy, ×2 at 85%+, ×1.5 at 70%+, plus 100/200 for a 95/99+ percentile mock. Planner task 5, helpful community answer 20.
+- **Rewards store (XP):** bonus coins, a free mock, and capped coupons (5%/10% off a test series, 5%/10% off coaching).
+- **Monthly prizes:** paid on the 1st by the cron in `vercel.json`. Set `CRON_SECRET` in Vercel → Settings → Environment Variables for it to run.
 
 ## Notes
 

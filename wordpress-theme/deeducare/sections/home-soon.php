@@ -18,7 +18,7 @@ $cards = array(
 	<div class="de-grid de-grid--300">
 		<?php foreach ( $cards as $c ) : ?>
 			<article class="de-soon-card">
-				<div class="de-soon-card__img"><?php de_image( $c[2], $c[0], 'de-img de-img--cover' ); ?></div>
+				<div class="de-soon-card__img"><?php de_image( $c[2], $c[0] . ' test series by DE Educare, coming soon', 'de-img de-img--cover' ); ?></div>
 				<div class="de-soon-card__body">
 					<h3 class="de-soon-card__t"><?php de_e( $c[0] ); ?></h3>
 					<p class="de-soon-card__d"><?php de_e( $c[1] ); ?></p>

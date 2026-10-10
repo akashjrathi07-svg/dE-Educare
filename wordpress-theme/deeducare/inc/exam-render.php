@@ -62,8 +62,8 @@ function de_render_tests( $view, $exam, $scope ) {
 	?>
 	<div class="de-split de-split--end">
 		<div class="de-stack-6">
-			<span class="de-eyebrow de-eyebrow--muted">STUDENT PORTAL</span>
-			<h2 class="de-h2"><?php de_e( $c['label'] . ' tests' ); ?></h2>
+			<span class="de-eyebrow de-eyebrow--muted">TEST SERIES</span>
+			<h2 class="de-h2"><?php de_e( $c['label'] . ' mocks, sectionals and topic tests' ); ?></h2>
 			<p class="de-p15">Every test opens in an exam-style window. Submit and Guru analyses your attempt in seconds: section scores, accuracy, time, weak topics and the next tests to take.</p>
 		</div>
 		<a class="de-sync" href="<?php echo esc_url( de_login_url() ); ?>">Sign in to save attempts</a>
@@ -72,7 +72,6 @@ function de_render_tests( $view, $exam, $scope ) {
 	<div class="de-seg" role="tablist" aria-label="<?php esc_attr_e( 'Test types', 'deeducare' ); ?>">
 		<button <?php echo de_tab_attrs( $g_portal, 'mocks', true ); // phpcs:ignore ?>><?php de_e( $c['tabs'][0] ); ?></button>
 		<button <?php echo de_tab_attrs( $g_portal, 'series', false ); // phpcs:ignore ?>><?php de_e( $c['tabs'][1] ); ?></button>
-		<button <?php echo de_tab_attrs( $g_portal, 'free', false ); // phpcs:ignore ?>>Free tests</button>
 	</div>
 
 	<div <?php echo de_panel_attrs( $g_portal, 'mocks', true ); // phpcs:ignore ?> class="de-stack-16">
@@ -167,18 +166,6 @@ function de_render_tests( $view, $exam, $scope ) {
 		<p class="de-note de-note--sm">Test 1 of every sectional and topic is free. Attempts sync to the app with the same login.</p>
 	</div>
 
-	<div <?php echo de_panel_attrs( $g_portal, 'free', false ); // phpcs:ignore ?> class="de-stack-16">
-		<div class="de-tests">
-			<?php for ( $d = 0; $d < 7; $d++ ) : ?>
-				<?php $ts = strtotime( '-' . $d . ' days', current_time( 'timestamp' ) ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested ?>
-				<?php de_test_card( $c['label'] . ' Daily Test · ' . date_i18n( 'j M', $ts ), $c['pfx'] . '-d-' . date_i18n( 'Ymd', $ts ), 5, 10, true, null ); ?>
-			<?php endfor; ?>
-			<?php foreach ( $c['pyq'] as $k => $p ) : ?>
-				<?php de_test_card( $p[0], $c['pfx'] . '-pyq-' . $k, $p[1], $p[2], true, null ); ?>
-			<?php endforeach; ?>
-		</div>
-		<p class="de-note de-note--sm">Free with a DE Educare ID. Every attempt includes AI analysis.</p>
-	</div>
 	<?php
 }
 
@@ -198,6 +185,8 @@ function de_render_exam_a( $view, $exam, $scope, $with_ids ) {
 			<?php endforeach; ?>
 		</dl>
 	</div>
+
+	<?php de_render_free_tests( $view, $exam, $with_ids ); ?>
 
 	<div class="de-stack-16 de-anchor" <?php echo de_sec_id( 'tests', $with_ids ); // phpcs:ignore ?> data-reveal>
 		<?php de_render_tests( $view, $exam, $scope ); ?>
@@ -331,13 +320,13 @@ function de_render_plans( $exam ) {
 	$daily = 'omet' === $exam ? 'omet' : $exam;
 	?>
 	<div class="de-stack-16 de-anchor" data-sec="plans" id="plans" data-reveal>
-		<div class="de-stack-8"><span class="de-eyebrow de-eyebrow--muted">PLANS &amp; PRICING</span><h2 class="de-h2">Choose your path</h2><span class="de-note">Prices include GST · UPI, cards, netbanking and EMI · unlocks instantly on web and app · Test 1 of every set is free to try</span></div>
+		<div class="de-stack-8"><span class="de-eyebrow de-eyebrow--muted">TEST SERIES PRICING</span><h2 class="de-h2">Choose your test series</h2><span class="de-note">Prices include GST · UPI, cards, netbanking and EMI · unlocks instantly on web and app · Test 1 of every set is free to try</span></div>
 		<div class="de-grid de-grid--230 de-grid--stretch">
 			<?php foreach ( de_plans()[ $exam ] as $p ) : ?>
 				<?php $dark = ! empty( $p['dark'] ); ?>
 				<div class="de-plan<?php echo $dark ? ' is-dark' : ''; ?>">
 					<div class="de-plan__top"><h3 class="de-plan__name"><?php de_e( $p['name'] ); ?></h3><?php if ( ! empty( $p['tag'] ) ) : ?><span class="de-tag"><?php de_e( $p['tag'] ); ?></span><?php endif; ?></div>
-					<span class="de-plan__price"><?php de_e( $p['price'] ); ?></span>
+					<span class="de-plan__price"><?php de_e( $p['price'] ); ?><?php if ( ! empty( $p['mrp'] ) && ! empty( $p['amount'] ) && $p['mrp'] > $p['amount'] ) : ?> <s class="de-plan__was"><span class="screen-reader-text">was </span><?php de_e( de_rupees( $p['mrp'] ) ); ?></s><?php endif; ?></span>
 					<p class="de-plan__desc"><?php de_e( $p['desc'] ); ?></p>
 					<ul class="de-plan__feat">
 						<?php foreach ( $p['feat'] as $f ) : ?>
@@ -348,6 +337,88 @@ function de_render_plans( $exam ) {
 					<a class="de-btn de-btn--block <?php echo $dark ? 'de-btn--amber' : ( ! empty( $p['free'] ) ? 'de-btn--soft' : 'de-btn--primary' ); ?>" <?php echo de_plan_action( $p, $daily ); // phpcs:ignore ?>><?php de_e( $p['cta'] ); ?></a>
 				</div>
 			<?php endforeach; ?>
+		</div>
+	</div>
+	<?php
+}
+
+/** Coaching programmes for this exam, with the enquiry form beside them. */
+function de_render_coaching( $exam ) {
+	$ids   = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'mba-plus', 'cat-coaching-2027' ) )[ $exam ];
+	$plans = array_values( array_filter( de_coaching(), function ( $c ) use ( $ids ) { return in_array( $c['id'], $ids, true ); } ) );
+	usort( $plans, function ( $a, $b ) use ( $ids ) { return array_search( $a['id'], $ids, true ) - array_search( $b['id'], $ids, true ); } );
+	$label = array( 'cat' => 'CAT 2027', 'cet' => 'MBA-CET 2028', 'omet' => 'OMETs' )[ $exam ];
+	$icons = array( array( 'icon-mentor.webp', 'Live classes' ), array( 'icon-books.webp', 'Books' ), array( 'icon-checklist.webp', 'Mocks' ), array( 'icon-support.webp', 'Mentorship' ) );
+	?>
+	<div class="de-stack-16 de-anchor" id="coaching" data-reveal>
+		<div class="de-stack-8">
+			<span class="de-eyebrow de-eyebrow--blue">COACHING · NEW BATCHES</span>
+			<h2 class="de-h2"><?php de_e( 'omet' === $exam ? 'Coaching that covers every OMET' : $label . ' coaching with live classes and mentors' ); ?></h2>
+			<p class="de-p15">Live lectures, a recording of every class, books, the full test series and one-on-one mentorship, online or in our Mumbai classroom. Send an enquiry for batch start dates.</p>
+			<ul class="de-feats" aria-label="Included">
+				<?php foreach ( $icons as $ic ) : ?>
+					<li><?php de_icon_img( $ic[0], '', 36 ); ?><span><?php de_e( $ic[1] ); ?></span></li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<div class="de-coach">
+			<div class="de-coach__plans">
+				<?php foreach ( $plans as $i => $p ) : ?>
+					<article class="de-plan<?php echo 0 === $i ? ' is-dark' : ''; ?>">
+						<div class="de-plan__top">
+							<h3 class="de-plan__name"><?php de_e( $p['name'] ); ?></h3>
+							<?php if ( ! empty( $p['tag'] ) ) : ?><span class="de-tag"><?php de_e( $p['tag'] ); ?></span><?php endif; ?>
+						</div>
+						<span class="de-plan__price"><?php de_e( de_rupees( $p['fee'] ) ); ?></span>
+						<p class="de-plan__desc"><?php de_e( $p['for'] ); ?></p>
+						<?php if ( 0 === $i ) : ?>
+							<ul class="de-plan__feat">
+								<?php foreach ( $p['feat'] as $f ) : ?>
+									<li><span class="de-plan__check" aria-hidden="true">✓</span><?php de_e( $f ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+						<?php de_lead_button( $p['id'], 'Enquire about ' . $p['name'], 'de-btn de-btn--block ' . ( 0 === $i ? 'de-btn--amber' : 'de-btn--primary' ) ); ?>
+					</article>
+				<?php endforeach; ?>
+			</div>
+			<div class="de-card de-coach__form">
+				<?php de_lead_form( $plans[0]['id'], true ); ?>
+			</div>
+		</div>
+	</div>
+	<?php
+}
+
+/** Free tests for this exam: today's daily test, the free mock and previous papers. */
+function de_render_free_tests( $view, $exam, $with_ids ) {
+	$c     = $view['catalog'];
+	$daily = 'omet' === $exam ? strtolower( $view['name'] ) : $exam;
+	$label = wp_date( 'j M' );
+	?>
+	<div class="de-stack-14 de-anchor" <?php echo de_sec_id( 'free', $with_ids ); // phpcs:ignore ?> data-reveal>
+		<div class="de-split de-split--end">
+			<div class="de-stack-6">
+				<span class="de-eyebrow de-eyebrow--muted">FREE TESTS</span>
+				<h2 class="de-h2"><?php de_e( 'Free ' . $c['label'] . ' mock test and daily test' ); ?></h2>
+				<p class="de-p15">Free with a DE Educare ID, no card needed. Every attempt gets the same AI analysis as paid tests.</p>
+			</div>
+			<a class="de-sync" href="<?php echo esc_url( de_page_url( 'free-resources' ) ); ?>">More free resources →</a>
+		</div>
+		<div class="de-tests">
+			<div class="de-test de-test--daily">
+				<div class="de-test__top"><span class="de-test__tag de-test__tag--free">FREE · DAILY</span><span class="de-test__meta">15 min</span></div>
+				<span class="de-test__name"><?php de_e( 'Today’s ' . $c['label'] . ' test · ' . $label ); ?></span>
+				<span class="de-test__status">New every morning · keeps your streak</span>
+				<a class="de-test__btn de-test__btn--start" href="<?php echo esc_url( de_daily_url( $daily ) ); ?>">Start today’s test</a>
+			</div>
+			<?php de_test_card( $c['mocks']['prefix'] . ' 1 · full-length', $c['pfx'] . '-m-1', $c['mocks']['q'], $c['mocks']['mins'], true, null ); ?>
+			<?php foreach ( $c['pyq'] as $k => $p ) : ?>
+				<?php de_test_card( $p[0], $c['pfx'] . '-pyq-' . $k, $p[1], $p[2], true, null ); ?>
+			<?php endforeach; ?>
+			<?php if ( ! empty( $c['secs'][0] ) ) : ?>
+				<?php de_test_card( $c['secs'][0][1] . ' Sectional 1', $c['pfx'] . '-ss-0-1', $c['secs'][0][2], $c['secMins'], true, null ); ?>
+			<?php endif; ?>
 		</div>
 	</div>
 	<?php

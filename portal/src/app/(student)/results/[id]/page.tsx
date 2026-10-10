@@ -6,6 +6,7 @@ import { attemptReport } from '@/lib/server/attempts';
 import { analyse, fmt, type AnalysedQuestion } from '@/lib/analysis';
 import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { ResultTabs } from './result-tabs';
+import { analysisCost } from '@/lib/economy';
 import { GuruButton, AiAnalysis } from './result-client';
 
 export const metadata = { title: 'Result and analysis' };
@@ -36,12 +37,13 @@ export default async function Result({ params }: { params: Promise<{ id: string 
   if (!solutionsOpen) for (const row of data.timeRows) { row.solution = null; row.right = 'Shown after the test window closes'; }
   const [{ total }] = await sql`select count(*)::int as total from attempts where test_id = ${a.test_id} and status = 'submitted'`;
 
+  const practice = b.test.type === 'practice';
   const hero = [
     { k: 'Score', v: String(Number(a.score)), u: '/ ' + Number(a.max_score) },
-    { k: a.percentile_estimated ? 'Est. percentile' : 'Percentile', v: Number(a.percentile).toFixed(1), u: '%ile' },
+    ...(practice ? [] : [{ k: a.percentile_estimated ? 'Est. percentile' : 'Percentile', v: Number(a.percentile).toFixed(1), u: '%ile' }]),
     { k: 'Accuracy', v: a.accuracy + '%', u: '' },
     { k: 'Attempted', v: String(a.correct + a.wrong), u: '/ ' + b.questions.length },
-    { k: 'Rank', v: a.rank == null ? '—' : '#' + a.rank, u: a.rank == null ? 'not ranked' : 'of ' + total },
+    ...(practice ? [] : [{ k: 'Rank', v: a.rank == null ? '—' : '#' + a.rank, u: a.rank == null ? 'not ranked' : 'of ' + total }]),
     { k: 'Time', v: fmt(a.time_sec ?? 0), u: '' },
   ];
   const weakest = [...data.sections].sort((x, y) => x.acc - y.acc)[0];
@@ -62,7 +64,7 @@ export default async function Result({ params }: { params: Promise<{ id: string 
       <div className="hero res-hero">
         {hero.map(h => <div key={h.k} className="stack" style={{ '--gap': '6px' } as React.CSSProperties}><div className="k">{h.k}</div><div className="v">{h.v}{h.u && <small> {h.u}</small>}</div></div>)}
       </div>
-      {a.percentile_estimated && <p className="note" style={{ marginTop: -12 }}>Percentile is estimated from recent score trends until 200 students have taken this test. Rank is among {total} attempt{total === 1 ? '' : 's'} so far.</p>}
+      {a.percentile_estimated && !practice && <p className="note" style={{ marginTop: -12 }}>Percentile is estimated from recent score trends until 200 students have taken this test. Rank is among {total} attempt{total === 1 ? '' : 's'} so far.</p>}
 
       <div className="ai-box">
         <span className="orb" />
@@ -72,9 +74,9 @@ export default async function Result({ params }: { params: Promise<{ id: string 
         </div>
         <GuruButton text={`Build me a 7-day fix plan after ${a.test_name}. ${data.guruTake}`} label="Build my fix plan" soft />
       </div>
-      <AiAnalysis attemptId={id} text={a.ai_analysis} />
+      <AiAnalysis attemptId={id} text={a.ai_analysis} cost={analysisCost(b.test.type)} />
 
-      <ResultTabs data={data} solutionsOpen={solutionsOpen} />
+      <ResultTabs data={data} solutionsOpen={solutionsOpen} percentile={b.test.type === 'practice' ? Math.round((100 * a.correct) / Math.max(1, b.questions.length)) : Number(a.percentile)} practice={b.test.type === 'practice'} />
     </>
   );
 }

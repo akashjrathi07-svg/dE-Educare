@@ -2,10 +2,11 @@ import 'server-only';
 import { sql } from './db';
 import {
   syncTimer, isSectional, canVisitSection, marksFor, scoreAttempt, percentileFromCurve, percentileFromScores,
-  REAL_PERCENTILE_MIN_ATTEMPTS, PEER_STATS_MIN_ATTEMPTS, xpForTest, normaliseAnswer, type Rules, type Marking, type QuestionKey,
+  REAL_PERCENTILE_MIN_ATTEMPTS, PEER_STATS_MIN_ATTEMPTS, normaliseAnswer, type Rules, type Marking, type QuestionKey,
 } from '../exam-logic';
 import { canTakeTest } from './access';
 import { awardXp, bumpStreak } from './xp';
+import { xpForResult } from '../economy';
 
 const GRACE_MS = 15_000;          // network slack after the clock hits zero
 const MAX_DELTA_SEC = 600;        // ignore implausible time jumps from a client
@@ -250,7 +251,9 @@ export async function submitAttempt(attemptId: string, userId: string) {
 
   if (done) {
     const daily = done.test.type === 'daily';
-    await awardXp(userId, daily ? 'daily_test' : 'test_complete', xpForTest(done.test.type, done.questions), String(done.test.id));
+    const [res] = await sql`select accuracy, percentile from attempts where id = ${attemptId}`;
+    const xp = xpForResult(done.test.type, Number(res?.accuracy ?? 0), res?.percentile == null ? null : Number(res.percentile));
+    await awardXp(userId, daily ? 'daily_test' : 'test_complete', xp, String(done.test.id));
     if (daily) await bumpStreak(userId);
   }
   return { ok: true };
