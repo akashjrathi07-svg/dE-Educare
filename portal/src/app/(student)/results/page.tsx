@@ -28,7 +28,12 @@ export default async function Results() {
             ))}
           </div>
         </div>
-      ) : <div className="card empty">No results yet. Submit a test and its full analysis appears here.</div>}
+      ) : <div className="card empty stack" style={{ alignItems: 'center', '--gap': '12px' } as React.CSSProperties}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/img/hero-mock-test.webp" alt="" width={1200} height={1000} style={{ width: 'min(320px, 80%)', height: 'auto' }} />
+        <span>No results yet. Submit a test and its full analysis appears here.</span>
+        <Link href="/daily/cat" className="btn">Take today’s free test</Link>
+      </div>}
       {rows.some(r => r.percentile_estimated) && <p className="note">* Estimated from recent score trends until 200 students have taken the test.</p>}
     </>
   );

@@ -132,6 +132,8 @@ export const STAFF_AREAS = {
   bank: ['admin', 'content'],
   tests: ['admin', 'content'],
   iface: ['admin', 'content'],
+  resources: ['admin', 'content'],
+  reviews: ['admin', 'support'],
 } as const satisfies Record<string, Role[]>;
 export type StaffArea = keyof typeof STAFF_AREAS;
 

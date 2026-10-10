@@ -40,7 +40,10 @@ Checks: `npm run typecheck`, `npm test`, `npm run build`.
 
 - **Questions:** Question bank → Bulk import takes `public/question-import-template.csv`. Every row is checked first and problems are listed with row numbers (for example, "Did you mean …?"). Then the valid rows are imported. Filling `question_id` updates an existing question.
 - **Tests:** Tests → New test. Pick the type and exam. The auto blueprint draws questions by difficulty % from live questions, or you can list question IDs yourself. Choose who can take the test (Free and/or plans) and where it appears on the Tests screen. Then publish, schedule or save it as a draft.
-- **Plans:** Courses & plans. The id in the table is what the website's checkout links use (`/checkout?plan=cat-ts`). Prices on the WordPress pages are text, so update them there too.
+- **Plans:** Courses & plans. The id in the table is what the website's checkout links use (`/checkout?plan=cat-ts`). The website reads live prices and MRPs from here every 10 minutes.
+- **Free tests:** any live test marked **Free** (except daily tests) is listed on the website's Free resources page under its exam (CAT, MBA-CET, SNAP …).
+- **Free resources:** upload PDFs (up to 30 MB). Students read them view-only in Library → Notes, with their DE ID watermarked on every page. Tick "List on deeducare.com" to show one on the website's Free resources page.
+- **Reviews:** students write reviews at `/review` (linked from Profile and the website). Approve them in Reviews; approved ones appear on the home page within 10 minutes.
 - **Classes:** schedule a class for a batch, or as an open class for an exam group. Add the recording link afterwards; it also appears in the Library.
 - **Exam interfaces:** rules such as the calculator, palette and language apply to an exam's tests straight away. Section timers apply to tests built after the change.
 

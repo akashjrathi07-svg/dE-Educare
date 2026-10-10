@@ -52,6 +52,10 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 700 }}>{lv.toNext.toLocaleString('en-IN')} XP to level {lv.level + 1}</div>
         </div>
       </div>
+      <Link href="/review" className="card pad row" style={{ justifyContent: 'space-between', color: 'var(--ink)', '--gap': '12px' } as React.CSSProperties}>
+        <span className="stack" style={{ '--gap': '2px' } as React.CSSProperties}><b style={{ fontSize: 15 }}>Write a review</b><span className="muted" style={{ fontSize: 13 }}>Tell other students how DE Educare works for you. Approved reviews show on deeducare.com.</span></span>
+        <span style={{ color: '#F2A900', fontSize: 20, letterSpacing: 1 }} aria-hidden="true">★★★★★</span>
+      </Link>
 
       <div className="grid" style={{ '--min': '130px', '--gap': '10px' } as React.CSSProperties}>
         {badges.map(([mark, name, sub, bg, on]) => (

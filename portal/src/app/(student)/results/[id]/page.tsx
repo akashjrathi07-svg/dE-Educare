@@ -74,7 +74,7 @@ export default async function Result({ params }: { params: Promise<{ id: string 
       </div>
       <AiAnalysis attemptId={id} text={a.ai_analysis} />
 
-      <ResultTabs data={data} solutionsOpen={solutionsOpen} />
+      <ResultTabs data={data} solutionsOpen={solutionsOpen} percentile={Number(a.percentile)} />
     </>
   );
 }

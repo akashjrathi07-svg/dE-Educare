@@ -63,6 +63,6 @@ $used  = array_unique( array_column( $reviews, 'kind' ) );
 		<?php if ( count( $reviews ) > 9 ) : ?>
 			<button type="button" class="de-btn de-btn--outline" data-rv-all>Show all <?php echo (int) count( $reviews ); ?> reviews</button>
 		<?php endif; ?>
-		<a class="de-btn de-btn--ghost" href="<?php echo esc_url( de_portal( 'profile', array( 'review' => '1' ) ) ); ?>">Studying with us? Write a review →</a>
+		<a class="de-btn de-btn--ghost" href="<?php echo esc_url( de_portal( 'review' ) ); ?>">Studying with us? Write a review →</a>
 	</div>
 </section>
