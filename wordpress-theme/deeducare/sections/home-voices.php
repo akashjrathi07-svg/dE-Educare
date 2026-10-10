@@ -1,7 +1,7 @@
 <?php
 /**
  * Student reviews, written in the portal and approved in Admin → Reviews.
- * The section is hidden until at least one approved review exists.
+ * Until the first review is approved, it invites students to write one.
  *
  * @package deeducare
  */
@@ -9,12 +9,36 @@
 defined( 'ABSPATH' ) || exit;
 
 $reviews = de_reviews();
-if ( ! $reviews ) {
-	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-		echo '<p style="padding:20px">Student reviews appear here once reviews are approved in the portal (Admin → Reviews).</p>';
-	}
+if ( ! $reviews ) :
+	$asks = array(
+		array( 'icon-checklist.webp', 'Test series', 'Did the mocks feel like the real paper? Did the analysis help?' ),
+		array( 'icon-mentor.webp', 'Classes', 'How were the live classes, recordings and mentors?' ),
+		array( 'icon-guru.webp', 'Guru AI', 'Did Guru’s plans and doubt solving move your scores?' ),
+	);
+	?>
+	<section class="de-wrap de-sec-40 de-stack-22" id="reviews" data-reveal>
+		<div class="de-split de-split--end">
+			<div class="de-stack-10">
+				<span class="de-eyebrow de-eyebrow--blue">STUDENT REVIEWS</span>
+				<h2 class="de-h2 de-h2--md">From students using DE Educare</h2>
+				<p class="de-p15">We only show real reviews from students on the portal, with their permission. Studying with us? Be among the first to share how it’s going.</p>
+			</div>
+			<a class="de-btn de-btn--primary de-btn--lg" href="<?php echo esc_url( de_portal( 'review' ) ); ?>">Write a review →</a>
+		</div>
+		<div class="de-grid de-grid--280">
+			<?php foreach ( $asks as $a ) : ?>
+				<a class="de-voice de-voice--ask" href="<?php echo esc_url( de_portal( 'review' ) ); ?>">
+					<?php de_icon_img( $a[0], '', 48 ); ?>
+					<span class="de-voice__n"><?php de_e( $a[1] ); ?></span>
+					<span class="de-voice__q"><?php de_e( $a[2] ); ?></span>
+					<span class="de-link-strong">Review <?php de_e( strtolower( $a[1] ) ); ?> →</span>
+				</a>
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php
 	return;
-}
+endif;
 $kinds = de_review_kinds();
 $avg   = array_sum( array_map( function ( $r ) { return (int) ( $r['rating'] ?? 5 ); }, $reviews ) ) / count( $reviews );
 $used  = array_unique( array_column( $reviews, 'kind' ) );

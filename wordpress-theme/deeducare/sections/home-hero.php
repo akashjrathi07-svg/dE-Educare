@@ -17,7 +17,7 @@ $hx = array(
 	array( 'id' => 'cat', 'name' => 'CAT', 'sub' => 'Coaching 2027 · Test Series', 'status' => 'LIVE', 'img' => 'img_cat', 'coach' => 'cat-coaching-2027', 'plan' => 'cat-ts', 'tests' => '20 mocks · 30 sectionals · 3 topic tests each', 'cta' => 'Explore CAT', 'url' => de_page_url( 'cat' ) ),
 	array( 'id' => 'cet', 'name' => 'MBA-CET', 'sub' => 'Coaching 2028 · Test Series', 'status' => 'LIVE', 'img' => 'img_cet', 'coach' => 'cet-coaching-2028', 'plan' => 'cet-ts', 'tests' => '30 mocks · 40 sectionals · 3 topic tests each', 'cta' => 'Explore MBA-CET', 'url' => de_page_url( 'mba-cet' ) ),
 	array( 'id' => 'omet', 'name' => 'OMETs', 'sub' => 'SNAP · NMAT · XAT · CMAT', 'status' => 'LIVE', 'img' => 'img_omet', 'coach' => 'mba-plus', 'plan' => 'om-pack', 'tests' => '15 mocks per exam · sectionals · 3 topic tests each', 'cta' => 'Explore OMETs', 'url' => de_page_url( 'omet' ) ),
-	array( 'id' => 'govt', 'name' => 'Bank PO · RBI · UPSC', 'sub' => 'Government exam test series', 'status' => 'SOON', 'img' => 'img_govt', 'coach' => '', 'plan' => '', 'tests' => '', 'cta' => 'Get notified', 'url' => add_query_arg( 'exam', 'Bank PO', $contact ) ),
+	array( 'id' => 'govt', 'name' => 'Govt exams', 'sub' => 'Bank PO · RBI · UPSC', 'status' => 'SOON', 'img' => 'img_govt', 'coach' => '', 'plan' => '', 'tests' => '', 'cta' => 'Get notified', 'url' => add_query_arg( 'exam', 'Bank PO', $contact ) ),
 );
 $trust = array( 'Free daily test, no card', 'AI analysis on every attempt', 'One login on web and app', 'Mumbai-based team' );
 

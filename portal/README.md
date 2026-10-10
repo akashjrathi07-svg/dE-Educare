@@ -56,7 +56,7 @@ All numbers live in `src/lib/economy.ts`.
 - **Costs:** chat 1 · voice tutor reply 3 · photo doubt 2 · test analysis 1 (topic/daily), 2 (sectional), 3 (mock) · practice set 1 per 10 questions · full progress report 5 (≤10 tests) or 10. Coins are refunded if the AI can't answer.
 - **XP:** topic/daily/practice test 2 · sectional 20 · mock 100, ×3 at 95%+ accuracy, ×2 at 85%+, ×1.5 at 70%+, plus 100/200 for a 95/99+ percentile mock. Planner task 5, helpful community answer 20.
 - **Rewards store (XP):** bonus coins, a free mock, and capped coupons (5%/10% off a test series, 5%/10% off coaching).
-- **Monthly prizes:** paid on the 1st by the cron in `vercel.json`. Set `CRON_SECRET` in Vercel → Settings → Environment Variables for it to run.
+- **Monthly prizes:** paused. The prize table is in `economy.ts` and the payout route is `/api/cron/monthly-prizes`; to switch it on, add `"crons": [{ "path": "/api/cron/monthly-prizes", "schedule": "30 1 1 * *" }]` to `vercel.json` and set `CRON_SECRET` in Vercel.
 
 ## Notes
 

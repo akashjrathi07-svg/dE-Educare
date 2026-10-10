@@ -336,6 +336,10 @@ button.tr:hover, a.tr:hover { background: var(--sunk); color: var(--ink); }
 .auth-art { width: 100%; max-width: 280px; height: auto; align-self: center; }
 @media (max-width: 760px) { .auth-art { display: none; } }
 
+.staff-bar { max-width: 1120px; margin: -12px auto 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; background: #10142B; color: #fff; font-size: 13px; font-weight: 600; }
+.staff-bar:hover { color: #fff; background: #1F3A8A; }
+.staff-bar__go { font-weight: 800; color: #FFC44D; }
+
 /* ---------- Guru coins ---------- */
 .coin-box { border-radius: 14px; padding: 14px; background: var(--priSoft); display: flex; flex-direction: column; gap: 2px; }
 .coin-box.bonus { background: var(--streak-bg); }
