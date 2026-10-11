@@ -36,6 +36,9 @@
 			"link": { "color": { "text": "var(--wp--preset--color--primary)" } }
 		}
 	},
+	"customTemplates": [
+		{ "name": "page-sections", "title": "DE Educare sections (full width)", "postTypes": [ "page" ] }
+	],
 	"templateParts": [
 		{ "name": "header", "title": "Header", "area": "header" },
 		{ "name": "footer", "title": "Footer", "area": "footer" }

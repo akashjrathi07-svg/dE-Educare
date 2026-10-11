@@ -58,6 +58,23 @@ All numbers live in `src/lib/economy.ts`.
 - **Rewards store (XP):** bonus coins, a free mock, and capped coupons (5%/10% off a test series, 5%/10% off coaching).
 - **Monthly prizes:** paused. The prize table is in `economy.ts` and the payout route is `/api/cron/monthly-prizes`; to switch it on, add `"crons": [{ "path": "/api/cron/monthly-prizes", "schedule": "30 1 1 * *" }]` to `vercel.json` and set `CRON_SECRET` in Vercel.
 
+## API for the website, the app and the AI mentor
+
+Every API below accepts either the `de_session` cookie (portal and website) or an `Authorization: Bearer <token>` header (the app). One DE Educare ID, one history, one coin balance everywhere.
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/app/auth/otp` `{phone}` | Sends the sign-in code by SMS |
+| `POST /api/app/auth/verify` `{phone, code}` | Returns `{token, user, isNew}`. Store the token securely in the app. Valid for 60 days |
+| `POST /api/app/auth/logout` | Ends that session |
+| `GET /api/guru` | Recent Guru messages, first name and today's coins |
+| `POST /api/guru` `{text, page, mode}` | Streams Guru's reply as plain text. `mode` is `chat` (1 coin) or `voice` (3 coins, teacher style). Headers `X-Guru-Left` and `X-Guru-Bonus` give the new balance |
+| `POST /api/public/guru-preview` `{q}` | For visitors who are not signed in: 3 questions a day, then `{done: true}` |
+
+`page` names where the student is (for example `Website · CAT`, `App · Mock result`, `Live class · Quant`), and Guru uses it as context. The AI mentor for live lectures should use the same `/api/guru` messages and coins, with its own `page` value, so a student's lecture questions show up in the same history on web and app.
+
+The website is allowed by CORS through `WEBSITE_URL`. Signed-in students on the website use the shared cookie, which needs `COOKIE_DOMAIN=.deeducare.com`.
+
 ## Notes
 
 - Percentiles are estimated from a score curve until a test has 200 attempts. After that they come from real scores. Peer time and accuracy appear once a question has 50 attempts.

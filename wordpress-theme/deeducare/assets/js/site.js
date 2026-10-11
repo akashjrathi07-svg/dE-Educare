@@ -157,14 +157,51 @@
 		if ( fromHash && $( '[data-omet="' + fromHash + '"]', ometRoot ) ) { setOmet( fromHash, false ); }
 	}
 
+	/* ---------- OMET page built from blocks: one exam section at a time ---------- */
+	var ometSecs = $$( '.de-omet-sec[id]' );
+	if ( ometSecs.length > 1 ) {
+		var showOmet = function ( key, scroll ) {
+			var target = null;
+			ometSecs.forEach( function ( sec ) {
+				var on = sec.id === key;
+				sec.hidden = ! on;
+				if ( on ) { target = sec; }
+			} );
+			$$( '.de-omet-jump a, .de-secnav a' ).forEach( function ( a ) {
+				var h = a.getAttribute( 'href' ) || '';
+				if ( ometSecs.some( function ( sec ) { return '#' + sec.id === h; } ) ) { a.setAttribute( 'aria-current', '#' + key === h ? 'true' : 'false' ); }
+			} );
+			if ( scroll && target ) { target.scrollIntoView( { behavior: 'smooth', block: 'start' } ); }
+		};
+		var ometFromHash = function ( hash ) {
+			var id = ( hash || '' ).replace( '#', '' );
+			var hit = null;
+			ometSecs.forEach( function ( sec ) { if ( id === sec.id || id.indexOf( sec.id + '-' ) === 0 ) { hit = sec.id; } } );
+			return hit;
+		};
+		showOmet( ometFromHash( window.location.hash ) || ometSecs[ 0 ].id, false );
+		document.addEventListener( 'click', function ( e ) {
+			var a = e.target.closest( 'a[href^="#"]' );
+			var key = a && ometFromHash( a.getAttribute( 'href' ) );
+			if ( ! key ) { return; }
+			e.preventDefault();
+			showOmet( key, true );
+			if ( history.replaceState ) { history.replaceState( null, '', a.getAttribute( 'href' ) ); }
+			var inner = document.getElementById( a.getAttribute( 'href' ).slice( 1 ) );
+			if ( inner && inner.id !== key ) { inner.scrollIntoView( { behavior: 'smooth', block: 'start' } ); }
+		} );
+	}
+
 	/* ---------- Sticky section nav: highlight the section in view ---------- */
+	// Links in an editable section nav (paragraph of #anchor links) work the same way.
+	$$( '.de-secnav a[href^="#"]:not([data-secnav-link])' ).forEach( function ( a ) { a.setAttribute( 'data-secnav-link', a.getAttribute( 'href' ).slice( 1 ) ); } );
 	var secLinks = $$( '[data-secnav-link]' );
 	if ( secLinks.length ) {
 		var spy = function () {
 			var current = secLinks[ 0 ].getAttribute( 'data-secnav-link' );
 			secLinks.forEach( function ( a ) {
 				var el = document.getElementById( a.getAttribute( 'data-secnav-link' ) );
-				if ( el && el.getBoundingClientRect().top <= HEADER_OFFSET + 10 ) { current = a.getAttribute( 'data-secnav-link' ); }
+				if ( el && el.offsetParent && el.getBoundingClientRect().top <= HEADER_OFFSET + 10 ) { current = a.getAttribute( 'data-secnav-link' ); }
 			} );
 			secLinks.forEach( function ( a ) {
 				var on = a.getAttribute( 'data-secnav-link' ) === current;
@@ -285,7 +322,8 @@
 	var lead = $( '[data-lead-dialog]' );
 	if ( lead ) {
 		var openLead = function ( interest ) {
-			if ( interest ) { $( '[data-lead-interest]', lead ).value = interest; }
+			var pick = $( '[data-lead-interest]', lead );
+			if ( interest && $$( 'option', pick ).some( function ( o ) { return o.value === interest; } ) ) { pick.value = interest; }
 			$( '[data-lead-page]', lead ).value = window.location.href.split( '#' )[ 0 ];
 			if ( lead.showModal ) { if ( ! lead.open ) { lead.showModal(); } } else { lead.setAttribute( 'open', '' ); }
 			var first = $( 'input[name="name"]', lead );
@@ -293,12 +331,15 @@
 		};
 		var closeLead = function () { if ( lead.close ) { lead.close(); } else { lead.removeAttribute( 'open' ); } };
 		document.addEventListener( 'click', function ( e ) {
-			var b = e.target.closest( '[data-lead]' );
-			if ( b ) { e.preventDefault(); openLead( b.getAttribute( 'data-lead' ) ); }
+			var b = e.target.closest( '[data-lead], a[href^="#enquire"]' );
+			if ( ! b ) { return; }
+			e.preventDefault();
+			// Buttons in editable pages link to #enquire-<programme id>.
+			openLead( b.hasAttribute( 'data-lead' ) ? b.getAttribute( 'data-lead' ) : b.getAttribute( 'href' ).replace( /^#enquire-?/, '' ) );
 		} );
 		$( '[data-lead-close]', lead ).addEventListener( 'click', closeLead );
 		lead.addEventListener( 'click', function ( e ) { if ( e.target === lead ) { closeLead(); } } );
-		if ( lead.hasAttribute( 'data-open' ) || window.location.hash === '#enquire' ) { openLead( '' ); }
+		if ( lead.hasAttribute( 'data-open' ) || /^#enquire(-|$)/.test( window.location.hash ) ) { openLead( window.location.hash.replace( /^#enquire-?/, '' ) ); }
 	}
 	$$( '[data-lead-form]' ).forEach( function ( lform ) {
 		var pageIn = $( '[data-lead-page]', lform );
@@ -345,56 +386,6 @@
 				showAll = null;
 			} );
 		}
-	}
-
-	/* ---------- Guru preview chat ---------- */
-	var guru = $( '[data-guru]' );
-	if ( guru ) {
-		var log = $( '[data-guru-log]', guru );
-		var form = $( '[data-guru-form]', guru );
-		var input = form.querySelector( 'input' );
-		var send = form.querySelector( 'button' );
-		var left = $( '[data-guru-left]', guru );
-		var busy = false, done = false;
-		var add = function ( text, cls ) {
-			var m = document.createElement( 'div' );
-			m.className = 'de-chat__msg' + ( cls ? ' ' + cls : '' );
-			m.textContent = text;
-			log.appendChild( m );
-			log.scrollTop = log.scrollHeight;
-			return m;
-		};
-		var finish = function () {
-			done = true;
-			var a = document.createElement( 'a' );
-			a.className = 'de-chat__cta';
-			a.href = guru.getAttribute( 'data-signup' );
-			a.textContent = 'Create free DE Educare ID →';
-			log.appendChild( a );
-			log.scrollTop = log.scrollHeight;
-		};
-		var ask = function ( q ) {
-			q = ( q || '' ).trim();
-			if ( ! q || busy ) { return; }
-			add( q, 'de-chat__msg--me' );
-			input.value = '';
-			if ( done ) { add( 'That’s the end of the preview. Create a free DE Educare ID for 10 Guru questions a day.' ); return; }
-			busy = true;
-			send.disabled = true;
-			var thinking = add( 'Guru is thinking…', 'de-chat__msg--thinking' );
-			fetch( CFG.guruUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { q: q } ) } )
-				.then( function ( r ) { return r.ok ? r.json() : Promise.reject( r ); } )
-				.then( function ( data ) {
-					thinking.remove();
-					add( data.answer || CFG.fallback );
-					if ( typeof data.left === 'number' ) { left.textContent = data.left + ' FREE PREVIEW QUESTION' + ( data.left === 1 ? '' : 'S' ); }
-					if ( data.done || data.left === 0 ) { finish(); }
-				} )
-				.catch( function () { thinking.remove(); add( CFG.fallback ); } )
-				.then( function () { busy = false; send.disabled = false; } );
-		};
-		form.addEventListener( 'submit', function ( e ) { e.preventDefault(); ask( input.value ); } );
-		$$( '[data-guru-ask]', guru ).forEach( function ( b ) { b.addEventListener( 'click', function () { ask( b.getAttribute( 'data-guru-ask' ) ); } ); } );
 	}
 
 	/* ---------- Shared login: show "Hi Akash · Dashboard" when signed in on the portal ---------- */

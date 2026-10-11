@@ -6,7 +6,7 @@ A block theme built from the `De educare Website v4` design. It covers the Home,
 
 1. Zip this folder: `cd wordpress-theme && zip -r deeducare.zip deeducare`.
 2. In WordPress, go to **Appearance → Themes → Add New → Upload Theme**, upload the zip, then click **Activate**.
-3. When you activate the theme, it creates the pages `/cat/`, `/mba-cet/`, `/omet/`, `/free-resources/` and `/contact/` if they don't exist yet. If a page with that slug already exists, it now shows the designed layout instead of its old content.
+3. When you activate the theme, it creates the pages Home, `/cat/`, `/mba-cet/`, `/omet/`, `/free-resources/` and `/contact/` and fills any that are empty. It also sets Home as the front page. Pages you have already written are left alone.
 4. Go to **Settings → Permalinks** and choose **Post name**.
 5. Go to **Appearance → Customize → DE Educare** and set these:
    - portal URL, phone, WhatsApp number, email and hours
@@ -16,18 +16,31 @@ A block theme built from the `De educare Website v4` design. It covers the Home,
    - the email address that receives call-back requests
 
    The site logo is under **Site Identity**.
-6. Optional, for Guru: to turn on the live AI preview on the home page, add this line to `wp-config.php`:
-   ```php
-   define( 'DEEDUCARE_ANTHROPIC_API_KEY', 'sk-ant-…' );
-   ```
-   Without a key, Guru gives a fixed study tip. Visitors get 3 preview questions per day.
+6. **Turn off any old chat widget plugin** (Plugins → Deactivate). Guru replaces it on every page.
 
 ## Editing content
 
-- **Prices, FAQs, exam dates, cutoffs, colleges and sample quotes** live in `inc/content.php`. Every page and the search-engine data (JSON-LD) read from that one file.
-- A price of `'₹ —'` means "coming soon". Its button shows a notice instead of going to checkout. To make a plan buyable, set `price` and `amount` (for example `'₹1,500'` and `1500`).
-- **To rearrange sections**, use **Appearance → Editor → Templates**. Each section is a **DE Educare section** block. You can move or remove it, or add another one and pick which section it shows from the sidebar.
-- **Privacy, terms and refund pages** are normal pages, so you write them in the regular editor.
+Every page is a normal WordPress page made of standard blocks: headings, paragraphs, images, buttons, lists, tables, FAQ accordions and groups. Open the page in **Pages** and edit it like any other page.
+
+- **Change anything:** click any text, image or button and edit it. Use the block toolbar to move a block up or down, and the **+** button to add new blocks.
+- **Button colours:** select a button and pick a style in the sidebar (Blue, Outline, Amber, White, Ghost, Soft blue or Dark).
+- **Buttons that open forms or Guru:** a button linking to `#enquire-cat-coaching-2027` (or `#enquire-cet-coaching-2028`, `#enquire-mba-plus`) opens the enquiry form with that programme picked. A link to `#ask-guru` opens Guru.
+- **FAQs:** each question is a Details block. Edit, add or delete questions freely. Search engines get the FAQ data from what is on the page.
+- **Live blocks:** blocks named **DE Educare section · Live …** show data from the student portal: prices, test lists, the predictor, the enquiry and call-back forms, free questions and reviews. They update on their own; move or remove them like any block.
+- **New landing page:** create a page and pick the template **DE Educare sections (full width)** in the page sidebar. Copy sections from another page with the block menu (⋮ → Copy) and paste.
+- **Start a page over:** **Appearance → DE Educare pages** rebuilds a page from the theme's version. Your current version stays in the page's **Revisions**, so you can go back.
+- **Prices of test series and plans** come from the portal (Admin → Plans). Coaching fees on the pages are plain text: change them in the page. `inc/content.php` holds the content the theme uses when it builds a page.
+- **Privacy, terms and refund pages** are normal pages too.
+
+## Guru on every page
+
+Guru is the floating **Ask Guru** button on every page (`assets/js/guru.js`). It talks to the portal, not to WordPress, so no API key is stored in WordPress.
+
+- **Signed-in students** (signed in at the portal, same DE Educare ID) get their own Guru: the same chat history and coins as in the portal and the app, chat or voice.
+- **Visitors** get 3 free questions a day, then an invitation to create a free DE Educare ID.
+- Other scripts can open it with `DEGuru.open('question')`.
+
+The website and portal must share the parent domain (for example `deeducare.com` and `portal.deeducare.com`) and the portal needs `COOKIE_DOMAIN=.deeducare.com` and `WEBSITE_URL=https://deeducare.com` in Vercel.
 
 ## Links into the portal
 
@@ -45,4 +58,4 @@ The portal must accept these routes. If a student already owns the plan, it shou
 - Each page gets its own title, meta description, canonical URL and Open Graph tags.
 - Each page also gets JSON-LD structured data: the organisation, courses with prices, its FAQs and the breadcrumb.
 - If Rank Math, Yoast or AIOSEO is active, the plugin handles titles and meta tags, and the theme adds only the course, FAQ and breadcrumb data. In that case, turn off the plugin's own FAQ schema.
-- FAQs and all tab content are in the page HTML, so search engines can read them.
+- FAQs and all tab content are in the page HTML, so search engines can read them. The FAQ structured data is read from the page's FAQ blocks, so it always matches what visitors see.

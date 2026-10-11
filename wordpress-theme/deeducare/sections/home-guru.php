@@ -1,6 +1,7 @@
 <?php
 /**
- * Guru live demo: three free preview questions answered by the AI (server-side proxy in inc/guru.php).
+ * Guru on the home page. Questions open the floating Guru (assets/js/guru.js):
+ * the student's own Guru when signed in, or 3 free preview questions.
  *
  * @package deeducare
  */
@@ -27,14 +28,14 @@ $sugg  = array( 'How should I start CAT prep?', 'Is 85 enough for 99 %ile?', 'CA
 			</ul>
 			<span class="de-guru__note">10 free Guru coins a day · 50 on test series · unlimited on coaching.</span>
 		</div>
-		<div class="de-chat" data-guru data-signup="<?php echo esc_url( de_signup_url() ); ?>">
-			<div class="de-chat__head"><span class="de-orb" aria-hidden="true"></span><span class="de-chat__name">Guru</span><span class="de-chat__left" data-guru-left>3 FREE PREVIEW QUESTIONS</span></div>
-			<div class="de-chat__log" data-guru-log aria-live="polite">
+		<div class="de-chat">
+			<div class="de-chat__head"><span class="de-orb" aria-hidden="true"></span><span class="de-chat__name">Guru</span><span class="de-chat__left">CHAT OR VOICE</span></div>
+			<div class="de-chat__log">
 				<div class="de-chat__msg">Hi, I'm Guru. Ask me anything about CAT, CET or OMET prep.</div>
 			</div>
 			<div class="de-chat__sugg">
 				<?php foreach ( $sugg as $s ) : ?>
-					<button type="button" class="de-chat__chip" data-guru-ask="<?php echo esc_attr( $s ); ?>"><?php de_e( $s ); ?></button>
+					<button type="button" class="de-chat__chip" data-guru-open data-guru-q="<?php echo esc_attr( $s ); ?>"><?php de_e( $s ); ?></button>
 				<?php endforeach; ?>
 			</div>
 			<form class="de-chat__form" data-guru-form>

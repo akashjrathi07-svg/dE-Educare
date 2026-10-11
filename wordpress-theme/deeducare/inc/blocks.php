@@ -17,21 +17,46 @@ function de_sections() {
 		'footer'          => 'Site footer',
 		'floating'        => 'WhatsApp button and mobile action bar',
 		'home-hero'       => 'Home · Hero and exam picker',
-		'home-marquee'    => 'Home · College marquee',
+		'home-marquee'    => 'Live · College marquee',
 		'home-tools'      => 'Home · Quick tools',
-		'home-predict'    => 'Home · Percentile and college predictor',
+		'home-predict'    => 'Live · Percentile and college predictor',
 		'home-free'       => 'Home · Free daily tests (CAT, CET, SNAP)',
 		'home-ladder'     => 'Home · Climb to 99',
 		'home-compare'    => 'Home · Compare coaching programmes',
 		'home-guru'       => 'Home · Guru demo',
 		'home-soon'       => 'Home · Government exams',
 		'home-community'  => 'Home · One login and community',
-		'home-voices'     => 'Home · Student reviews (from the portal)',
+		'home-voices'     => 'Live · Student reviews (from the portal)',
 		'home-faq'        => 'Home · FAQs',
-		'exam'            => 'Exam page (choose exam)',
+		'exam'            => 'Exam page, whole (older layout)',
+		'exam-tabs'       => 'Live · Exam tabs with banner and prices',
+		'test-series'     => 'Live · Test series price cards',
+		'exam-free-tests' => 'Live · Free tests for an exam',
+		'exam-tests'      => 'Live · Test series catalogue for an exam',
+		'exam-plans'      => 'Live · Test series plans and prices for an exam',
+		'exam-aside'      => 'Live · Exam sidebar (coaching fee, test series price)',
+		'enquiry-form'    => 'Live · Coaching enquiry form',
+		'free-questions'  => 'Live · Free practice questions',
+		'free-tests-all'  => 'Live · Free tests (CAT, MBA-CET, SNAP)',
+		'free-notes'      => 'Live · Free notes and PDFs from the portal',
+		'contact-form'    => 'Live · Call-back request form',
 		'free'            => 'Free resources page',
 		'contact'         => 'Contact page',
 	);
+}
+
+/**
+ * Exam view for a block's "exam" setting: CAT and MBA-CET use their own data,
+ * SNAP/NMAT/XAT/CMAT use the OMET view. Returns [ view, plan group, key ].
+ */
+function de_exam_view( $exam ) {
+	if ( in_array( $exam, array( 'snap', 'nmat', 'xat', 'cmat' ), true ) ) {
+		return array( de_omet_view( $exam ), 'omet', $exam );
+	}
+	if ( 'omet' === $exam ) {
+		return array( de_omet_view( 'snap' ), 'omet', 'snap' );
+	}
+	return array( de_exams()[ $exam ], $exam, $exam );
 }
 
 function de_render_section( $attributes ) {
@@ -39,7 +64,7 @@ function de_render_section( $attributes ) {
 	if ( ! isset( de_sections()[ $name ] ) ) {
 		return '';
 	}
-	$exam = in_array( $attributes['exam'] ?? '', array( 'cat', 'cet', 'omet' ), true ) ? $attributes['exam'] : 'cat';
+	$exam = in_array( $attributes['exam'] ?? '', array( 'cat', 'cet', 'omet', 'snap', 'nmat', 'xat', 'cmat' ), true ) ? $attributes['exam'] : 'cat';
 	ob_start();
 	include DE_THEME_DIR . '/sections/' . $name . '.php';
 	return ob_get_clean();

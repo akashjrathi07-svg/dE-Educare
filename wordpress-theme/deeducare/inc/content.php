@@ -11,8 +11,6 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_GURU_FALLBACK', 'Start with one full mock to find your baseline, then pick your two weakest topics and take their topic tests daily. Add a sectional every other day. Analyse each mock for twice as long as you took it.' );
-
 /** Topic lists shared by CAT and MBA-CET. */
 function de_topics() {
 	return array(
