@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { poolerUrl } from '../db-url';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -6,13 +7,17 @@ declare global {
 }
 
 function connect() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.');
+  const raw = process.env.DATABASE_URL;
+  if (!raw) throw new Error('DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.');
+  const url = poolerUrl(raw);
+  const pooled = /pooler\.supabase\.com/.test(url);
   return postgres(url, {
-    max: Number(process.env.DATABASE_POOL_MAX || 10),
-    idle_timeout: 20,
-    // Supabase's transaction pooler does not support prepared statements.
-    prepare: !/pooler\.supabase\.com:6543/.test(url),
+    max: Number(process.env.DATABASE_POOL_MAX || (pooled ? 5 : 10)),
+    idle_timeout: pooled ? 5 : 20,
+    max_lifetime: pooled ? 60 * 5 : null,
+    connect_timeout: 10,
+    // The transaction pooler does not support prepared statements.
+    prepare: !pooled,
     transform: { undefined: null },
   });
 }
