@@ -391,12 +391,13 @@ function de_render_coaching( $exam ) {
 }
 
 /** Free tests for this exam: today's daily test, the free mock and previous papers. */
-function de_render_free_tests( $view, $exam, $with_ids ) {
+function de_render_free_tests( $view, $exam, $with_ids, $head = true ) {
 	$c     = $view['catalog'];
 	$daily = 'omet' === $exam ? strtolower( $view['name'] ) : $exam;
 	$label = wp_date( 'j M' );
 	?>
 	<div class="de-stack-14 de-anchor" <?php echo de_sec_id( 'free', $with_ids ); // phpcs:ignore ?> data-reveal>
+		<?php if ( $head ) : ?>
 		<div class="de-split de-split--end">
 			<div class="de-stack-6">
 				<span class="de-eyebrow de-eyebrow--muted">FREE TESTS</span>
@@ -405,6 +406,7 @@ function de_render_free_tests( $view, $exam, $with_ids ) {
 			</div>
 			<a class="de-sync" href="<?php echo esc_url( de_page_url( 'free-resources' ) ); ?>">More free resources →</a>
 		</div>
+		<?php endif; ?>
 		<div class="de-tests">
 			<div class="de-test de-test--daily">
 				<div class="de-test__top"><span class="de-test__tag de-test__tag--free">FREE · DAILY</span><span class="de-test__meta">15 min</span></div>

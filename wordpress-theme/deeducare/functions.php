@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '2.0.1' );
+define( 'DE_THEME_VERSION', '2.1.0' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
@@ -16,8 +16,9 @@ require DE_THEME_DIR . '/inc/helpers.php';
 require DE_THEME_DIR . '/inc/customizer.php';
 require DE_THEME_DIR . '/inc/exam-render.php';
 require DE_THEME_DIR . '/inc/blocks.php';
+require DE_THEME_DIR . '/inc/page-builder-blocks.php';
+require DE_THEME_DIR . '/inc/page-builder.php';
 require DE_THEME_DIR . '/inc/seo.php';
-require DE_THEME_DIR . '/inc/guru.php';
 require DE_THEME_DIR . '/inc/contact.php';
 require DE_THEME_DIR . '/inc/lead.php';
 require DE_THEME_DIR . '/inc/reviews.php';
@@ -48,10 +49,12 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'deeducare', DE_THEME_URI . '/assets/css/site.css', array( 'deeducare-fonts' ), DE_THEME_VERSION );
 	wp_enqueue_script( 'deeducare', DE_THEME_URI . '/assets/js/site.js', array(), DE_THEME_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 	wp_localize_script( 'deeducare', 'DE_SITE', array(
-		'guruUrl'   => esc_url_raw( rest_url( 'deeducare/v1/guru' ) ),
-		'leadUrl'   => esc_url_raw( rest_url( 'deeducare/v1/lead' ) ),
-		'examDate'  => de_setting( 'cat_date' ),
-		'fallback'  => DE_GURU_FALLBACK,
-		'portal'    => untrailingslashit( de_portal() ),
+		'leadUrl'  => esc_url_raw( rest_url( 'deeducare/v1/lead' ) ),
+		'examDate' => de_setting( 'cat_date' ),
+		'portal'   => untrailingslashit( de_portal() ),
+		'signup'   => de_signup_url(),
+		'login'    => de_login_url(),
 	) );
+	// Guru on every page: talks to the portal, so signed-in students keep one history and one coin balance.
+	wp_enqueue_script( 'deeducare-guru', DE_THEME_URI . '/assets/js/guru.js', array( 'deeducare' ), DE_THEME_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 } );

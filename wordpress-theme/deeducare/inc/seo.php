@@ -123,15 +123,15 @@ function de_jsonld( $key, $url ) {
 		);
 	}
 
-	// FAQs exactly as shown on the page.
-	$faqs = array();
-	if ( 'home' === $key ) {
+	// FAQs exactly as shown on the page: read from the page's FAQ blocks, so edits in the editor carry over.
+	$faqs = de_page_faqs();
+	if ( ! $faqs && 'home' === $key ) {
 		$faqs = de_home_faqs();
-	} elseif ( 'free' === $key ) {
+	} elseif ( ! $faqs && 'free' === $key ) {
 		$faqs = de_free_faqs();
-	} elseif ( in_array( $key, array( 'cat', 'cet' ), true ) ) {
+	} elseif ( ! $faqs && in_array( $key, array( 'cat', 'cet' ), true ) ) {
 		$faqs = de_exams()[ $key ]['faq'];
-	} elseif ( 'omet' === $key ) {
+	} elseif ( ! $faqs && 'omet' === $key ) {
 		foreach ( array_keys( de_omets() ) as $k ) {
 			$faqs = array_merge( $faqs, de_omet_view( $k )['faq'] );
 		}
@@ -249,3 +249,39 @@ add_filter( 'wp_robots', function ( $robots ) {
 	}
 	return $robots;
 } );
+
+/**
+ * Question and answer pairs from the current page's FAQ blocks (Details
+ * blocks with the class de-faq__item). Empty when the page has none.
+ */
+function de_page_faqs() {
+	$post = get_queried_object();
+	if ( is_front_page() && 'page' === get_option( 'show_on_front' ) ) {
+		$post = get_post( (int) get_option( 'page_on_front' ) );
+	}
+	if ( ! $post instanceof WP_Post || '' === trim( $post->post_content ) ) {
+		return array();
+	}
+	$faqs = array();
+	$walk = function ( $blocks ) use ( &$walk, &$faqs ) {
+		foreach ( $blocks as $b ) {
+			if ( 'core/details' === $b['blockName'] && false !== strpos( $b['attrs']['className'] ?? '', 'de-faq__item' ) ) {
+				$q = isset( $b['attrs']['summary'] ) ? $b['attrs']['summary'] : '';
+				if ( '' === $q && preg_match( '#<summary>(.*?)</summary>#s', $b['innerHTML'], $m ) ) {
+					$q = $m[1];
+				}
+				$a = trim( wp_strip_all_tags( implode( ' ', array_map( 'render_block', $b['innerBlocks'] ) ) ) );
+				$q = trim( html_entity_decode( wp_strip_all_tags( $q ), ENT_QUOTES ) );
+				if ( $q && $a ) {
+					$faqs[] = array( $q, html_entity_decode( preg_replace( '/\s+/', ' ', $a ), ENT_QUOTES ) );
+				}
+				continue;
+			}
+			if ( ! empty( $b['innerBlocks'] ) ) {
+				$walk( $b['innerBlocks'] );
+			}
+		}
+	};
+	$walk( parse_blocks( $post->post_content ) );
+	return $faqs;
+}

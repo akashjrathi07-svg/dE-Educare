@@ -4,7 +4,7 @@ import 'server-only';
 function allowedOrigins() {
   const site = (process.env.WEBSITE_URL || 'https://deeducare.com').replace(/\/$/, '');
   const u = new URL(site);
-  const bare = u.hostname.replace(/^www\./, '');
+  const bare = u.host.replace(/^www\./, '');
   return new Set([`${u.protocol}//${bare}`, `${u.protocol}//www.${bare}`]);
 }
 
@@ -15,7 +15,10 @@ export function corsHeaders(req: Request): Record<string, string> {
   if (origin && allowedOrigins().has(origin)) {
     h['Access-Control-Allow-Origin'] = origin;
     h['Access-Control-Allow-Credentials'] = 'true';
-    h['Access-Control-Allow-Methods'] = 'GET, OPTIONS';
+    h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+    h['Access-Control-Allow-Headers'] = 'Content-Type';
+    h['Access-Control-Expose-Headers'] = 'X-Guru-Left, X-Guru-Bonus, X-Guru-Limit';
+    h['Access-Control-Max-Age'] = '600';
   }
   return h;
 }

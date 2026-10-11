@@ -44,7 +44,8 @@ export async function requestOtp(phoneInput: string): Promise<{ ok: true; phone:
   return { ok: true, phone, devCode: sent.devCode };
 }
 
-export async function verifyOtp(phoneInput: string, code: string): Promise<{ ok: true; user: User; isNew: boolean } | { ok: false; error: string }> {
+/** Checks the code and signs in. On the web a session cookie is set; for the app (`app: true`) the token is returned instead. */
+export async function verifyOtp(phoneInput: string, code: string, opts: { app?: boolean } = {}): Promise<{ ok: true; user: User; isNew: boolean; token: string } | { ok: false; error: string }> {
   const phone = normalisePhone(phoneInput);
   if (!phone || !/^\d{6}$/.test(code)) return { ok: false, error: 'Enter the 6-digit code.' };
   const [req] = await sql`select * from otp_requests where phone = ${phone} and not used and expires_at > now() order by created_at desc limit 1`;
@@ -63,8 +64,8 @@ export async function verifyOtp(phoneInput: string, code: string): Promise<{ ok:
     isNew = true;
     [user] = await createUser(phone);
   }
-  await createSession(user.id);
-  return { ok: true, user, isNew };
+  const token = await createSession(user.id, !opts.app);
+  return { ok: true, user, isNew, token };
 }
 
 /** New account with a unique DE ID (DE-2026-482130). Retries on the rare ID clash. */
@@ -82,16 +83,18 @@ export async function createUser(phone: string, role: Role = 'student') {
   }
 }
 
-async function createSession(userId: string) {
+async function createSession(userId: string, setCookie = true) {
   const token = crypto.randomBytes(32).toString('base64url');
   const ua = (await headers()).get('user-agent')?.slice(0, 200) ?? null;
   await sql`insert into sessions (user_id, token_hash, expires_at, user_agent) values (${userId}, ${hash(token)}, now() + ${SESSION_DAYS + ' days'}::interval, ${ua})`;
+  if (!setCookie) return token;
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/',
     maxAge: SESSION_DAYS * 86400,
     // e.g. ".deeducare.com" so the website can see the student is signed in.
     domain: process.env.COOKIE_DOMAIN || undefined,
   });
+  return token;
 }
 
 export async function signOut() {
@@ -101,10 +104,13 @@ export async function signOut() {
   jar.set(SESSION_COOKIE, '', { path: '/', maxAge: 0, domain: process.env.COOKIE_DOMAIN || undefined });
 }
 
-/** The signed-in user, or null. */
-/** Signed-in user for this request. Cached per request, so layouts and pages share one lookup. */
+/**
+ * The signed-in user for this request (cached, so layouts and pages share one lookup): from the de_session cookie (web, website) or an
+ * `Authorization: Bearer <session token>` header (the mobile app).
+ */
 export const currentUser = cache(async function currentUser(): Promise<User | null> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const bearer = (await headers()).get('authorization')?.match(/^Bearer\s+([A-Za-z0-9_-]{20,})$/)?.[1];
+  const token = bearer ?? (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const [row] = await sql<User[]>`
     select u.* from sessions s join users u on u.id = s.user_id
