@@ -15,7 +15,7 @@ A block theme built from the `De educare Website v4` design. It covers the Home,
    - exam banner photos
    - the email address that receives call-back requests
 
-   The site logo is under **Site Identity**.
+   The site logo is under **Site Identity**. If your logo image already includes the name, leave **Show the name "DE Educare" next to the logo** unticked so the name doesn't appear twice.
 6. **Turn off any old chat widget plugin** (Plugins → Deactivate). Guru replaces it on every page.
 
 ## Editing content
@@ -29,7 +29,7 @@ Every page is a normal WordPress page made of standard blocks: headings, paragra
 - **Live blocks:** blocks named **DE Educare section · Live …** show data from the student portal: prices, test lists, the predictor, the enquiry and call-back forms, free questions and reviews. They update on their own; move or remove them like any block.
 - **New landing page:** create a page and pick the template **DE Educare sections (full width)** in the page sidebar. Copy sections from another page with the block menu (⋮ → Copy) and paste.
 - **Start a page over:** **Appearance → DE Educare pages** rebuilds a page from the theme's version. Your current version stays in the page's **Revisions**, so you can go back.
-- **Prices of test series and plans** come from the portal (Admin → Plans). Coaching fees on the pages are plain text: change them in the page. `inc/content.php` holds the content the theme uses when it builds a page.
+- **Prices of test series and plans** come from the portal (Admin → Plans). The website keeps a saved copy and refreshes it in the background every 10 minutes, so pages never wait for the portal. Coaching fees on the pages are plain text: change them in the page. `inc/content.php` holds the content the theme uses when it builds a page.
 - **Privacy, terms and refund pages** are normal pages too.
 
 ## Guru on every page

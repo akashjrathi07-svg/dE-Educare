@@ -130,16 +130,21 @@ function de_image( $setting_or_url, $label, $class = 'de-img', $eager = false ) 
 
 /**
  * Site logo: the image from Customize → Site Identity → Logo when set,
- * otherwise the "DE" mark. Used in the header and footer.
+ * otherwise the "DE" mark with the name. Used in the header and footer.
+ * An uploaded logo usually already shows the name, so the text name is only
+ * added when "Show the name next to the logo" is ticked.
  */
 function de_logo( $class = 'de-logo' ) {
 	echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( home_url( '/' ) ) . '" aria-label="DE Educare home">';
 	if ( has_custom_logo() ) {
-		echo wp_get_attachment_image( get_theme_mod( 'custom_logo' ), 'medium', false, array( 'class' => 'de-logo__img', 'alt' => 'DE Educare logo' ) );
+		echo wp_get_attachment_image( get_theme_mod( 'custom_logo' ), 'medium', false, array( 'class' => 'de-logo__img', 'alt' => 'DE Educare', 'loading' => false ) );
+		if ( get_theme_mod( 'de_logo_text', false ) ) {
+			echo '<span class="de-logo__text">DE Educare</span>';
+		}
 	} else {
-		echo '<span class="de-logo__mark" aria-hidden="true">DE</span>';
+		echo '<span class="de-logo__mark" aria-hidden="true">DE</span><span class="de-logo__text">DE Educare</span>';
 	}
-	echo '<span class="de-logo__text">DE Educare</span></a>';
+	echo '</a>';
 }
 
 /** URL of an image bundled with the theme (assets/img). */
@@ -172,27 +177,72 @@ function de_faq_list( $faqs, $class = '' ) {
 }
 
 /**
- * Live plan prices from the portal (Admin → Courses & plans), cached for 10 minutes.
- * Returns [] when the portal can't be reached, so the prices typed in content.php are used.
+ * Data from the portal API, kept in the database so pages never wait for the portal.
+ *
+ * A fresh copy (10 minutes) is used as is. An older copy is shown straight away and
+ * refreshed after the page has been sent to the visitor. Only the very first request
+ * ever waits for the portal (2 seconds at most). A failed refresh keeps the last good
+ * copy, so a portal hiccup never blanks prices or tests on the website.
+ *
+ * @param string   $key    Cache name.
+ * @param string   $path   Portal API path, e.g. api/public/plans.
+ * @param callable $mapper Turns the decoded JSON into the value pages use.
+ */
+function de_portal_data( $key, $path, $mapper ) {
+	static $memo = array();
+	if ( isset( $memo[ $key ] ) ) {
+		return $memo[ $key ];
+	}
+	$option = 'de_pc_' . $key;
+	$cached = get_option( $option );
+	if ( is_array( $cached ) && array_key_exists( 'd', $cached ) ) {
+		$age = time() - (int) $cached['t'];
+		if ( $age > ( $cached['ok'] ? 10 * MINUTE_IN_SECONDS : 2 * MINUTE_IN_SECONDS ) && ! get_transient( $option . '_lock' ) ) {
+			// One refresh at a time, after the response is sent.
+			set_transient( $option . '_lock', 1, MINUTE_IN_SECONDS );
+			add_action( 'shutdown', function () use ( $option, $path, $mapper, $cached ) {
+				// Send the page first (PHP-FPM or LiteSpeed hosting), then refresh.
+				if ( function_exists( 'fastcgi_finish_request' ) ) {
+					fastcgi_finish_request();
+				} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+					litespeed_finish_request();
+				}
+				de_portal_fetch( $option, $path, $mapper, $cached, 5 );
+			} );
+		}
+		return $memo[ $key ] = $cached['d'];
+	}
+	return $memo[ $key ] = de_portal_fetch( $option, $path, $mapper, null, 2 );
+}
+
+/** Fetches and stores one portal dataset. Returns the data (the previous copy if the portal fails). */
+function de_portal_fetch( $option, $path, $mapper, $previous, $timeout ) {
+	$res = wp_remote_get( de_portal( $path ), array( 'timeout' => $timeout ) );
+	if ( ! is_wp_error( $res ) && 200 === wp_remote_retrieve_response_code( $res ) ) {
+		$data = call_user_func( $mapper, (array) json_decode( wp_remote_retrieve_body( $res ), true ) );
+		update_option( $option, array( 't' => time(), 'ok' => true, 'd' => $data ), false );
+		delete_transient( $option . '_lock' );
+		return $data;
+	}
+	$data = is_array( $previous ) ? $previous['d'] : array();
+	update_option( $option, array( 't' => time(), 'ok' => false, 'd' => $data ), false );
+	return $data;
+}
+
+/**
+ * Live plan prices from the portal (Admin → Courses & plans).
+ * Returns [] when the portal has never been reached, so the prices typed in content.php are used.
  */
 function de_portal_plans() {
-	$cached = get_transient( 'de_portal_plans' );
-	if ( false !== $cached ) {
-		return $cached;
-	}
-	$res   = wp_remote_get( de_portal( 'api/public/plans' ), array( 'timeout' => 3 ) );
-	$plans = array();
-	if ( ! is_wp_error( $res ) && 200 === wp_remote_retrieve_response_code( $res ) ) {
-		$data = json_decode( wp_remote_retrieve_body( $res ), true );
+	return de_portal_data( 'plans', 'api/public/plans', function ( $data ) {
+		$plans = array();
 		foreach ( ( $data['plans'] ?? array() ) as $p ) {
 			if ( ! empty( $p['id'] ) ) {
 				$plans[ $p['id'] ] = $p;
 			}
 		}
-	}
-	// On failure, retry in 2 minutes instead of hammering the portal on every page view.
-	set_transient( 'de_portal_plans', $plans, $plans ? 10 * MINUTE_IN_SECONDS : 2 * MINUTE_IN_SECONDS );
-	return $plans;
+		return $plans;
+	} );
 }
 
 /** Puts the portal's live price on each paid plan; plans that are draft in the portal show "₹ —". */

@@ -53,7 +53,7 @@ function de_page_home() {
 	);
 	$o .= deb_live( 'exam-tabs' );
 	$o .= deb_group(
-		deb_group( deb_heading( 'Test series: pick your exam', 2, 'de-h2' ) . deb_p( 'Prices include GST · UPI, cards and EMI', 'de-note de-note--sm' ), 'de-split de-split--end' ),
+		deb_group( deb_heading( 'Test series: pick your exam', 2, 'de-h2' ) . deb_p( 'Prices include GST · UPI, cards and netbanking', 'de-note de-note--sm' ), 'de-split de-split--end' ),
 		'de-wrap de-ts-head',
 		'div',
 		'test-series'
@@ -234,7 +234,7 @@ function de_block_coaching_compare() {
 		deb_group( deb_group( deb_eyebrow( 'COACHING · NEW BATCHES', 'blue' ) . deb_heading( 'Compare coaching programmes', 2, 'de-h2 de-h2--lg' ), 'de-stack-10' ), 'de-split de-split--end' )
 		. deb_group( $cards, 'de-coach-grid' )
 		. deb_table( $head, $rows, 'de-compare-table' )
-		. deb_p( 'Programme fees per student. Send an enquiry for batch start dates, timings and payment options.', 'de-note de-note--sm' ),
+		. deb_p( 'Programme fees per student. EMI available on all coaching programmes. Send an enquiry for batch start dates, timings and payment options.', 'de-note de-note--sm' ),
 		'de-wrap de-compare',
 		'section',
 		'coaching'
@@ -607,7 +607,7 @@ function de_build_pages( $force = false, $only = array() ) {
 		}
 		$page = de_site_page( $slug );
 		if ( ! $page ) {
-			$id     = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $title, 'post_content' => call_user_func( $builder ), 'page_template' => 'page-sections', 'meta_input' => array( '_de_built' => DE_THEME_VERSION ) ) );
+			$id     = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $title, 'post_content' => wp_slash( call_user_func( $builder ) ), 'page_template' => 'page-sections', 'meta_input' => array( '_de_built' => DE_THEME_VERSION ) ) );
 			$done[] = array( $title, 'created' );
 		} else {
 			$id  = $page->ID;
@@ -616,7 +616,8 @@ function de_build_pages( $force = false, $only = array() ) {
 				$done[] = array( $page->post_title, 'kept (your edits are safe)' );
 				continue;
 			}
-			wp_update_post( array( 'ID' => $id, 'post_content' => call_user_func( $builder ), 'page_template' => 'page-sections' ) );
+			// wp_slash: saving strips one level of backslashes, which would break escapes like \u002d in block settings.
+			wp_update_post( array( 'ID' => $id, 'post_content' => wp_slash( call_user_func( $builder ) ), 'page_template' => 'page-sections' ) );
 			update_post_meta( $id, '_de_built', DE_THEME_VERSION );
 			$done[] = array( $page->post_title, $old ? 'rebuilt (old version saved in revisions)' : 'filled' );
 		}

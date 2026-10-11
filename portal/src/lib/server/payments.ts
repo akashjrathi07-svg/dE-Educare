@@ -1,6 +1,7 @@
 import 'server-only';
 import crypto from 'node:crypto';
 import { sql } from './db';
+import { autoBatch } from './enrol';
 
 /**
  * Razorpay. A plan unlocks only after the payment is verified on the server:
@@ -11,7 +12,7 @@ import { sql } from './db';
 export const razorpayConfigured = () => !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
 export const testModeAllowed = () => !razorpayConfigured() && (process.env.NODE_ENV !== 'production' || process.env.ALLOW_TEST_PAYMENTS === '1');
 
-export type Quote = { course: { id: string; slug: string; name: string; price_paise: number; mrp_paise: number; validity: string; exam_id: string | null }; coupon: { id: string; code: string } | null; discount: number; total: number; couponError?: string };
+export type Quote = { course: { id: string; slug: string; name: string; price_paise: number; mrp_paise: number; validity: string; exam_id: string | null; category: string }; coupon: { id: string; code: string } | null; discount: number; total: number; couponError?: string };
 
 export async function quote(courseSlug: string, couponCode: string | null, userId: string): Promise<Quote | null> {
   const [course] = await sql`select id, slug, name, price_paise, mrp_paise, validity, exam_id, category from courses where slug = ${courseSlug} and status = 'live'`;
@@ -86,6 +87,8 @@ export async function fulfil(orderId: string, paymentId: string, method: string 
     const ends = o.validity === '6m' ? sql`now() + interval '6 months'` : o.validity === '12m' ? sql`now() + interval '12 months'`
       : o.exam_date ? sql`${o.exam_date}::date + interval '1 day'` : sql`now() + interval '12 months'`;
     await tx`insert into entitlements (user_id, course_id, ends_at, source, order_id) values (${o.user_id}, ${o.course_id}, ${ends}, 'purchase', ${orderId}) on conflict (order_id) do nothing`;
+    // Coaching bought online: seat the student in the course's open batch straight away.
+    await autoBatch(tx, o.user_id, o.course_id);
     if (o.coupon_id) await tx`update coupons set used = used + 1 where id = ${o.coupon_id}`;
     return true;
   });

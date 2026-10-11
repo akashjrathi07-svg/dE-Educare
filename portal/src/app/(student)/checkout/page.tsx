@@ -17,7 +17,7 @@ export default async function Checkout({ searchParams }: { searchParams: Promise
     <>
       <Link href="/plans" className="back">← Plans</Link>
       <h1 className="h1">Checkout</h1>
-      <CheckoutForm plan={{ slug: q.course.slug, name: q.course.name, price: q.course.price_paise }} test={sp.test ?? ''} initialCoupon={sp.coupon ?? ''} />
+      <CheckoutForm plan={{ slug: q.course.slug, name: q.course.name, price: q.course.price_paise, emi: q.course.category === 'coaching' }} test={sp.test ?? ''} initialCoupon={sp.coupon ?? ''} />
     </>
   );
 }

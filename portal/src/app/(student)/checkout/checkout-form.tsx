@@ -17,7 +17,7 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
-export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: string; name: string; price: number }; test: string; initialCoupon: string }) {
+export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: string; name: string; price: number; emi: boolean }; test: string; initialCoupon: string }) {
   const router = useRouter();
   const [method, setMethod] = useState('upi');
   const [coupon, setCoupon] = useState(initialCoupon);
@@ -25,7 +25,9 @@ export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: stri
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, start] = useTransition();
   const total = plan.price - (applied?.discount ?? 0);
-  const methods = [['upi', 'UPI', 'Google Pay, PhonePe, Paytm or any UPI app'], ['card', 'Credit / debit card', 'Visa, Mastercard, RuPay'], ['netbanking', 'Netbanking', 'All major Indian banks'], ['emi', 'EMI', `From ${inr(plan.price / 6)}/month, no-cost on select cards`]];
+  // EMI is offered on coaching only, not on mocks and test series.
+  const methods = [['upi', 'UPI', 'Google Pay, PhonePe, Paytm or any UPI app'], ['card', 'Credit / debit card', 'Visa, Mastercard, RuPay'], ['netbanking', 'Netbanking', 'All major Indian banks'],
+    ...(plan.emi ? [['emi', 'EMI', `From ${inr(plan.price / 6)}/month, no-cost on select cards`]] : [])];
 
   const apply = () => start(async () => {
     const q = await checkQuote(plan.slug, coupon);
@@ -46,6 +48,8 @@ export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: stri
     const rzp = new Rzp({
       key: r.keyId, order_id: r.gatewayOrderId, amount: r.amount, currency: 'INR', name: 'DE Educare', description: r.planName,
       prefill: { name: r.name, contact: r.phone, email: r.email, method },
+      // Hide EMI and pay-later inside the Razorpay window too, unless this is coaching.
+      ...(plan.emi ? {} : { config: { display: { hide: [{ method: 'emi' }, { method: 'cardless_emi' }, { method: 'paylater' }] } } }),
       theme: { color: '#1F3A8A' },
       handler: async (resp: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
         const c = await confirmPayment(resp);

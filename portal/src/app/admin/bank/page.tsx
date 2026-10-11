@@ -63,7 +63,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<SP>
   return (
     <>
       <Head title="Question bank" sub="Every question with the details the analysis needs">
-        <Link className="btn ghost" href={link({ import: '1' })}>Bulk import</Link>
+        <Link className="btn ghost" href={link({ import: '1' })}>Add many (Excel or Word)</Link>
         <Link className="btn" href={link({ add: '1' })}>Add question</Link>
       </Head>
 

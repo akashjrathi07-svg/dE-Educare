@@ -1,15 +1,19 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Drawer, Field, useAction } from '../ui';
-import { updateStudent, type StudentUpdate } from './actions';
+import { Chips, Drawer, Field, useAction } from '../ui';
+import { enrol, enrolMany, updateStudent, type StudentUpdate } from './actions';
 
 type Opt = { id: string; name: string };
+type Course = Opt & { price: number };
+type Batch = Opt & { courseId?: string | null };
+const PAY = { upi: 'UPI', cash: 'Cash', bank: 'Bank transfer', cheque: 'Cheque', card: 'Card (POS)', emi: 'EMI', free: 'Free / scholarship' } as const;
 type Row = { id: string; name: string; phone: string; deId: string; role: string; exam: string; plans: string; batchId: string | null; batch: string; pct: string; attempts: number; credits: number; last: string; joined: string };
 
 const ini = (n: string) => n.split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
 const phone = (p: string) => p.replace(/^\+91(\d{5})(\d{5})$/, '$1 $2');
 
-export function StudentsClient({ rows, exams, batches, courses, role, openId }: { rows: Row[]; exams: Opt[]; batches: Opt[]; courses: Opt[]; role: string; openId: string | null }) {
+export function StudentsClient({ rows, exams, batches, courses, role, openId, enrolOpen }: { rows: Row[]; exams: Opt[]; batches: Batch[]; courses: Course[]; role: string; openId: string | null; enrolOpen: boolean }) {
   const first = rows.find(r => r.id === openId);
   const init = (r: Row): StudentUpdate => ({ userId: r.id, exam: r.exam, grant: '', batchId: r.batchId ?? 'none', credits: 0, role: r.role });
   const [open, setOpen] = useState<Row | null>(first ?? null);
@@ -21,6 +25,7 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId }: 
 
   return (
     <>
+      {enrolOpen && canGrant && <EnrolDrawer courses={courses} batches={batches} />}
       <div className="tbl-wrap">
         <div className="tbl" style={{ '--minw': '940px', '--cols': 'minmax(0,1.4fr) 110px minmax(0,1.2fr) minmax(0,1fr) 80px 70px 90px' } as React.CSSProperties}>
           <div className="tr th"><span>Student</span><span>Exam</span><span>Plan</span><span>Batch</span><span>Avg %ile</span><span>Tests</span><span>Last active</span></div>
@@ -78,5 +83,60 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId }: 
         </Drawer>
       )}
     </>
+  );
+}
+
+/** Enrol one student or a list (offline admissions, payments taken outside the website). */
+function EnrolDrawer({ courses, batches }: { courses: Course[]; batches: Batch[] }) {
+  const router = useRouter();
+  const close = () => router.push('/admin/students');
+  const [many, setMany] = useState(false);
+  const [f, setF] = useState({ phone: '', name: '', lines: '', courseId: '', batchId: '', pay: 'upi' as keyof typeof PAY, amount: '', reference: '', note: '' });
+  const { busy, run } = useAction();
+  const set = (p: Partial<typeof f>) => setF(x => ({ ...x, ...p }));
+  const course = courses.find(c => c.id === f.courseId);
+  const courseBatches = batches.filter(b => b.courseId === f.courseId);
+  const common = { courseId: f.courseId, batchId: f.batchId, pay: f.pay, amount: Number(f.amount) || 0, reference: f.reference, note: f.note };
+  const submit = () => run(() => (many ? enrolMany(f.lines, common) : enrol({ ...common, phone: f.phone, name: f.name })), r => {
+    if (!r.ok) return;
+    if (many) close();
+    else { set({ phone: '', name: '', reference: '', note: '' }); router.refresh(); }
+  });
+  return (
+    <Drawer title="Enrol students" onClose={close}
+      foot={<><button type="button" className="btn ghost" onClick={close}>Done</button>
+        <button type="button" className="btn" disabled={busy || !f.courseId || (many ? !f.lines.trim() : !f.phone.trim())} onClick={submit}>{busy ? 'Enrolling…' : many ? 'Enrol everyone' : 'Enrol student'}</button></>}>
+      <div className="note">For admissions at the centre or payments taken outside the website. Online purchases unlock on their own, and coaching buyers join the course&apos;s open batch automatically.</div>
+      <Chips options={['one', 'many']} labels={{ one: 'One student', many: 'A list' }} value={many ? 'many' : 'one'} onChange={v => setMany(v === 'many')} />
+      {many ? (
+        <Field label="Students" hint="One per line: mobile, name (and amount if it differs). You can paste two columns from Excel.">
+          <textarea className="input mono" rows={7} value={f.lines} placeholder={'9876543210, Riya Sharma\n9123456780, Aman Verma, 20000'} onChange={e => set({ lines: e.target.value })} />
+        </Field>
+      ) : <>
+        <Field label="Mobile number" req hint="Their DE Educare ID. New numbers get an account; they sign in with this number."><input className="input" inputMode="tel" value={f.phone} placeholder="98765 43210" onChange={e => set({ phone: e.target.value })} /></Field>
+        <Field label="Name"><input className="input" value={f.name} onChange={e => set({ name: e.target.value })} /></Field>
+      </>}
+      <Field label="Course" req>
+        <select className="input" value={f.courseId} onChange={e => { const c = courses.find(x => x.id === e.target.value); set({ courseId: e.target.value, batchId: '', amount: c && c.price ? String(c.price) : '' }); }}>
+          <option value="">Pick a course</option>{courses.map(c => <option key={c.id} value={c.id}>{c.name}{c.price ? ` · ₹${c.price.toLocaleString('en-IN')}` : ''}</option>)}
+        </select>
+      </Field>
+      <Field label="Batch" hint={course && !courseBatches.length ? 'This course has no batches yet (Admin → Batches)' : undefined}>
+        <select className="input" value={f.batchId} onChange={e => set({ batchId: e.target.value })}>
+          <option value="">{courseBatches.length ? 'Automatic: the newest batch with seats' : 'None'}</option>
+          {courseBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          <option value="none">No batch</option>
+          {batches.filter(b => b.courseId !== f.courseId).map(b => <option key={b.id} value={b.id}>{b.name} (other course)</option>)}
+        </select>
+      </Field>
+      <Field label="Paid by" group>
+        <Chips options={Object.keys(PAY) as (keyof typeof PAY)[]} labels={PAY} value={f.pay} onChange={v => set({ pay: v as keyof typeof PAY })} />
+      </Field>
+      {f.pay !== 'free' && <>
+        <Field label="Amount paid (₹)" req hint={f.pay === 'emi' ? 'Amount received so far' : undefined}><input className="input" type="number" min={1} value={f.amount} onChange={e => set({ amount: e.target.value })} /></Field>
+        <Field label="Receipt or transaction no."><input className="input" value={f.reference} placeholder="UTR / receipt no." onChange={e => set({ reference: e.target.value })} /></Field>
+      </>}
+      <Field label="Note"><input className="input" value={f.note} placeholder="e.g. EMI 1 of 3, scholarship 50%" onChange={e => set({ note: e.target.value })} /></Field>
+    </Drawer>
   );
 }

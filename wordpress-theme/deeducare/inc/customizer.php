@@ -52,6 +52,16 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 		),
 	);
 
+	// Site Identity: an uploaded logo normally contains the name already.
+	$wp->add_setting( 'de_logo_text', array( 'default' => false, 'sanitize_callback' => 'wp_validate_boolean' ) );
+	$wp->add_control( 'de_logo_text', array(
+		'label'       => __( 'Show the name "DE Educare" next to the logo', 'deeducare' ),
+		'description' => __( 'Leave off if your logo image already includes the name.', 'deeducare' ),
+		'type'        => 'checkbox',
+		'section'     => 'title_tagline',
+		'priority'    => 9,
+	) );
+
 	$defaults = de_setting_defaults();
 	foreach ( $sections as $section_id => $section ) {
 		$wp->add_section( $section_id, array( 'title' => $section['title'], 'panel' => 'de_panel' ) );

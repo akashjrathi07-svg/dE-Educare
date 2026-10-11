@@ -5,7 +5,7 @@ import { studentColumns } from '@/lib/server/admin';
 import { Head } from '../ui';
 import { StudentsClient } from './students-client';
 
-export default async function Students({ searchParams }: { searchParams: Promise<{ q?: string; exam?: string; batch?: string; open?: string; staff?: string }> }) {
+export default async function Students({ searchParams }: { searchParams: Promise<{ q?: string; exam?: string; batch?: string; open?: string; staff?: string; nobatch?: string; enrol?: string }> }) {
   const me = await requireStaff('students');
   const sp = await searchParams;
   const q = (sp.q ?? '').trim();
@@ -16,13 +16,15 @@ export default async function Students({ searchParams }: { searchParams: Promise
         where u.role = any(${roles})
           ${sp.exam ? sql`and u.target_exam = ${sp.exam}` : sql``}
           ${sp.batch ? sql`and exists (select 1 from batch_members m where m.user_id = u.id and m.batch_id = ${sp.batch})` : sql``}
+          ${sp.nobatch ? sql`and exists (select 1 from entitlements e join batches b on b.course_id = e.course_id where e.user_id = u.id and (e.ends_at is null or e.ends_at > now()))
+                             and not exists (select 1 from batch_members m where m.user_id = u.id)` : sql``}
           ${q ? sql`and (u.name ilike ${'%' + q + '%'} or u.de_id ilike ${'%' + q + '%'} ${digits.length >= 4 ? sql`or u.phone like ${'%' + digits + '%'}` : sql``})` : sql``}
           ${sp.open && UUID.test(sp.open) ? sql`or u.id = ${sp.open}` : sql``}
         order by u.created_at desc limit 200`,
     sql`select count(*)::int as total from users where role = 'student'`,
     sql`select code, name from exams order by sort`,
-    sql`select id, name from batches order by name`,
-    sql`select id, name from courses order by sort`,
+    sql`select id, name, course_id from batches order by name`,
+    sql`select c.id, c.name, c.price_paise, c.status from courses c order by c.sort`,
   ]);
   const chip = (code: string | null, label: string) => {
     const p = new URLSearchParams({ ...(q && { q }), ...(code && { exam: code }), ...(sp.batch && { batch: sp.batch }) });
@@ -32,6 +34,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
     <>
       <Head title={sp.staff ? 'Staff' : 'Students'} sub={sp.staff ? 'Faculty, content, support and admin accounts' : `${total.toLocaleString('en-IN')} students · one DE Educare ID across web and app`}>
         {me.role === 'admin' && <Link className="btn ghost" href={sp.staff ? '/admin/students' : '/admin/students?staff=1'}>{sp.staff ? 'Students' : 'Staff'}</Link>}
+        {(me.role === 'admin' || me.role === 'support') && !sp.staff && <Link className="btn" href="/admin/students?enrol=1">Enrol students</Link>}
         {me.role !== 'faculty' && <a className="btn ghost" href={'/admin/students/export?' + new URLSearchParams({ ...(sp.exam && { exam: sp.exam }), ...(sp.batch && { batch: sp.batch }) })}>Export CSV</a>}
       </Head>
       <div className="row" style={{ '--gap': '12px' } as React.CSSProperties}>
@@ -39,12 +42,14 @@ export default async function Students({ searchParams }: { searchParams: Promise
           {sp.exam && <input type="hidden" name="exam" value={sp.exam} />}{sp.batch && <input type="hidden" name="batch" value={sp.batch} />}{sp.staff && <input type="hidden" name="staff" value="1" />}
           <input className="input" name="q" defaultValue={q} placeholder="Search by name, phone or DE ID" aria-label="Search students" />
         </form>
-        {!sp.staff && <div className="chips">{chip(null, 'All')}{exams.map(e => chip(e.code, e.name))}</div>}
+        {!sp.staff && <div className="chips">{chip(null, 'All')}{exams.map(e => chip(e.code, e.name))}
+          <Link href={sp.nobatch ? '/admin/students' : '/admin/students?nobatch=1'} className="chip" aria-pressed={!!sp.nobatch}>Needs a batch</Link></div>}
       </div>
       {sp.batch && <div className="alert info">Showing one batch · <Link href="/admin/students">show everyone</Link></div>}
       <StudentsClient
-        role={me.role} openId={sp.open ?? null}
-        exams={exams.map(e => ({ id: e.code, name: e.name }))} batches={batches.map(b => ({ id: b.id, name: b.name }))} courses={courses.map(c => ({ id: c.id, name: c.name }))}
+        role={me.role} openId={sp.open ?? null} enrolOpen={!!sp.enrol}
+        exams={exams.map(e => ({ id: e.code, name: e.name }))} batches={batches.map(b => ({ id: b.id, name: b.name, courseId: b.course_id }))}
+        courses={courses.map(c => ({ id: c.id, name: c.name + (c.status === 'draft' ? ' (not on sale online)' : ''), price: Math.round(c.price_paise / 100) }))}
         rows={rows.map(r => ({
           id: r.id, name: r.name ?? 'New student', phone: r.phone, deId: r.de_id, role: r.role, exam: r.target_exam ?? '', plans: r.plans ?? 'Free', batchId: r.batch_id, batch: r.batch ?? 'None',
           pct: r.pct == null ? '—' : String(r.pct), attempts: r.attempts, credits: r.guru_credits,

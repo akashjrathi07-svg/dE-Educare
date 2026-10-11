@@ -72,5 +72,5 @@ $icons = array( array( 'icon-mentor.webp', 'Live lectures by mentors' ), array( 
 			</tbody>
 		</table>
 	</div>
-	<p class="de-note de-note--sm">Programme fees per student. Send an enquiry for batch start dates, timings and payment options.</p>
+	<p class="de-note de-note--sm">Programme fees per student. EMI available on all coaching programmes. Send an enquiry for batch start dates, timings and payment options.</p>
 </section>
