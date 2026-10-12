@@ -4,6 +4,7 @@ import { sql } from '@/lib/server/db';
 import { examRefs } from '@/lib/server/admin';
 import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { Head } from '../ui';
+import { stripImages } from '@/components/rich-text';
 import { BankTools, ReportActions } from './bank-client';
 
 type SP = { q?: string; exam?: string; sec?: string; diff?: string; reported?: string; nosol?: string; add?: string; edit?: string; import?: string; page?: string };
@@ -14,7 +15,7 @@ const LEGEND: [string, string, string, string][] = [
   ['type', 'Yes', 'MCQ, TITA, MSQ', 'Answer input'], ['difficulty', 'Yes', 'Easy, Medium, Hard', 'Difficulty report, SWOT'], ['ideal_time_sec', 'Yes', 'Seconds, e.g. 90', 'Time analysis'],
   ['marks_correct', 'Yes', 'e.g. 3', 'Score'], ['marks_wrong', 'Yes', 'e.g. 1, or 0 for TITA', 'Score'], ['set_id', 'No', 'Same ID groups an RC passage or DILR set', 'Split-screen sets'],
   ['set_text', 'No', 'Fill on the first row of each set', 'Split-screen sets'], ['question_text', 'Yes', 'Plain text. Use $…$ for maths.', '—'], ['image_url', 'No', 'Chart or diagram link (https://)', '—'],
-  ['option_a … option_d', 'MCQ / MSQ', 'Answer options', '—'], ['correct_answer', 'Yes', 'A–D · A|C for MSQ · number for TITA', 'Score'], ['solution_text', 'Yes', 'Step-by-step solution', 'Detailed solutions'],
+  ['option_a … option_e', 'MCQ / MSQ', 'Answer options (E is optional)', '—'], ['correct_answer', 'Yes', 'A–E · A|C for MSQ · number for TITA', 'Score'], ['solution_text', 'Yes', 'Step-by-step solution', 'Detailed solutions'],
   ['solution_video_url', 'No', 'YouTube or Vimeo link', 'Detailed solutions'], ['tags', 'No', 'Comma separated', 'Search'], ['source', 'No', 'Original, CAT 2024 Slot 1…', 'Previous-paper tests'], ['language', 'No', 'English, Hindi, Both', 'Language switch'],
 ];
 const FEEDS: [string, string, string][] = [
@@ -55,7 +56,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<SP>
   const edit = e0 ? {
     question_id: e0.external_id, exam: e0.exam, section: e0.sec, topic: e0.topic ?? '', subtopic: e0.subtopic ?? '', type: e0.type, difficulty: e0.difficulty, ideal_time_sec: String(e0.ideal_time_sec),
     marks_correct: String(Number(e0.marks_correct)), marks_wrong: String(Number(e0.marks_wrong)), set_id: e0.set_ext ?? '', set_text: e0.set_text ?? '', question_text: e0.text, image_url: e0.image_url ?? '',
-    option_a: opts.find(o => o.key === 'A')?.text ?? '', option_b: opts.find(o => o.key === 'B')?.text ?? '', option_c: opts.find(o => o.key === 'C')?.text ?? '', option_d: opts.find(o => o.key === 'D')?.text ?? '',
+    option_a: opts.find(o => o.key === 'A')?.text ?? '', option_b: opts.find(o => o.key === 'B')?.text ?? '', option_c: opts.find(o => o.key === 'C')?.text ?? '', option_d: opts.find(o => o.key === 'D')?.text ?? '', option_e: opts.find(o => o.key === 'E')?.text ?? '',
     correct_answer: e0.correct, solution_text: e0.solution_text ?? '', solution_video_url: e0.solution_video_url ?? '', tags: (e0.tags ?? []).join(', '), source: e0.source ?? '',
     language: { en: 'English', hi: 'Hindi', both: 'Both' }[e0.language as string] ?? 'English', status: e0.status === 'draft' ? 'draft' : 'live',
   } : null;
@@ -113,7 +114,7 @@ export default async function Bank({ searchParams }: { searchParams: Promise<SP>
             <div key={r.id} className="tr" style={{ alignItems: 'start' }}>
               <span className="mono" style={{ fontSize: 12 }}>{r.external_id}</span>
               <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
-                <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.text}</span>
+                <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.text.includes('[[img:') ? '🖼 ' + stripImages(r.text) : r.text}</span>
                 {r.status === 'draft' && <span className="tag">Draft · not used in tests</span>}
                 {r.reports && <ReportActions questionId={r.id} reports={r.reports} />}
               </div>

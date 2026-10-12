@@ -63,7 +63,19 @@ If a code doesn't arrive, the Vercel log shows `MSG91 did not send the OTP:` wit
   - Enter the mobile number (a new number gets a DE Educare ID), the course and the batch, and how they paid: UPI, cash, bank, cheque, card, EMI or free. Paste a list to enrol a whole batch.
   - Paid enrolments get an invoice number like online orders.
   - Online buyers unlock their plan automatically, and coaching buyers join the course's newest batch with free seats. **Needs a batch** lists anyone with a coaching plan but no batch.
-- **Uploading whole tests:** Tests → Upload tests. The **Word test template** (`public/test-upload-template.docx`) holds the test itself: `Test:` and `Section:` lines, numbered questions, (A)–(D) options, `Answer:` and `Solution:`. The **Excel details template** (`public/question-details-template.xlsx`) holds, per Test + Section + Q No, the topic, subtopic, difficulty, ideal time, marks, tags, source and image link. These feed the analysis and the auto test builder. Upload both together. One all-in-one Excel sheet (`public/test-upload-template.xlsx`) also works.
+- **Uploading whole tests:** Tests → Upload tests.
+  - The **Word test template** (`public/test-upload-template.docx`) holds the test itself:
+    - `Test:` and `Section:` lines, then for each question `Topic:` (it carries on until the next one), the question (`Q.1)`), options `a)`–`d)`, `Answer:` and `Explanation:`.
+    - Add `e)` only for questions that have five options. Each question keeps exactly the options written.
+    - `D.51-55)` with a passage, directions, table or picture before question 51 makes questions 51–55 one RC/DILR set: they share the passage and are always picked together.
+    - Pictures in the Word file are uploaded and shown in the exam and the solutions.
+  - The **Excel details template** (`public/question-details-template.xlsx`) has one row per question number with:
+    - Subtopic, Type (Single / Multiple / Numeric), Difficulty Level (Very Easy … Very Hard), ideal time, marks and negative marks.
+    - Concepts, Source (e.g. `CAT 2023 Slot 2`), and optionally Correct Answer(s).
+  - A `Subject` path like `Quant (QA) > Percentages > Successive change` also fills section, topic and subtopic.
+  - Very Easy and Very Hard are saved as Easy and Hard with a `very easy` / `very hard` tag.
+  - These details feed the analysis, practice sets, the auto test builder and Guru: Guru sees each student's weakest topics and how many unseen bank questions each one has.
+  - Upload the Word file and the Excel sheet together. One all-in-one Excel sheet (`public/test-upload-template.xlsx`) also works.
 - **Coupons:** Coupons → New coupon. Set % or ₹ off (with an optional cap), how many times it can be used, an end date, and whether it applies to every plan, test series, coaching or chosen plans. Students type the code at checkout, or a link can carry it: `/checkout?plan=cat-ts&coupon=CAT500`. "Reward coupons" lists the personal coupons students got from the rewards store.
 - **Plans:** Courses & plans. The id in the table is what the website's checkout links use (`/checkout?plan=cat-ts`). The website reads live prices and MRPs from here every 10 minutes.
 - **Free tests:** any live test marked **Free** (except daily tests) is listed on the website's Free resources page under its exam (CAT, MBA-CET, SNAP …).
