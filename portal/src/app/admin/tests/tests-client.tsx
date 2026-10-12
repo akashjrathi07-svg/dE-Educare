@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chips, Field, Status, useAction, useToast } from '../ui';
 import { readFile, readText } from '../read-sheet';
+import { mergeDetails } from '@/lib/question-import';
 import { checkUpload, uploadTests, type UploadSettings } from './upload';
 import { createTest, setTestStatus, type TestInput } from './actions';
 
@@ -191,10 +192,15 @@ type UploadCheck = Awaited<ReturnType<typeof checkUpload>>;
 /** Upload whole tests from Excel/CSV or Word, and optionally make a plan (10 mocks, test series) from them. */
 export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[]; courses: { id: string; name: string; exam: string | null }[]; nodes: { id: string; path: string; exam: string }[]; closeHref: string }) {
   const [st, setSt] = useState<UploadSettings>({ exam: exams[0]?.code ?? '', type: 'full_mock', name: '', slugPrefix: '', startAt: 1, section: '', minutes: 0, free: false, courses: [], newCourse: null, publish: 'now', nodeId: '' });
-  const [table, setTable] = useState<string[][] | null>(null);
+  const [content, setContent] = useState<string[][] | null>(null);
+  const [details, setDetails] = useState<{ name: string; rows: string[][] } | null>(null);
   const [fileName, setFileName] = useState('');
   const [text, setText] = useState('');
   const [tab, setTab] = useState<'file' | 'paste'>('file');
+  // Word holds the questions; the optional Excel sheet adds topic, difficulty, marks… by question number.
+  const merged = useMemo(() => (content && details ? mergeDetails(content, details.rows) : null), [content, details]);
+  const table = merged ? merged.table : content;
+  const setTable = setContent;
   const [check, setCheck] = useState<UploadCheck | null>(null);
   const [checking, setChecking] = useState(false);
   const router = useRouter();
@@ -219,6 +225,10 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
     if (file.size > 8 * 1024 * 1024) { toast('File is larger than 8 MB. Split it into parts.'); return; }
     try { setFileName(file.name); setTable(await readFile(file)); } catch { toast('Could not read that file. Save it as .xlsx, .csv or .docx and try again.'); }
   };
+  const pickDetails = async (file: File | undefined) => {
+    if (!file) return;
+    try { setDetails({ name: file.name, rows: await readFile(file) }); } catch { toast('Could not read the details file. Save it as .xlsx or .csv.'); }
+  };
   const many = (check?.tests.length ?? 0) > 1;
 
   return (
@@ -228,7 +238,7 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
         One file can hold one test or a whole series. The questions are added to the question bank and the tests are created in one step.
         In <b>Word</b>, start each test with a line <b>Test: CAT Mock 1</b> and each section with <b>Section: QA</b>, then the questions (numbered, options (A)–(D), <b>Answer:</b>, <b>Solution:</b>).
         In <b>Excel</b>, add columns <b>Test</b> and <b>Section</b> next to Question, Option A–D, Answer, Solution, Topic and Difficulty.
-        {' '}Start from a template: <a href="/test-upload-template.docx" download>Word</a> · <a href="/test-upload-template.xlsx" download>Excel</a>.
+        {' '}Templates: <a href="/test-upload-template.docx" download>Word test template</a> (questions, options, answers, solutions) with the <a href="/question-details-template.xlsx" download>Excel details template</a> (topic, subtopic, difficulty, time, marks), or everything in one <a href="/test-upload-template.xlsx" download>Excel sheet</a>.
       </div>
 
       <div className="form-grid">
@@ -251,7 +261,7 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
       {tab === 'file' ? (
         <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
           <input type="file" accept=".xlsx,.csv,.docx,.txt,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
-          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Images in Word files are not imported; add an image link in Excel instead'}</span>
+          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Images in Word files are not imported; add an image link in the details sheet instead'}</span>
         </label>
       ) : (
         <>
@@ -260,6 +270,20 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
           <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn ghost" disabled={!text.trim()} onClick={() => { setFileName('Pasted text'); setTable(readText(text)); }}>{checking ? 'Checking…' : 'Check tests'}</button></div>
         </>
       )}
+
+      <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
+        <span className="eyebrow">Question details (Excel, optional)</span>
+        <div className="row" style={{ '--gap': '10px' } as React.CSSProperties}>
+          <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
+            <input type="file" accept=".xlsx,.csv" className="sr" onChange={e => pickDetails(e.target.files?.[0])} />{details ? 'Change details file' : 'Add details file'}
+          </label>
+          {details && <button type="button" className="btn ghost sm" onClick={() => setDetails(null)}>Remove</button>}
+          <span className="note" style={{ fontSize: 13 }}>
+            {details ? `${details.name} · ${merged?.matched ?? 0} questions got their details${merged?.unmatched.length ? ` · ${merged.unmatched.length} rows matched no question (${merged.unmatched.slice(0, 3).join('; ')})` : ''}`
+              : 'Topic, subtopic, difficulty, ideal time and marks for each question, matched by Test, Section and Q No. These feed the analysis and the auto test builder.'}
+          </span>
+        </div>
+      </div>
 
       {check && table && (
         <div className="stack" style={{ '--gap': '12px' } as React.CSSProperties}>

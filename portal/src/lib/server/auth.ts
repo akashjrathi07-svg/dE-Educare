@@ -132,6 +132,7 @@ export async function requireUser(next?: string): Promise<User> {
 export const STAFF_AREAS = {
   overview: ['admin', 'content', 'faculty', 'support'],
   courses: ['admin'],
+  coupons: ['admin'],
   batches: ['admin', 'faculty'],
   students: ['admin', 'support', 'faculty'],
   classes: ['admin', 'faculty'],

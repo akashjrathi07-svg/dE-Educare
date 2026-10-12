@@ -40,8 +40,8 @@ function de_plans() {
 			array( 'id' => 'cet-ts', 'name' => 'CET Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹1,800', 'amount' => 1800, 'mrp' => 2500, 'desc' => '30 full-length mocks, 40 sectionals (10 per section) and 3 topic tests for every topic, with section-wise analysis.', 'feat' => array( '30 mocks, 40 sectionals', '3 topic tests per topic', 'Section-wise speed analysis', '50 Guru coins a day' ), 'best' => 'From foundation to exam-ready.', 'cta' => 'Get the Test Series', 'dark' => true ),
 		),
 		'omet' => array(
-			array( 'id' => 'om-pack', 'name' => 'OMET Combo', 'tag' => 'ALL 4 EXAMS', 'price' => '₹3,000', 'amount' => 3000, 'mrp' => 4500, 'desc' => '15 mocks each for SNAP, NMAT, XAT and CMAT, sectionals for every section and 3 topic tests per topic, each in its own pattern and timing.', 'feat' => array( '15 mocks per exam (60 in all)', 'Sectionals for every section', '3 topic tests per topic', 'Exam-specific interfaces' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Combo', 'dark' => true ),
-			array( 'id' => 'om-single', 'name' => 'Individual OMET', 'price' => '₹1,000', 'amount' => 1000, 'mrp' => 1500, 'desc' => '15 mocks, sectionals and topic tests for one OMET of your choice.', 'feat' => array( '15 full-length mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For a single target exam.', 'cta' => 'Choose exam' ),
+			array( 'id' => 'om-pack', 'name' => 'OMET Combo', 'tag' => 'ALL 4 EXAMS', 'soon' => true, 'price' => '₹3,000', 'amount' => 3000, 'mrp' => 4500, 'desc' => '15 mocks each for SNAP, NMAT, XAT and CMAT, sectionals for every section and 3 topic tests per topic, each in its own pattern and timing.', 'feat' => array( '15 mocks per exam (60 in all)', 'Sectionals for every section', '3 topic tests per topic', 'Exam-specific interfaces' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Combo', 'dark' => true ),
+			array( 'id' => 'om-single', 'name' => 'SNAP Test Series', 'price' => '₹1,000', 'amount' => 1000, 'mrp' => 1500, 'desc' => '15 SNAP mocks, sectionals and topic tests in the real SNAP pattern and timing.', 'feat' => array( '15 full-length SNAP mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For SNAP aspirants.', 'cta' => 'Get the SNAP Test Series' ),
 		),
 	) );
 }
@@ -342,12 +342,12 @@ function de_omet_view( $key ) {
 			'label'      => $name,
 			'tabs'       => array( $name . ' Mocks', $name . ' Sectionals & topics' ),
 			'mocks'      => array( 'n' => 15, 'prefix' => $name . ' Mock', 'q' => $o['q'], 'mins' => $o['mins'] ),
-			'mockPlan'   => array( 'om-single', 'om-pack' ),
+			'mockPlan'   => array( 'om-pack', 'om-single' ),
 			'sm'         => null,
 			'secs'       => $secs,
 			'secN'       => 4,
 			'secMins'    => 20,
-			'seriesPlan' => array( 'om-single', 'om-pack' ),
+			'seriesPlan' => array( 'om-pack', 'om-single' ),
 			'pyq'        => array( array( $name . ' sample paper', $o['q'], $o['mins'] ) ),
 		),
 	);
@@ -474,8 +474,8 @@ function de_test_series() {
 	return array(
 		array( 'plan' => 'cat-ts', 'exam' => 'cat', 'name' => 'CAT Test Series', 'counts' => array( array( '20', 'Mocks' ), array( '30', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'cat' ) . '#plans' ),
 		array( 'plan' => 'cet-ts', 'exam' => 'cet', 'name' => 'CET Test Series', 'counts' => array( array( '30', 'Mocks' ), array( '40', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'mba-cet' ) . '#plans' ),
+		array( 'plan' => 'om-single', 'exam' => 'snap', 'name' => 'SNAP Test Series', 'counts' => array( array( '15', 'Mocks' ), array( '✓', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#snap' ),
 		array( 'plan' => 'om-pack', 'exam' => 'omet', 'name' => 'OMET Combo', 'counts' => array( array( '15', 'Mocks per exam' ), array( 'All', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
-		array( 'plan' => 'om-single', 'exam' => 'omet', 'name' => 'Individual OMET', 'counts' => array( array( '15', 'Mocks' ), array( '✓', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
 	);
 }
 

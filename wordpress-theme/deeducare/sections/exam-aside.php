@@ -10,10 +10,13 @@ defined( 'ABSPATH' ) || exit;
 list( , $group, $key ) = de_exam_view( $exam );
 $plans = de_plans()[ $group ];
 $top   = $plans[0];
+// The highlighted plan, or else the first one on sale (not "coming soon").
 foreach ( $plans as $p ) {
-	if ( ! empty( $p['dark'] ) ) {
+	if ( empty( $p['soon'] ) && empty( $p['free'] ) && ( ! empty( $p['dark'] ) || ! empty( $top['soon'] ) || ! empty( $top['free'] ) ) ) {
 		$top = $p;
-		break;
+		if ( ! empty( $p['dark'] ) ) {
+			break;
+		}
 	}
 }
 $coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-coaching-2028', 'omet' => 'mba-plus' )[ $group ];
@@ -42,7 +45,7 @@ $daily = de_daily_url( 'omet' === $group ? $key : $group );
 				<li><span aria-hidden="true">✓</span><?php de_e( $f ); ?></li>
 			<?php endforeach; ?>
 		</ul>
-		<a class="de-btn de-btn--amber de-btn--block de-btn--lg" <?php echo de_plan_action( $top, $group ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( $top['cta'] ); ?></a>
+		<a class="de-btn de-btn--amber de-btn--block de-btn--lg" <?php echo de_plan_action( $top, $group ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( de_plan_cta( $top, $top['cta'] ) ); ?></a>
 	</div>
 	<a class="de-daily-card" href="<?php echo esc_url( $daily ); ?>">
 		<span class="de-daily-card__big">5Q</span>

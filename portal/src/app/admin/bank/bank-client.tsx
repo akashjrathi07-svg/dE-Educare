@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chips, Field, useAction, useToast } from '../ui';
 import { checkImport, resolveReports, runImport, saveQuestion } from './actions';
-import type { ImportDefaults } from '@/lib/question-import';
+import { mergeDetails, type ImportDefaults } from '@/lib/question-import';
 import { readFile, readText } from '../read-sheet';
 
 type Exam = { code: string; name: string; plus: number; minus: number; sections: { code: string; name: string; topics: string[] }[] };
@@ -152,7 +152,10 @@ type Check = Awaited<ReturnType<typeof checkImport>>;
 
 function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; defaultExam: string; closeHref: string }) {
   const [tab, setTab] = useState<'file' | 'paste'>('file');
-  const [table, setTable] = useState<string[][] | null>(null);
+  const [content, setTable] = useState<string[][] | null>(null);
+  const [details, setDetails] = useState<{ name: string; rows: string[][] } | null>(null);
+  const merged = useMemo(() => (content && details ? mergeDetails(content, details.rows) : null), [content, details]);
+  const table = merged ? merged.table : content;
   const [name, setName] = useState('');
   const [text, setText] = useState('');
   const [d, setD] = useState<ImportDefaults>({ exam: exams.find(e => e.code === defaultExam)?.code ?? '', section: '', topic: '', difficulty: '' });
@@ -185,6 +188,10 @@ function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; default
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast('File is larger than 5 MB. Split it into parts.'); return; }
     try { setName(file.name); setTable(await readFile(file)); } catch { toast('Could not read that file. Save it as .xlsx or .csv and try again.'); }
+  };
+  const pickDetails = async (file: File | undefined) => {
+    if (!file) return;
+    try { setDetails({ name: file.name, rows: await readFile(file) }); } catch { toast('Could not read the details file. Save it as .xlsx or .csv.'); }
   };
   const fromPaste = () => { if (text.trim()) { setName('Pasted questions'); setTable(readText(text)); } };
   const setDef = (p: ImportDefaults) => setD(x => ({ ...x, ...p }));
@@ -239,8 +246,8 @@ function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; default
             <li>Upload the .xlsx or .csv file. Every row is checked first; nothing is saved yet.</li>
           </ol>
           <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
-            <input type="file" accept=".xlsx,.csv,.tsv,.txt,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
-            <b>{name || 'Choose an Excel or CSV file'}</b><span className="note">{checking ? 'Checking every row…' : 'Up to 2,000 questions at a time'}</span>
+            <input type="file" accept=".xlsx,.csv,.tsv,.txt,.docx,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
+            <b>{name || 'Choose an Excel, CSV or Word file'}</b><span className="note">{checking ? 'Checking every row…' : 'Up to 2,000 questions at a time'}</span>
           </label>
         </>
       ) : (
@@ -253,6 +260,17 @@ function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; default
           <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn ghost" disabled={!text.trim()} onClick={fromPaste}>{checking ? 'Checking…' : 'Check questions'}</button></div>
         </>
       )}
+
+      <div className="row" style={{ '--gap': '10px' } as React.CSSProperties}>
+        <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
+          <input type="file" accept=".xlsx,.csv" className="sr" onChange={e => pickDetails(e.target.files?.[0])} />{details ? 'Change details file' : 'Add question details (Excel)'}
+        </label>
+        {details && <button type="button" className="btn ghost sm" onClick={() => setDetails(null)}>Remove</button>}
+        <span className="note" style={{ fontSize: 13 }}>
+          {details ? `${details.name} · ${merged?.matched ?? 0} questions got their details${merged?.unmatched.length ? ` · ${merged.unmatched.length} rows matched no question` : ''}`
+            : 'Optional: topic, subtopic, difficulty, ideal time and marks per question, matched by Q No (and Test, Section).'}
+        </span>
+      </div>
 
       {check && table && (
         <div className="stack" style={{ '--gap': '10px' } as React.CSSProperties}>

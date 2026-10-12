@@ -199,7 +199,7 @@ function de_llms_txt() {
 	$l[] = '## Test series (prices include GST)';
 	foreach ( de_plans() as $plans ) {
 		foreach ( $plans as $p ) {
-			if ( '₹ —' === $p['price'] ) {
+			if ( ! empty( $p['soon'] ) ) {
 				continue;
 			}
 			$price = ! empty( $p['free'] ) ? 'free' : $p['price'] . ( ! empty( $p['mrp'] ) ? ' (MRP ' . de_rupees( $p['mrp'] ) . ')' : '' );

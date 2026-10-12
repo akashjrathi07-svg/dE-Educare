@@ -2,7 +2,8 @@ import 'server-only';
 
 /**
  * Sends the login code. SMS_PROVIDER:
- * - "msg91": real SMS through MSG91's OTP API (needs a DLT-approved template in India).
+ * - "msg91": real SMS through MSG91's OTP API (needs a DLT-approved template in India). The template text,
+ *   with MSG91's ##OTP## placeholder, is in the README ("Login codes by SMS").
  * - "console": prints the code to the server log and shows it on the login screen. Refused in production.
  */
 export async function sendOtpSms(phone: string, code: string): Promise<{ ok: boolean; devCode?: string }> {
@@ -12,8 +13,14 @@ export async function sendOtpSms(phone: string, code: string): Promise<{ ok: boo
       template_id: process.env.MSG91_TEMPLATE_ID || '',
       mobile: phone.replace('+', ''),
       otp: code,
-    }), { method: 'POST', headers: { authkey: process.env.MSG91_AUTH_KEY || '', 'content-type': 'application/json' } });
-    return { ok: res.ok };
+    }), { method: 'POST', headers: { authkey: process.env.MSG91_AUTH_KEY || '', 'content-type': 'application/json' } }).catch(() => null);
+    // MSG91 answers 200 with {"type":"error"} when the template, sender ID or key is wrong.
+    const body = res ? await res.json().catch(() => ({})) as { type?: string; message?: string } : {};
+    if (!res?.ok || body.type !== 'success') {
+      console.error('MSG91 did not send the OTP:', res?.status, body.message ?? body.type ?? 'no response');
+      return { ok: false };
+    }
+    return { ok: true };
   }
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_CONSOLE_OTP !== '1') {
     console.error('SMS_PROVIDER is "console" in production. Set SMS_PROVIDER=msg91.');

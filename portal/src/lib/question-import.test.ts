@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseCsv, parseTextQuestions, validateRows, type ExamRef } from './question-import';
+import { mergeDetails, parseCsv, parseTextQuestions, validateRows, type ExamRef } from './question-import';
 
 const EXAMS: ExamRef[] = [
   { code: 'CAT', name: 'CAT', sections: [{ code: 'QA', name: 'Quant', topics: ['Profit & Loss', 'Time, Speed & Distance', 'Algebra', 'Geometry'] }, { code: 'DILR', name: 'DILR', topics: ['Arrangements'] }, { code: 'VARC', name: 'VARC', topics: ['Reading Comprehension'] }] },
@@ -135,5 +135,36 @@ Answer: 10`);
     const r = validateRows(t, EXAMS, { defaults: { exam: 'CAT', topic: 'General' }, newTopics: true });
     expect(r.errors).toEqual([]);
     expect(r.ready.map(q => [q.testName, q.sectionCode])).toEqual([['CAT Mock 1', 'QA'], ['CAT Mock 1', 'QA'], ['CAT Mock 1', 'DILR'], ['CAT Mock 2', 'QA']]);
+  });
+});
+
+describe('Word questions + Excel details', () => {
+  it('fills topic, difficulty and marks by test, section and question number', () => {
+    const word = parseTextQuestions(`Test: CAT Mock 1
+Section: QA
+1. Two plus two?
+(A) 3 (B) 4
+Answer: B
+2. Fifteen percent of 200?
+Answer: 30
+Section: VARC
+1. Main idea?
+(A) X (B) Y
+Answer: A`);
+    const excel = [
+      ['Test', 'Section', 'Q No', 'Topic', 'Subtopic', 'Difficulty', 'Ideal time (sec)', 'Marks if correct', 'Negative marks'],
+      ['CAT Mock 1', 'QA', '2', 'Algebra', 'Percent', 'Easy', '60', '3', '0'],
+      ['CAT Mock 1', 'QA', '1', 'Geometry', '', 'Hard', '120', '3', '1'],
+      ['CAT Mock 1', 'VARC', '1', 'Reading Comprehension', 'Main idea', 'Medium', '90', '3', '1'],
+      ['CAT Mock 1', 'QA', '9', 'Algebra', '', 'Easy', '', '', ''],
+    ];
+    const m = mergeDetails(word, excel);
+    expect(m.matched).toBe(3);
+    expect(m.unmatched.length).toBe(1);
+    const r = validateRows(m.table, EXAMS, { defaults: { exam: 'CAT', topic: 'General' }, newTopics: true });
+    expect(r.errors).toEqual([]);
+    expect(r.ready.map(q => [q.sectionCode, q.topic, q.subtopic, q.difficulty, q.ideal, q.marksWrong])).toEqual([
+      ['QA', 'Geometry', null, 'hard', 120, 1], ['QA', 'Algebra', 'Percent', 'easy', 60, 0], ['VARC', 'Reading Comprehension', 'Main idea', 'medium', 90, 1],
+    ]);
   });
 });

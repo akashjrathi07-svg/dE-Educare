@@ -248,12 +248,12 @@ function de_portal_plans() {
 /** Puts the portal's live price on each paid plan; plans that are draft in the portal show "₹ —". */
 function de_apply_portal_prices( $by_exam ) {
 	$live = de_portal_plans();
-	if ( ! $live ) {
-		return $by_exam;
-	}
 	foreach ( $by_exam as $exam => $plans ) {
 		foreach ( $plans as $i => $p ) {
 			if ( ! empty( $p['free'] ) || empty( $live[ $p['id'] ] ) ) {
+				if ( '₹ —' === $p['price'] ) {
+					$by_exam[ $exam ][ $i ]['soon'] = true;
+				}
 				continue;
 			}
 			$lp = $live[ $p['id'] ];
@@ -266,8 +266,17 @@ function de_apply_portal_prices( $by_exam ) {
 					unset( $by_exam[ $exam ][ $i ]['mrp'] );
 				}
 			} else {
-				$by_exam[ $exam ][ $i ]['price'] = '₹ —';
-				unset( $by_exam[ $exam ][ $i ]['amount'] );
+				$by_exam[ $exam ][ $i ]['soon'] = true;
+			}
+		}
+	}
+	// Plans marked "soon" here (content.php) or draft in the portal show "Coming soon" and a Notify me button.
+	foreach ( $by_exam as $exam => $plans ) {
+		foreach ( $plans as $i => $p ) {
+			if ( ! empty( $p['soon'] ) ) {
+				$by_exam[ $exam ][ $i ]['price'] = 'Coming soon';
+				$by_exam[ $exam ][ $i ]['tag']   = 'COMING SOON';
+				unset( $by_exam[ $exam ][ $i ]['amount'], $by_exam[ $exam ][ $i ]['mrp'] );
 			}
 		}
 	}
@@ -287,15 +296,20 @@ function de_plan( $id ) {
 }
 
 /**
- * Plan button attributes: a checkout link, the daily free test, or a
- * "pricing coming soon" notice while the price is '₹ —'.
+ * Plan button attributes: a checkout link, the daily free test, or, for a plan
+ * that is coming soon, the contact form to be told when it launches.
  */
 function de_plan_action( $plan, $exam = 'cat' ) {
 	if ( ! empty( $plan['free'] ) ) {
 		return 'href="' . esc_url( de_daily_url( $exam ) ) . '"';
 	}
-	if ( '₹ —' === $plan['price'] ) {
-		return 'href="#" data-toast="' . esc_attr( 'Pricing for ' . $plan['name'] . ' coming soon' ) . '"';
+	if ( ! empty( $plan['soon'] ) ) {
+		return 'href="' . esc_url( add_query_arg( 'exam', $plan['name'], de_page_url( 'contact' ) ) ) . '"';
 	}
 	return 'href="' . esc_url( de_checkout_url( $plan['id'] ) ) . '"';
+}
+
+/** Button text for a plan: "Notify me" while it is coming soon. */
+function de_plan_cta( $plan, $label ) {
+	return ! empty( $plan['soon'] ) ? 'Notify me' : $label;
 }

@@ -12,7 +12,6 @@ export default async function Plans() {
   const plans = await sql`
     select c.*, e.name as exam from courses c left join exams e on e.id = c.exam_id
     where c.status = 'live' and c.price_paise > 0 and (e.exam_group = ${u.exam_group} or e.id is null) order by c.sort`;
-  const soon = await sql`select c.name from courses c join exams e on e.id = c.exam_id where c.status = 'draft' and e.exam_group = ${u.exam_group} order by c.sort`;
   return (
     <>
       <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
@@ -39,7 +38,6 @@ export default async function Plans() {
           ))}
         </div>
       ) : <div className="card empty">Plans for this exam are launching soon.</div>}
-      {soon.length > 0 && <p className="note">Coming soon: {soon.map(s => s.name).join(', ')}.</p>}
     </>
   );
 }
