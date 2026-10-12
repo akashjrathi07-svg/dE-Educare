@@ -32,6 +32,8 @@ export type ImportRow = {
   type: 'MCQ' | 'TITA' | 'MSQ'; difficulty: 'easy' | 'medium' | 'hard'; ideal: number; marksCorrect: number; marksWrong: number;
   setId: string | null; setText: string | null; text: string; image: string | null; options: { key: string; text: string }[];
   correct: string; solution: string | null; video: string | null; tags: string[]; source: string | null; language: 'en' | 'hi' | 'both';
+  /** Test this question belongs to, when a file holds whole tests ("test" column or "Test:" line). */
+  testName: string | null;
 };
 export type RowError = { row: number; message: string };
 
@@ -48,6 +50,7 @@ const ALIASES: Record<string, string> = {
   optiona: 'option_a', optionb: 'option_b', optionc: 'option_c', optiond: 'option_d', option1: 'option_a', option2: 'option_b', option3: 'option_c', option4: 'option_d',
   answer: 'correct_answer', ans: 'correct_answer', correct: 'correct_answer', correctoption: 'correct_answer', key: 'correct_answer',
   solution: 'solution_text', explanation: 'solution_text', video: 'solution_video_url', solutionvideo: 'solution_video_url',
+  test: 'test', testname: 'test', mock: 'test', paper: 'test', sectionname: 'section',
 };
 function headerName(h: string) {
   const t = h.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -65,6 +68,12 @@ function answerKeys(raw: string, options: { key: string; text: string }[]) {
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+/** Short stable key for a passage (FNV-1a), so the same passage always maps to the same set. */
+function passageKey(t: string) {
+  let h = 0x811c9dc5;
+  for (const ch of norm(t)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(36).toUpperCase();
+}
 const url = (s: string) => /^https?:\/\/\S+$/i.test(s);
 
 /** Matches an exam by code or name ("CAT", "MBA-CET", "UPSC Prelims"). */
@@ -107,7 +116,9 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
     const exam = findExam(exams, col(r, 'exam'));
     if (!exam) return err(`exam "${col(r, 'exam')}" not found. Use one of: ${exams.map(e => e.code).join(', ')}.`);
     const secIn = col(r, 'section');
-    const sec = exam.sections.find(s => norm(s.code) === norm(secIn) || norm(s.name) === norm(secIn));
+    const sec = exam.sections.find(s => norm(s.code) === norm(secIn) || norm(s.name) === norm(secIn))
+      // "Quantitative Aptitude" for "Quant (QA)", "VARC" for "Verbal Ability & RC (VARC)"…
+      ?? (norm(secIn).length >= 2 ? exam.sections.find(s => norm(s.name).includes(norm(secIn)) || norm(secIn).includes(norm(s.code)) && norm(s.code).length >= 2) : undefined);
     if (!sec) return err(`section "${secIn}" is not a ${exam.code} section. Use: ${exam.sections.map(s => s.code).join(', ')}.`);
     const topic = col(r, 'topic');
     if (!topic) return err('topic is required.');
@@ -144,7 +155,9 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
     const image = col(r, 'image_url'), video = col(r, 'solution_video_url');
     if (image && !url(image)) return err('image_url must start with https://');
     if (video && !url(video)) return err('solution_video_url must start with https://');
-    const setId = col(r, 'set_id') || null, setText = col(r, 'set_text') || null;
+    const setText = col(r, 'set_text') || null;
+    // A passage without a set ID: rows with the same passage form one set.
+    const setId = col(r, 'set_id') || (setText ? 'P-' + passageKey(setText) : null);
     if (setId && setText) setTexts.set(setId, setText);
     const lang = norm(col(r, 'language') || 'english');
     ready.push({
@@ -153,6 +166,7 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
       setId, setText, text, image: image || null, options: type === 'TITA' ? [] : options, correct, solution: col(r, 'solution_text') || null, video: video || null,
       tags: col(r, 'tags').split(',').map(t => t.trim()).filter(Boolean), source: col(r, 'source') || null,
       language: lang.startsWith('hi') ? 'hi' : lang.startsWith('both') ? 'both' : 'en',
+      testName: own(r, 'test') || null,
     });
   });
   // A set's passage only needs to be on its first row.
@@ -162,7 +176,7 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
   return { ready: ready.filter(q => !bad.has(q.row)), errors: errors.sort((a, b) => a.row - b.row), total: table.length - 1 };
 }
 
-const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url'];
+const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url', 'test', 'section'];
 
 /**
  * Reads questions typed or pasted from Word / PDF into a table that validateRows understands.
@@ -179,18 +193,21 @@ const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'optio
  * "Topic:" and "Difficulty:" lines are optional per question.
  */
 export function parseTextQuestions(text: string): string[][] {
-  const lines = text.replace(/\r\n?/g, '\n').replace(/ /g, ' ').split('\n');
+  let lines = text.replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ').split('\n');
+  // Titles and instructions above the first "Test:" line are not questions.
+  const firstTest = lines.findIndex(l => /^\s*test\s*[:.\-–]/i.test(l));
+  if (firstTest > 0) lines = lines.slice(firstTest);
   const rows: string[][] = [TEXT_HEADER];
   const QSTART = /^\s*(?:Q(?:uestion)?\s*\.?\s*)?(\d{1,4})\s*[.):]\s+(.*)$/i;
   const OPT = /(?:^|\s)\(?([A-Da-d])[).]\s+/g;
-  const LABEL = /^\s*(answer|ans|correct answer|key|solution|sol|explanation|exp|topic|chapter|difficulty|level|passage|directions?|image)\s*[:.\-–]\s*(.*)$/i;
-  let passage = '', setNo = 0, setId = '';
+  const LABEL = /^\s*(answer|ans|correct answer|key|solution|sol|explanation|exp|topic|chapter|difficulty|level|passage|directions?|image|test|section)\s*[:.\-–]\s*(.*)$/i;
+  let passage = '', setNo = 0, setId = '', test = '', section = '';
   type Q = { text: string[]; opts: string[]; ans: string; sol: string[]; topic: string; diff: string; image: string; in: 'q' | 'opt' | 'sol' | 'passage' };
   // Held in an object so TypeScript doesn't narrow it inside the loop.
   const cur: { q: Q | null } = { q: null };
   const flush = () => {
     if (cur.q && cur.q.text.join(' ').trim()) {
-      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image]);
+      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image, test, section]);
     }
     cur.q = null;
   };
@@ -203,12 +220,15 @@ export function parseTextQuestions(text: string): string[][] {
   };
 
   let blank = false;
-  for (const raw of lines) {
+  const isOptLine = (l: string | undefined) => !!l && /^\(?[A-Da-d][).]\s+/.test(l.trim());
+  for (const [li, raw] of lines.entries()) {
     const line = raw.trim();
     if (!line) { blank = true; if (cur.q && cur.q.in === 'passage') cur.q.in = 'q'; continue; }
     const lab = line.match(LABEL);
     if (lab) {
       const k = lab[1].toLowerCase(), v = lab[2].trim();
+      // "Test: CAT Mock 2" and "Section: QA" apply to every question after them.
+      if (k === 'test' || k === 'section') { flush(); if (k === 'test') { test = v; section = ''; } else section = v; passage = ''; blank = false; cur.q = null; continue; }
       if (/^(passage|directions?)$/.test(k)) { flush(); passage = v; setNo++; setId = 'TXT-' + Date.now().toString(36).toUpperCase() + '-' + setNo; blank = false; cur.q = null; continue; }
       if (!cur.q) start('');
       if (/^(answer|ans|correct answer|key)$/.test(k)) { cur.q!.ans = v; cur.q!.in = 'q'; }
@@ -222,12 +242,17 @@ export function parseTextQuestions(text: string): string[][] {
     const qs = line.match(QSTART);
     if (qs) { start(qs[2]); blank = false; continue; }
     const isOpt = /^\(?[A-Da-d][).]\s+/.test(line);
+    // A plain line followed by options is a new question, even right after a solution.
+    if (cur.q && cur.q.in === 'sol' && !isOpt && isOptLine(lines.slice(li + 1).find(l => l.trim()))) { start(line); blank = false; continue; }
     if (cur.q && cur.q.in === 'sol' && !isOpt) { cur.q.sol.push(line); blank = false; continue; }
     if (isOpt && cur.q) { addOptions(line); cur.q.in = 'opt'; blank = false; continue; }
     if (!cur.q) {
       // Text before any numbered question: a passage if one was announced, else an unnumbered question.
       if (passage && setNo && !rows.slice(1).some(r => r[7] === setId)) passage += '\n' + line;
       else start(line);
+    } else if (cur.q.ans && cur.q.in === 'q') {
+      // After a question's answer, the next plain line is the next (unnumbered) question.
+      start(line);
     } else if (blank && cur.q.in !== 'q' && (cur.q.ans || cur.q.opts.length)) {
       // A blank line after a finished question starts the next unnumbered one.
       start(line);

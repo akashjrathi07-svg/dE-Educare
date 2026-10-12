@@ -23,11 +23,11 @@ export async function upsertQuestion(tx: Tx, q: ImportRow, exams: AdminExam[], s
     solution_text: q.solution, solution_video_url: q.video, tags: q.tags, source: q.source, language: q.language, status,
   };
   if (q.externalId) {
-    const [u] = await tx`update questions set ${tx(v as never)}, updated_at = now() where external_id = ${q.externalId} returning external_id`;
-    if (u) return { id: u.external_id as string, created: false };
-    const [n] = await tx`insert into questions ${tx({ ...v, external_id: q.externalId } as never)} returning external_id`;
-    return { id: n.external_id as string, created: true };
+    const [u] = await tx`update questions set ${tx(v as never)}, updated_at = now() where external_id = ${q.externalId} returning id, external_id`;
+    if (u) return { id: u.external_id as string, uuid: u.id as string, created: false };
+    const [n] = await tx`insert into questions ${tx({ ...v, external_id: q.externalId } as never)} returning id, external_id`;
+    return { id: n.external_id as string, uuid: n.id as string, created: true };
   }
-  const [n] = await tx`insert into questions ${tx(v as never)} returning external_id`;
-  return { id: n.external_id as string, created: true };
+  const [n] = await tx`insert into questions ${tx(v as never)} returning id, external_id`;
+  return { id: n.external_id as string, uuid: n.id as string, created: true };
 }

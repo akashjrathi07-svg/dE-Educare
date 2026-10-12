@@ -108,3 +108,32 @@ Answer: A`);
     expect(r.ready[0]).toMatchObject({ correct: 'B', topic: 'Mental maths', difficulty: 'hard', solution: 'Add.' });
   });
 });
+
+describe('whole tests from Word', () => {
+  it('splits by Test: and Section: lines and keeps unnumbered questions apart', () => {
+    const t = parseTextQuestions(`Test: CAT Mock 1
+Section: Quant
+What is 2+2?
+(A) 3 (B) 4
+Answer: B
+What is 3+3?
+(A) 6 (B) 7
+Answer: A
+Section: DILR
+1. Who sits at the end?
+(A) X (B) Y
+Answer: A
+Test: CAT Mock 2
+Section: QA
+1. What is 5+5?
+Answer: 10`);
+    const h = t[0];
+    const c = (r: string[], k: string) => r[h.indexOf(k)];
+    expect(t.slice(1).map(r => [c(r, 'test'), c(r, 'section'), c(r, 'question_text')])).toEqual([
+      ['CAT Mock 1', 'Quant', 'What is 2+2?'], ['CAT Mock 1', 'Quant', 'What is 3+3?'], ['CAT Mock 1', 'DILR', 'Who sits at the end?'], ['CAT Mock 2', 'QA', 'What is 5+5?'],
+    ]);
+    const r = validateRows(t, EXAMS, { defaults: { exam: 'CAT', topic: 'General' }, newTopics: true });
+    expect(r.errors).toEqual([]);
+    expect(r.ready.map(q => [q.testName, q.sectionCode])).toEqual([['CAT Mock 1', 'QA'], ['CAT Mock 1', 'QA'], ['CAT Mock 1', 'DILR'], ['CAT Mock 2', 'QA']]);
+  });
+});

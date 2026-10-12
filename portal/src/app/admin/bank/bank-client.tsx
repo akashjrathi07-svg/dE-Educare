@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Chips, Field, useAction, useToast } from '../ui';
 import { checkImport, resolveReports, runImport, saveQuestion } from './actions';
-import { parseCsv, parseTextQuestions, type ImportDefaults } from '@/lib/question-import';
+import type { ImportDefaults } from '@/lib/question-import';
+import { readFile, readText } from '../read-sheet';
 
 type Exam = { code: string; name: string; plus: number; minus: number; sections: { code: string; name: string; topics: string[] }[] };
 type Form = Record<string, string>;
@@ -148,24 +149,6 @@ function Preview({ f, exam, secName }: { f: Form; exam: Exam; secName: string })
 }
 
 type Check = Awaited<ReturnType<typeof checkImport>>;
-
-/** Reads an uploaded file into rows: Excel (.xlsx), CSV, tab-separated, or plain text questions. */
-async function readFile(file: File): Promise<string[][]> {
-  if (/\.xlsx$/i.test(file.name)) {
-    const { readSheet } = await import('read-excel-file/browser');
-    const rows = await readSheet(file);
-    return rows.map(r => r.map(c => (c == null ? '' : c instanceof Date ? c.toISOString().slice(0, 10) : String(c))));
-  }
-  return readText(await file.text());
-}
-
-/** Text pasted or uploaded: a sheet (tabs or commas with a heading row) or questions typed like a worksheet. */
-function readText(text: string): string[][] {
-  const first = text.trim().split(/\r?\n/)[0] ?? '';
-  if (first.includes('\t')) return text.split(/\r?\n/).filter(l => l.trim()).map(l => l.split('\t'));
-  if (/question/i.test(first) && first.split(',').length >= 4) return parseCsv(text);
-  return parseTextQuestions(text);
-}
 
 function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; defaultExam: string; closeHref: string }) {
   const [tab, setTab] = useState<'file' | 'paste'>('file');

@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { Chips, Field, Status, useAction } from '../ui';
+import { useEffect, useRef, useState } from 'react';
+import { Chips, Field, Status, useAction, useToast } from '../ui';
+import { readFile, readText } from '../read-sheet';
+import { checkUpload, uploadTests, type UploadSettings } from './upload';
 import { createTest, setTestStatus, type TestInput } from './actions';
 
 type Sec = { code: string; name: string; questions: number; minutes: number | null; topics: string[] };
@@ -180,6 +182,140 @@ export function StatusMenu({ id, status, when }: { id: string; status: string; w
         {status !== 'draft' && <option value="draft">Move to draft</option>}
         {status !== 'archived' && <option value="archived">Archive</option>}
       </select>
+    </div>
+  );
+}
+
+type UploadCheck = Awaited<ReturnType<typeof checkUpload>>;
+
+/** Upload whole tests from Excel/CSV or Word, and optionally make a plan (10 mocks, test series) from them. */
+export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[]; courses: { id: string; name: string; exam: string | null }[]; nodes: { id: string; path: string; exam: string }[]; closeHref: string }) {
+  const [st, setSt] = useState<UploadSettings>({ exam: exams[0]?.code ?? '', type: 'full_mock', name: '', slugPrefix: '', startAt: 1, section: '', minutes: 0, free: false, courses: [], newCourse: null, publish: 'now', nodeId: '' });
+  const [table, setTable] = useState<string[][] | null>(null);
+  const [fileName, setFileName] = useState('');
+  const [text, setText] = useState('');
+  const [tab, setTab] = useState<'file' | 'paste'>('file');
+  const [check, setCheck] = useState<UploadCheck | null>(null);
+  const [checking, setChecking] = useState(false);
+  const router = useRouter();
+  const toast = useToast();
+  const { busy, run } = useAction();
+  const exam = exams.find(e => e.code === st.exam) ?? exams[0];
+  const set = (p: Partial<UploadSettings>) => setSt(x => ({ ...x, ...p }));
+  const seq = useRef(0);
+
+  useEffect(() => {
+    if (!table) { setCheck(null); return; }
+    const n = ++seq.current;
+    setChecking(true);
+    const t = setTimeout(() => {
+      checkUpload({ table, settings: st }).then(r => { if (n === seq.current) setCheck(r); }).catch(() => toast('Could not check the file. Try again.')).finally(() => { if (n === seq.current) setChecking(false); });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [table, st, toast]);
+
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { toast('File is larger than 8 MB. Split it into parts.'); return; }
+    try { setFileName(file.name); setTable(await readFile(file)); } catch { toast('Could not read that file. Save it as .xlsx, .csv or .docx and try again.'); }
+  };
+  const many = (check?.tests.length ?? 0) > 1;
+
+  return (
+    <div className="card pad stack" style={{ '--gap': '16px' } as React.CSSProperties}>
+      <div className="row" style={{ justifyContent: 'space-between' }}><b style={{ fontSize: 17 }}>Upload tests</b><Link className="btn ghost sm" href={closeHref}>Close</Link></div>
+      <div className="note" style={{ fontSize: 13 }}>
+        One file can hold one test or a whole series. The questions are added to the question bank and the tests are created in one step.
+        In <b>Word</b>, start each test with a line <b>Test: CAT Mock 1</b> and each section with <b>Section: QA</b>, then the questions (numbered, options (A)–(D), <b>Answer:</b>, <b>Solution:</b>).
+        In <b>Excel</b>, add columns <b>Test</b> and <b>Section</b> next to Question, Option A–D, Answer, Solution, Topic and Difficulty.
+        {' '}Start from a template: <a href="/test-upload-template.docx" download>Word</a> · <a href="/test-upload-template.xlsx" download>Excel</a>.
+      </div>
+
+      <div className="form-grid">
+        <Field label="Exam" req>
+          <select className="input" value={st.exam} onChange={e => set({ exam: e.target.value, section: '', courses: [] })}>{exams.map(e => <option key={e.code} value={e.code}>{e.name}</option>)}</select>
+        </Field>
+        <Field label="Test type" group span><Chips options={Object.keys(TYPES) as TestInput['type'][]} labels={TYPES} value={st.type} onChange={v => set({ type: v as UploadSettings['type'] })} /></Field>
+        <Field label="Section" hint="For questions without a section (sectional tests)">
+          <select className="input" value={st.section} onChange={e => set({ section: e.target.value })}><option value="">From the file</option>{exam.sections.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}</select>
+        </Field>
+        <Field label="Test name" hint="Used when the file has no Test lines or column"><input className="input" value={st.name} placeholder="CAT Mock 11" onChange={e => set({ name: e.target.value })} /></Field>
+        <Field label="Test ID start (website links)" hint={many ? `Gives ${st.slugPrefix || 'cat-m'}-${st.startAt} … in file order. Blank makes them from the names.` : 'e.g. cat-m-11. Blank makes one from the name.'}>
+          <input className="input mono" value={st.slugPrefix} placeholder={many ? 'cat-m' : 'cat-m-11'} onChange={e => set({ slugPrefix: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} />
+        </Field>
+        {many && <Field label="Start numbering at"><input className="input" type="number" min={0} value={st.startAt} onChange={e => set({ startAt: Number(e.target.value) })} /></Field>}
+        <Field label="Duration (min)" hint="0 uses the exam pattern"><input className="input" type="number" min={0} value={st.minutes} onChange={e => set({ minutes: Number(e.target.value) })} /></Field>
+      </div>
+
+      <Chips options={['file', 'paste']} labels={{ file: 'Excel, CSV or Word file', paste: 'Paste from Word or PDF' }} value={tab} onChange={v => { setTab(v as 'file' | 'paste'); setTable(null); setFileName(''); }} />
+      {tab === 'file' ? (
+        <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
+          <input type="file" accept=".xlsx,.csv,.docx,.txt,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
+          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Images in Word files are not imported; add an image link in Excel instead'}</span>
+        </label>
+      ) : (
+        <>
+          <textarea className="input mono" rows={12} style={{ fontSize: 13 }} value={text} onChange={e => setText(e.target.value)}
+            placeholder={'Test: CAT Mock 1\nSection: QA\n1. A price rises by 20% and then falls by 20%. What is the net change?\n(A) No change  (B) 4% decrease  (C) 4% increase  (D) 2% decrease\nAnswer: B\nSolution: 1.2 × 0.8 = 0.96\n\nSection: DILR\nDirections: Five friends sit in a row…\n1. Who sits at the left end?\n(A) A (B) B (C) C (D) D\nAnswer: B'} />
+          <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn ghost" disabled={!text.trim()} onClick={() => { setFileName('Pasted text'); setTable(readText(text)); }}>{checking ? 'Checking…' : 'Check tests'}</button></div>
+        </>
+      )}
+
+      {check && table && (
+        <div className="stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+          <div className={'alert ' + (check.errors.length ? 'err' : 'ok')}>
+            {check.tests.length} test{check.tests.length === 1 ? '' : 's'} · {check.tests.reduce((a, t) => a + t.questions, 0)} questions
+            {check.errors.length > 0 ? ` · ${check.errors.length + (check.moreErrors ?? 0)} need a fix before uploading` : ' · ready'}
+          </div>
+          <div className="list">
+            {check.tests.map(t => (
+              <div key={t.name} className="list-row stack" style={{ alignItems: 'flex-start', '--gap': '4px' } as React.CSSProperties}>
+                <div className="row" style={{ justifyContent: 'space-between', width: '100%' }}><b>{t.name}</b><span className="mono note">{t.slug || 'ID made from the name'} · {t.minutes} min</span></div>
+                <span className="note" style={{ fontSize: 13 }}>
+                  {t.sections.map(s => `${s.name} ${s.count}${s.pattern && s.pattern !== s.count ? ` (pattern ${s.pattern})` : ''}`).join(' · ')} · {t.questions} questions
+                </span>
+              </div>
+            ))}
+          </div>
+          {check.errors.length > 0 && (
+            <div className="list">
+              {check.errors.map((e, i) => <div key={i} className="list-row" style={{ fontSize: 13 }}><span className="mono" style={{ width: 90, flex: 'none', color: 'var(--bad)' }}>{tab === 'paste' || /docx/i.test(fileName) ? 'Question ' + (e.row - 1) : 'Row ' + e.row}</span><span>{e.message}</span></div>)}
+              {(check.moreErrors ?? 0) > 0 && <div className="list-row note">…and {check.moreErrors} more.</div>}
+            </div>
+          )}
+
+          <div className="form-grid">
+            <Field label="Who can take them" group span hint="Free tests are open to everyone; otherwise the selected plans unlock them">
+              <div className="chips">
+                <button type="button" className="chip" aria-pressed={st.free} onClick={() => set({ free: !st.free })}>Free</button>
+                {courses.filter(c => !c.exam || c.exam === st.exam).map(c => (
+                  <button key={c.id} type="button" className="chip" aria-pressed={st.courses.includes(c.id)}
+                    onClick={() => set({ courses: st.courses.includes(c.id) ? st.courses.filter(x => x !== c.id) : [...st.courses, c.id] })}>{c.name}</button>
+                ))}
+              </div>
+            </Field>
+            <Field label="Make a new plan from these tests" span hint="e.g. a 10-mock pack or a test series students can buy">
+              <div className="row" style={{ '--gap': '8px' } as React.CSSProperties}>
+                <input className="input" style={{ flex: '2 1 200px', width: 'auto' }} value={st.newCourse?.name ?? ''} placeholder={`${exam.name} ${check.tests.length} Mocks`} onChange={e => set({ newCourse: e.target.value ? { name: e.target.value, price: st.newCourse?.price ?? 0, live: st.newCourse?.live ?? false } : null })} />
+                <input className="input" style={{ flex: '1 1 110px', width: 'auto' }} type="number" min={0} disabled={!st.newCourse} value={st.newCourse?.price ?? ''} placeholder="Price ₹" onChange={e => st.newCourse && set({ newCourse: { ...st.newCourse, price: Number(e.target.value) } })} />
+                <label className="row" style={{ fontSize: 13, fontWeight: 700 }}><input type="checkbox" disabled={!st.newCourse} checked={!!st.newCourse?.live} onChange={e => st.newCourse && set({ newCourse: { ...st.newCourse, live: e.target.checked } })} /> On sale now</label>
+              </div>
+            </Field>
+            <Field label="Show on the Tests screen under" span>
+              <select className="input" value={st.nodeId} onChange={e => set({ nodeId: e.target.value })}>
+                <option value="">Not listed (direct link and plans only)</option>{nodes.filter(n => n.exam === st.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
+              </select>
+            </Field>
+            <Field label="Publish" group><Chips options={['now', 'draft']} labels={{ now: 'Publish now', draft: 'Save as draft' }} value={st.publish} onChange={v => set({ publish: v as 'now' | 'draft' })} /></Field>
+          </div>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <button type="button" className="btn" disabled={busy || checking || !!check.errors.length || !check.tests.length}
+              onClick={() => run(() => uploadTests({ table, settings: st }), r => { if (r.ok) router.push(closeHref); })}>
+              {busy ? 'Uploading…' : `Upload ${check.tests.length} test${check.tests.length === 1 ? '' : 's'}`}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
