@@ -3,9 +3,9 @@ import { requireStaff } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { examRefs, TEST_TYPES } from '@/lib/server/admin';
 import { Head } from '../ui';
-import { Builder, StatusMenu } from './tests-client';
+import { Builder, StatusMenu, UploadTests } from './tests-client';
 
-type SP = { new?: string; exam?: string; status?: string; q?: string; page?: string };
+type SP = { new?: string; upload?: string; exam?: string; status?: string; q?: string; page?: string };
 const PAGE = 50;
 
 export default async function Tests({ searchParams }: { searchParams: Promise<SP> }) {
@@ -40,8 +40,14 @@ export default async function Tests({ searchParams }: { searchParams: Promise<SP
   return (
     <>
       <Head title="Tests" sub="Mocks, sectionals, topic tests, daily tests and previous papers">
+        <Link className="btn ghost" href={link({ upload: '1' })}>Upload tests (Excel or Word)</Link>
         <Link className="btn" href={link({ new: '1' })}>New test</Link>
       </Head>
+      {sp.upload && (
+        <UploadTests closeHref={link({})}
+          exams={exams.map(e => ({ code: e.code, name: e.name, plus: e.plus, rules: e.rules, marking: e.marking, totalMinutes: e.totalMinutes, sections: e.sections.map(s => ({ code: s.code, name: s.name, questions: s.questions ?? 10, minutes: s.minutes, topics: s.topics })) }))}
+          courses={courses.map(c => ({ id: c.id, name: c.name, exam: c.exam }))} nodes={nodes.map(n => ({ id: n.id, path: n.path, exam: n.exam }))} />
+      )}
       {sp.new && (
         <Builder closeHref={link({})} pool={poolMap}
           exams={exams.map(e => ({ code: e.code, name: e.name, plus: e.plus, rules: e.rules, marking: e.marking, totalMinutes: e.totalMinutes, sections: e.sections.map(s => ({ code: s.code, name: s.name, questions: s.questions ?? 10, minutes: s.minutes, topics: s.topics })) }))}
