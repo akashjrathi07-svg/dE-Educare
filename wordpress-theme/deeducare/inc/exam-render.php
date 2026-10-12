@@ -320,7 +320,7 @@ function de_render_plans( $exam ) {
 	$daily = 'omet' === $exam ? 'omet' : $exam;
 	?>
 	<div class="de-stack-16 de-anchor" data-sec="plans" id="plans" data-reveal>
-		<div class="de-stack-8"><span class="de-eyebrow de-eyebrow--muted">TEST SERIES PRICING</span><h2 class="de-h2">Choose your test series</h2><span class="de-note">Prices include GST · UPI, cards, netbanking and EMI · unlocks instantly on web and app · Test 1 of every set is free to try</span></div>
+		<div class="de-stack-8"><span class="de-eyebrow de-eyebrow--muted">TEST SERIES PRICING</span><h2 class="de-h2">Choose your test series</h2><span class="de-note">Prices include GST · UPI, cards and netbanking · unlocks instantly on web and app · Test 1 of every set is free to try</span></div>
 		<div class="de-grid de-grid--230 de-grid--stretch">
 			<?php foreach ( de_plans()[ $exam ] as $p ) : ?>
 				<?php $dark = ! empty( $p['dark'] ); ?>

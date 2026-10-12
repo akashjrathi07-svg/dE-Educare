@@ -35,6 +35,7 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
       easy: prev?.easy ?? 30, medium: prev?.medium ?? 50, hard: prev?.hard ?? 20, minutes: p.minutes, free: type === 'daily' || type === 'pyq' ? true : prev?.free ?? false,
       courses: exam.code === prev?.exam ? prev.courses : [], solutions: prev?.solutions ?? 'after_submit', windowEnd: prev?.windowEnd ?? '', ranking: prev?.ranking ?? 'all_india',
       publish: prev?.publish ?? 'now', date: prev?.date ?? '', time: prev?.time ?? '09:00', nodeId: exam.code === prev?.exam ? prev.nodeId : '',
+      count: prev?.count ?? 1, startAt: prev?.startAt ?? 1, fresh: prev?.fresh ?? true,
     };
   };
   const [f, setF] = useState<TestInput>(() => init(first.code, 'full_mock'));
@@ -48,17 +49,26 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
   const totQ = f.sections.reduce((a, s) => a + (s.count || 0), 0);
   const avail = (code: string) => f.type === 'topic' ? pool[`${exam.code}|${code}|t:${f.topic}`] ?? 0 : DIFFS.reduce((a, d) => a + (pool[`${exam.code}|${code}|${d}`] ?? 0), 0);
   const pctOk = Math.round(f.easy + f.medium + f.hard) === 100;
-  const label = f.publish === 'draft' ? 'Save draft' : f.publish === 'schedule' ? 'Schedule test' : 'Publish test';
+  const n = f.mode === 'manual' ? 1 : Math.max(1, f.count ?? 1);
+  const label = (f.publish === 'draft' ? 'Save' : f.publish === 'schedule' ? 'Schedule' : 'Publish') + (n > 1 ? ` ${n} tests` : f.publish === 'draft' ? ' draft' : ' test');
 
   return (
     <div className="grid" style={{ '--min': '420px', alignItems: 'start', '--gap': '16px' } as React.CSSProperties}>
       <div className="card pad stack" style={{ '--gap': '16px' } as React.CSSProperties}>
         <div className="row" style={{ justifyContent: 'space-between' }}><b style={{ fontSize: 17 }}>New test</b><Link className="btn ghost sm" href={closeHref}>Close</Link></div>
         <div className="form-grid">
-          <Field label="Test name" req><input className="input" value={f.name} placeholder="CAT Mock 11" onChange={e => set({ name: e.target.value })} /></Field>
-          <Field label="Test ID (website link)" hint="Must match the website's link for this test, e.g. cat-m-1. Leave blank to make one.">
-            <input className="input mono" value={f.slug ?? ''} placeholder="cat-m-11" onChange={e => set({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} />
+          <Field label={n > 1 ? 'Series name' : 'Test name'} req hint={n > 1 ? `Numbered: ${f.name || 'CAT Mock'} ${f.startAt ?? 1} … ${f.name || 'CAT Mock'} ${(f.startAt ?? 1) + n - 1}` : undefined}>
+            <input className="input" value={f.name} placeholder={n > 1 ? 'CAT Mock' : 'CAT Mock 11'} onChange={e => set({ name: e.target.value })} />
           </Field>
+          <Field label={n > 1 ? 'Test ID start (website links)' : 'Test ID (website link)'} hint={n > 1 ? `Gives ${f.slug || 'cat-m'}-${f.startAt ?? 1} … ${f.slug || 'cat-m'}-${(f.startAt ?? 1) + n - 1}. Leave blank to make them.` : "Must match the website's link for this test, e.g. cat-m-1. Leave blank to make one."}>
+            <input className="input mono" value={f.slug ?? ''} placeholder={n > 1 ? 'cat-m' : 'cat-m-11'} onChange={e => set({ slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} />
+          </Field>
+          {f.mode === 'auto' && <>
+            <Field label="How many tests" hint="Make a whole series at once. No question repeats inside the series.">
+              <input className="input" type="number" min={1} max={50} value={f.count ?? 1} onChange={e => set({ count: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} />
+            </Field>
+            {n > 1 && <Field label="Start numbering at"><input className="input" type="number" min={0} value={f.startAt ?? 1} onChange={e => set({ startAt: Number(e.target.value) })} /></Field>}
+          </>}
           <Field label="Test type" group span><Chips options={Object.keys(TYPES) as TestInput['type'][]} labels={TYPES} value={f.type} onChange={v => setF(init(f.exam, v as TestInput['type'], secCode, f))} /></Field>
           <Field label="Exam interface" hint="Sets sections, timers and marking">
             <select className="input" value={f.exam} onChange={e => setF(init(e.target.value, f.type, '', f))}>{exams.map(e => <option key={e.code} value={e.code}>{e.name}</option>)}</select>
@@ -79,6 +89,11 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
               <input className="input" type="number" min={0} max={100} value={f[d]} onChange={e => set({ [d]: Number(e.target.value) })} />
             </Field>
           ))}
+          {f.mode === 'auto' && (
+            <Field label="Question freshness" group>
+              <Chips options={['fresh', 'any']} labels={{ fresh: 'Unused questions first', any: 'Any question' }} value={f.fresh ? 'fresh' : 'any'} onChange={v => set({ fresh: v === 'fresh' })} />
+            </Field>
+          )}
           <Field label="Duration (min)" hint={r.secTimer && !one && f.type !== 'daily' ? 'Sections keep their own timers' : undefined}><input className="input" type="number" min={1} value={f.minutes} onChange={e => set({ minutes: Number(e.target.value) })} /></Field>
         </div>
 
@@ -91,8 +106,8 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
               <div key={s.code} className="list-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div className="stack" style={{ flex: '1 1 200px', '--gap': '2px' } as React.CSSProperties}>
                   <b style={{ fontSize: 14 }}>{sec.name}{f.type === 'topic' ? ' · ' + f.topic : ''}</b>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: f.mode === 'auto' && av < s.count ? 'var(--bad)' : 'var(--ok)' }}>
-                    {f.mode === 'auto' ? `${av} live questions match${av < s.count ? ' · not enough' : ''}` : `List ${s.count} question IDs`}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: f.mode === 'auto' && av < s.count * n ? 'var(--bad)' : 'var(--ok)' }}>
+                    {f.mode === 'auto' ? `${av} live questions match${n > 1 ? ` · ${s.count * n} needed for ${n} tests` : ''}${av < s.count * n ? ' · not enough' : ''}` : `List ${s.count} question IDs`}
                   </span>
                 </div>
                 <label className="row" style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>Questions
@@ -135,7 +150,7 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
 
       <div className="dark-panel stack" style={{ position: 'sticky', top: 20, '--gap': '14px' } as React.CSSProperties}>
         <span className="eyebrow" style={{ color: '#FFC44D' }}>Summary</span>
-        <b style={{ fontSize: 20 }}>{f.name || 'Untitled test'}</b>
+        <b style={{ fontSize: 20 }}>{f.name || 'Untitled test'}{n > 1 ? ` × ${n}` : ''}</b>
         <div className="grid" style={{ '--min': '80px', '--gap': '8px' } as React.CSSProperties}>
           {[['Questions', totQ], ['Minutes', f.minutes], ['Max marks', +(totQ * exam.plus).toFixed(1)]].map(([k, v]) => (
             <div key={k} style={{ background: 'rgba(255,255,255,.06)', borderRadius: 12, padding: 12 }}><div style={{ font: '800 24px var(--sans)' }}>{v}</div><div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontWeight: 700 }}>{k}</div></div>

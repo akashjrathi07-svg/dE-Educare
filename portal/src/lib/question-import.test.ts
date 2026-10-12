@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseCsv, validateRows, type ExamRef } from './question-import';
+import { parseCsv, parseTextQuestions, validateRows, type ExamRef } from './question-import';
 
 const EXAMS: ExamRef[] = [
   { code: 'CAT', name: 'CAT', sections: [{ code: 'QA', name: 'Quant', topics: ['Profit & Loss', 'Time, Speed & Distance', 'Algebra', 'Geometry'] }, { code: 'DILR', name: 'DILR', topics: ['Arrangements'] }, { code: 'VARC', name: 'VARC', topics: ['Reading Comprehension'] }] },
@@ -48,5 +48,63 @@ describe('validation', () => {
 
   it('allows any topic for exams without a topic list', () => {
     expect(run('MBA-CET,LR,Coding-Decoding,MCQ,Easy,30,1,0,,,Q,a,b,,,A').ready).toHaveLength(1);
+  });
+});
+
+describe('easier imports', () => {
+  it('reads numbered questions pasted from Word, with inline and stacked options', () => {
+    const t = parseTextQuestions(`1. A price rises by 20% and then falls by 20%. What is the net change?
+(A) No change  (B) 4% decrease
+(C) 4% increase  (D) 2% decrease
+Answer: B
+Solution: 1.2 x 0.8 = 0.96.
+So it is a 4% decrease.
+
+Q2) How many ways can 3 people sit in a row?
+a) 3
+b) 6
+c) 9
+Ans: (b)
+Difficulty: Easy
+
+3. What is 15% of 200?
+Answer: 30`);
+    expect(t.length).toBe(4);
+    const [h, q1, q2, q3] = t;
+    const c = (r: string[], k: string) => r[h.indexOf(k)];
+    expect(c(q1, 'question_text')).toMatch(/^A price rises/);
+    expect([c(q1, 'option_a'), c(q1, 'option_b'), c(q1, 'option_c'), c(q1, 'option_d')]).toEqual(['No change', '4% decrease', '4% increase', '2% decrease']);
+    expect(c(q1, 'solution_text')).toBe('1.2 x 0.8 = 0.96.\nSo it is a 4% decrease.');
+    expect(c(q2, 'option_c')).toBe('9');
+    expect(c(q2, 'difficulty')).toBe('Easy');
+    expect(c(q3, 'correct_answer')).toBe('30');
+
+    const r = validateRows(t, EXAMS, { defaults: { exam: 'CAT', section: 'QA', topic: 'Algebra', difficulty: 'medium' } });
+    expect(r.errors).toEqual([]);
+    expect(r.ready.map(q => [q.type, q.correct, q.difficulty])).toEqual([['MCQ', 'B', 'medium'], ['MCQ', 'B', 'easy'], ['TITA', '30', 'medium']]);
+  });
+
+  it('keeps a passage with the questions under it', () => {
+    const t = parseTextQuestions(`Directions: Five friends sit in a row. C is in the middle.
+
+1. Who is at an end?
+(A) A (B) B
+Answer: B
+2. Who is next to C?
+(A) A (B) E
+Answer: A`);
+    const r = validateRows(t, EXAMS, { defaults: { exam: 'CAT', section: 'QA', topic: 'Algebra' } });
+    expect(r.ready.length).toBe(2);
+    expect(r.ready[0].setId).toBeTruthy();
+    expect(r.ready[0].setId).toBe(r.ready[1].setId);
+    expect(r.ready[1].setText).toMatch(/Five friends/);
+  });
+
+  it('accepts friendly sheet headings, answers like "Option 2", and new topics when asked', () => {
+    const table = [['Question', 'Option A', 'Option B', 'Option C', 'Answer', 'Explanation', 'Chapter', 'Level'], ['2+2?', '3', '4', '5', 'Option 2', 'Add.', 'Mental maths', 'Hard']];
+    expect(validateRows(table, EXAMS, { defaults: { exam: 'CAT', section: 'QA' } }).errors[0].message).toMatch(/Add new topics/);
+    const r = validateRows(table, EXAMS, { defaults: { exam: 'CAT', section: 'QA' }, newTopics: true });
+    expect(r.errors).toEqual([]);
+    expect(r.ready[0]).toMatchObject({ correct: 'B', topic: 'Mental maths', difficulty: 'hard', solution: 'Add.' });
   });
 });

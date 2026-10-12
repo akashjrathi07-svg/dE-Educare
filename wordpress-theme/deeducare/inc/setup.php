@@ -27,7 +27,43 @@ add_action( 'init', function () {
 	}
 	update_option( 'de_pages_built', DE_THEME_VERSION );
 	de_build_pages();
+	de_update_page_text();
 }, 20 );
+
+/**
+ * Theme 2.1.0 saved pages without wp_slash(), so block settings lost their backslashes
+ * ("de-hero\u002d\u002dintro" became "de-herou002du002dintro") and the editor showed
+ * those blocks as changed. Puts the backslashes back inside block comments only.
+ */
+function de_repair_block_escapes( $content ) {
+	return preg_replace_callback( '/<!-- wp:[^>]*?-->/', function ( $m ) {
+		return preg_replace( '/(?<!\\\\)u00(2d|3c|3e|26|22)/', '\\\\u00$1', $m[0] );
+	}, $content );
+}
+
+/**
+ * Corrects sentences the theme wrote into pages in an earlier version, only where
+ * the page still has the theme's exact wording (edited text is left alone).
+ * The old version stays in the page's revisions.
+ */
+function de_update_page_text() {
+	$fixes = array(
+		// EMI is offered on coaching only, not on mocks and test series.
+		'Prices include GST · UPI, cards and EMI' => 'Prices include GST · UPI, cards and netbanking',
+		'UPI, cards, netbanking and EMI through a secure payment gateway. Your plan unlocks instantly on web and app.' => 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app. EMI is available on coaching programmes.',
+		'Programme fees per student. Send an enquiry for batch start dates, timings and payment options.' => 'Programme fees per student. EMI available on all coaching programmes. Send an enquiry for batch start dates, timings and payment options.',
+	);
+	foreach ( array_keys( de_buildable_pages() ) as $slug ) {
+		$page = de_site_page( $slug );
+		if ( ! $page ) {
+			continue;
+		}
+		$new = de_repair_block_escapes( strtr( $page->post_content, $fixes ) );
+		if ( $new !== $page->post_content ) {
+			wp_update_post( array( 'ID' => $page->ID, 'post_content' => wp_slash( $new ) ) );
+		}
+	}
+}
 
 /**
  * Until a page has been built, show the theme's version of it so the site
@@ -152,3 +188,22 @@ add_action( 'admin_notices', function () {
 		}
 	}
 } );
+
+/**
+ * Image blocks: lazy-load everything except the exam page banner, which is the
+ * largest thing on screen and should load first.
+ */
+add_filter( 'render_block_core/image', function ( $html, $block ) {
+	$p = new WP_HTML_Tag_Processor( $html );
+	if ( ! $p->next_tag( 'img' ) ) {
+		return $html;
+	}
+	if ( false !== strpos( $block['attrs']['className'] ?? '', 'de-exam-hero__img' ) ) {
+		$p->remove_attribute( 'loading' );
+		$p->set_attribute( 'fetchpriority', 'high' );
+	} elseif ( null === $p->get_attribute( 'loading' ) ) {
+		$p->set_attribute( 'loading', 'lazy' );
+	}
+	$p->set_attribute( 'decoding', 'async' );
+	return $p->get_updated_html();
+}, 10, 2 );

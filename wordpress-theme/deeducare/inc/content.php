@@ -363,7 +363,7 @@ function de_home_faqs() {
 		array( 'How do Guru coins work?', 'Guru uses coins: 1 for a chat message, 3 for a voice tutor reply, 2 for a photo doubt, 1–3 for a test analysis and 1 per 10 questions for a practice set. You get 10 coins a day free, 50 on a test series and unlimited on coaching. Daily coins refill at midnight; bonus coins earned from XP never expire.' ),
 		array( 'Is the daily free test really free?', 'Yes, always. A new test is added every day with an instant scorecard and AI analysis.' ),
 		array( 'Do I need to pay to use the portal?', 'No. A free account gets the daily test, previous papers, free questions and 10 Guru coins a day.' ),
-		array( 'How do I pay?', 'UPI, cards, netbanking and EMI through a secure payment gateway. Your plan unlocks instantly on web and app.' ),
+		array( 'How do I pay?', 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app. EMI is available on coaching programmes.' ),
 		array( 'When do Bank PO, RBI and UPSC launch?', 'Government exam test series are launching soon. Tap Notify me to hear first.' ),
 	);
 }

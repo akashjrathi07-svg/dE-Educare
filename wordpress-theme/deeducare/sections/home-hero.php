@@ -115,7 +115,7 @@ $price = function ( $p, $size = '' ) {
 	<div class="de-stack-12" id="test-series">
 		<div class="de-split de-split--end">
 			<h2 class="de-h2">Test series: pick your exam</h2>
-			<span class="de-note de-note--sm">Prices include GST · UPI, cards and EMI</span>
+			<span class="de-note de-note--sm">Prices include GST · UPI, cards and netbanking</span>
 		</div>
 		<div class="de-ts">
 			<?php foreach ( de_test_series() as $t ) : ?>
