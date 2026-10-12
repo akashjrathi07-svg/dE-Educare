@@ -138,7 +138,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
               <span className="mono muted" style={{ fontSize: 13 }}>{me.xp.toLocaleString('en-IN')} XP</span>
             </div>
           )}
-          <div style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)' }}>Climb the board with tests and good scores. Every 100 XP is worth 1 bonus Guru coin.</div>
+          <div style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: 'var(--streak-ink)', background: 'var(--streak-bg)' }}>Climb the board with tests and good scores. Every {XP_PER_COIN} XP is worth 1 bonus Guru coin.</div>
         </section>
 
         <section className="list">

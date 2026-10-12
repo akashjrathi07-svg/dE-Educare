@@ -80,7 +80,7 @@ export default async function Tests({ searchParams }: { searchParams: Promise<{ 
                 <div style={{ fontSize: 16, fontWeight: 800 }}>{c.name}</div>
                 <div className="muted" style={{ fontSize: 13, lineHeight: 1.4 }}>{c.sub}</div>
               </div>
-              <div className="mono faint" style={{ fontSize: 11 }}>{c.kids ? `${c.kids} sections` : c.tests ? `${c.tests} tests` : 'Coming soon'}</div>
+              <div className="mono faint" style={{ fontSize: 11 }}>{c.kids ? `${c.kids} sections` : c.tests ? `${c.tests} tests` : 'Tests'}</div>
             </Link>
           ))}
         </div>

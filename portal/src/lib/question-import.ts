@@ -51,6 +51,8 @@ const ALIASES: Record<string, string> = {
   answer: 'correct_answer', ans: 'correct_answer', correct: 'correct_answer', correctoption: 'correct_answer', key: 'correct_answer',
   solution: 'solution_text', explanation: 'solution_text', video: 'solution_video_url', solutionvideo: 'solution_video_url',
   test: 'test', testname: 'test', mock: 'test', paper: 'test', sectionname: 'section',
+  qno: 'qno', q: 'qno', no: 'qno', questionno: 'qno', questionnumber: 'qno', qnumber: 'qno', sno: 'qno', srno: 'qno',
+  marksifcorrect: 'marks_correct', marksforcorrect: 'marks_correct', imagelink: 'image_url', imageurl: 'image_url', idealtimesec: 'ideal_time_sec', difficultylevel: 'difficulty',
 };
 function headerName(h: string) {
   const t = h.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -176,7 +178,7 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
   return { ready: ready.filter(q => !bad.has(q.row)), errors: errors.sort((a, b) => a.row - b.row), total: table.length - 1 };
 }
 
-const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url', 'test', 'section'];
+const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url', 'test', 'section', 'qno'];
 
 /**
  * Reads questions typed or pasted from Word / PDF into a table that validateRows understands.
@@ -202,16 +204,16 @@ export function parseTextQuestions(text: string): string[][] {
   const OPT = /(?:^|\s)\(?([A-Da-d])[).]\s+/g;
   const LABEL = /^\s*(answer|ans|correct answer|key|solution|sol|explanation|exp|topic|chapter|difficulty|level|passage|directions?|image|test|section)\s*[:.\-–]\s*(.*)$/i;
   let passage = '', setNo = 0, setId = '', test = '', section = '';
-  type Q = { text: string[]; opts: string[]; ans: string; sol: string[]; topic: string; diff: string; image: string; in: 'q' | 'opt' | 'sol' | 'passage' };
+  type Q = { text: string[]; opts: string[]; ans: string; sol: string[]; topic: string; diff: string; image: string; no: string; in: 'q' | 'opt' | 'sol' | 'passage' };
   // Held in an object so TypeScript doesn't narrow it inside the loop.
   const cur: { q: Q | null } = { q: null };
   const flush = () => {
     if (cur.q && cur.q.text.join(' ').trim()) {
-      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image, test, section]);
+      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image, test, section, cur.q.no]);
     }
     cur.q = null;
   };
-  const start = (first: string) => { flush(); cur.q = { text: first ? [first] : [], opts: [], ans: '', sol: [], topic: '', diff: '', image: '', in: 'q' }; };
+  const start = (first: string, no = '') => { flush(); cur.q = { text: first ? [first] : [], opts: [], ans: '', sol: [], topic: '', diff: '', image: '', no, in: 'q' }; };
   const addOptions = (line: string) => {
     // "(A) 10% (B) 12%" → two options; text before the first marker continues the previous option.
     const parts = line.split(OPT);
@@ -240,7 +242,7 @@ export function parseTextQuestions(text: string): string[][] {
       continue;
     }
     const qs = line.match(QSTART);
-    if (qs) { start(qs[2]); blank = false; continue; }
+    if (qs) { start(qs[2], qs[1]); blank = false; continue; }
     const isOpt = /^\(?[A-Da-d][).]\s+/.test(line);
     // A plain line followed by options is a new question, even right after a solution.
     if (cur.q && cur.q.in === 'sol' && !isOpt && isOptLine(lines.slice(li + 1).find(l => l.trim()))) { start(line); blank = false; continue; }
@@ -265,4 +267,56 @@ export function parseTextQuestions(text: string): string[][] {
   }
   flush();
   return rows;
+}
+
+
+/**
+ * Adds a details sheet (Excel) to questions from a Word file: topic, subtopic, difficulty, ideal time,
+ * marks, tags, source, type or image for each question. Rows are matched by Test + Section + Q No, then
+ * Test + Q No, then Q No alone; the question's own values win where both are filled.
+ * Returns the merged table and how many detail rows matched.
+ */
+export function mergeDetails(content: string[][], details: string[][]): { table: string[][]; matched: number; unmatched: string[] } {
+  if (content.length < 2 || details.length < 2) return { table: content, matched: 0, unmatched: [] };
+  const ch = content[0].map(h => headerName(String(h ?? '')));
+  const dh = details[0].map(h => headerName(String(h ?? '')));
+  const FIELDS = ['topic', 'subtopic', 'difficulty', 'ideal_time_sec', 'marks_correct', 'marks_wrong', 'tags', 'source', 'type', 'image_url', 'language'];
+  const cell = (h: string[], r: string[], k: string) => { const i = h.indexOf(k); return i < 0 ? '' : String(r[i] ?? '').trim(); };
+  const num = (v: string) => v.replace(/[^0-9]/g, '');
+  // Question numbers: as written in Word, else counted from 1 inside each test.
+  const counters = new Map<string, number>();
+  const keysOf = (h: string[], r: string[], count: boolean) => {
+    const t = norm(cell(h, r, 'test')), s = norm(cell(h, r, 'section'));
+    let n = num(cell(h, r, 'qno'));
+    if (!n && count) { const c = (counters.get(t) ?? 0) + 1; counters.set(t, c); n = String(c); }
+    return [`${t}|${s}|${n}`, `${t}||${n}`, `||${n}`];
+  };
+  const byKey = new Map<string, string[]>();
+  for (const r of details.slice(1)) {
+    if (!r.some(c => String(c ?? '').trim())) continue;
+    const t = norm(cell(dh, r, 'test')), sec = norm(cell(dh, r, 'section')), n = num(cell(dh, r, 'qno'));
+    if (!n) continue;
+    byKey.set(`${t}|${sec}|${n}`, r);
+  }
+  const header = [...ch];
+  for (const f of FIELDS) if (!header.includes(f) && dh.includes(f)) header.push(f);
+  const used = new Set<string[]>();
+  const rows = content.slice(1).map(r => {
+    const out = header.map((h, i) => (i < ch.length ? String(r[i] ?? '') : ''));
+    const [k1, k2, k3] = keysOf(ch, r, true);
+    // Exact match first, then the same number in the same test, then the number alone.
+    let d = byKey.get(k1);
+    if (!d) for (const [k, v] of byKey) { const [t, , n] = k.split('|'); if (!used.has(v) && `${t}||${n}` === k2) { d = v; break; } }
+    if (!d) for (const [k, v] of byKey) { const n = k.split('|')[2]; if (!used.has(v) && `||${n}` === k3) { d = v; break; } }
+    if (d) {
+      used.add(d);
+      for (const f of FIELDS) {
+        const v = cell(dh, d, f), i = header.indexOf(f);
+        if (v && i >= 0 && !String(out[i] ?? '').trim()) out[i] = v;
+      }
+    }
+    return out;
+  });
+  const unmatched = [...byKey.entries()].filter(([, v]) => !used.has(v)).map(([k]) => k.split('|').filter(Boolean).join(' · ') || k).slice(0, 20);
+  return { table: [header, ...rows], matched: used.size, unmatched };
 }

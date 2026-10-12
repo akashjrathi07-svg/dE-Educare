@@ -41,7 +41,7 @@ function de_test_card( $name, $id, $q, $mins, $free, $plan_id ) {
 		<span class="de-test__status"><?php echo $free ? 'Free · AI analysis included' : esc_html( 'Included in ' . ( $plan ? $plan['name'] : 'paid plans' ) ); ?></span>
 		<?php if ( $free ) : ?>
 			<a class="de-test__btn de-test__btn--start" href="<?php echo esc_url( de_test_url( $id ) ); ?>">Start test</a>
-		<?php elseif ( $plan && '₹ —' === $plan['price'] ) : ?>
+		<?php elseif ( $plan && ! empty( $plan['soon'] ) ) : ?>
 			<a class="de-test__btn" href="#" data-toast="<?php echo esc_attr( 'Pricing for ' . $plan['name'] . ' coming soon' ); ?>">Unlock</a>
 		<?php else : ?>
 			<a class="de-test__btn" href="<?php echo esc_url( de_checkout_url( $plan_id, $id ) ); ?>">Unlock</a>
@@ -147,7 +147,7 @@ function de_render_tests( $view, $exam, $scope ) {
 												$plan = de_plan( $last( $c['seriesPlan'] ) );
 												if ( 1 === $n ) {
 													printf( '<a class="de-pill de-pill--free" href="%s">Test 1 · free</a>', esc_url( de_test_url( $tid ) ) );
-												} elseif ( $plan && '₹ —' === $plan['price'] ) {
+												} elseif ( $plan && ! empty( $plan['soon'] ) ) {
 													printf( '<a class="de-pill" href="#" data-toast="%s">Test %d · locked</a>', esc_attr( 'Pricing for ' . $plan['name'] . ' coming soon' ), (int) $n );
 												} else {
 													printf( '<a class="de-pill" href="%s">Test %d · locked</a>', esc_url( de_checkout_url( $plan['id'], $tid ) ), (int) $n );
@@ -334,7 +334,7 @@ function de_render_plans( $exam ) {
 						<?php endforeach; ?>
 					</ul>
 					<span class="de-plan__best"><?php de_e( $p['best'] ); ?></span>
-					<a class="de-btn de-btn--block <?php echo $dark ? 'de-btn--amber' : ( ! empty( $p['free'] ) ? 'de-btn--soft' : 'de-btn--primary' ); ?>" <?php echo de_plan_action( $p, $daily ); // phpcs:ignore ?>><?php de_e( $p['cta'] ); ?></a>
+					<a class="de-btn de-btn--block <?php echo $dark ? 'de-btn--amber' : ( ! empty( $p['free'] ) ? 'de-btn--soft' : 'de-btn--primary' ); ?>" <?php echo de_plan_action( $p, $daily ); // phpcs:ignore ?>><?php de_e( de_plan_cta( $p, $p['cta'] ) ); ?></a>
 				</div>
 			<?php endforeach; ?>
 		</div>

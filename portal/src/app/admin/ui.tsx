@@ -16,7 +16,7 @@ export function ToastHost({ children }: { children: React.ReactNode }) {
 }
 
 const NAV: [area: string, href: string, mark: string, label: string][] = [
-  ['overview', '/admin', 'OV', 'Overview'], ['courses', '/admin/courses', 'CP', 'Courses & plans'], ['batches', '/admin/batches', 'BT', 'Batches'],
+  ['overview', '/admin', 'OV', 'Overview'], ['courses', '/admin/courses', 'CP', 'Courses & plans'], ['coupons', '/admin/coupons', 'CU', 'Coupons'], ['batches', '/admin/batches', 'BT', 'Batches'],
   ['students', '/admin/students', 'ST', 'Students'], ['classes', '/admin/classes', 'LC', 'Live classes'], ['bank', '/admin/bank', 'QB', 'Question bank'],
   ['tests', '/admin/tests', 'TS', 'Tests'], ['iface', '/admin/interfaces', 'EI', 'Exam interfaces'],
   ['resources', '/admin/resources', 'FR', 'Free resources'], ['reviews', '/admin/reviews', 'RV', 'Reviews'],
@@ -51,7 +51,7 @@ export function Head({ title, sub, children }: { title: string; sub: string; chi
   );
 }
 
-const STATUS_TAG: Record<string, string> = { Live: 'ok', 'Live now': 'live', Scheduled: 'pri', Draft: '', Recorded: '', Ended: '', Archived: '', Cancelled: 'bad' };
+const STATUS_TAG: Record<string, string> = { Live: 'ok', 'Live now': 'live', Scheduled: 'pri', Draft: '', Recorded: '', Ended: '', Archived: '', Cancelled: 'bad', Paused: '', Expired: 'bad', 'Used up': 'mid' };
 export const Status = ({ s }: { s: string }) => <span className={'tag ' + (STATUS_TAG[s] ?? '')}>{s}</span>;
 
 export function Drawer({ title, onClose, children, foot }: { title: string; onClose: () => void; children: React.ReactNode; foot: React.ReactNode }) {

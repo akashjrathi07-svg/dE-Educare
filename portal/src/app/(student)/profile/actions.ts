@@ -38,7 +38,7 @@ export async function redeem(rewardId: string) {
   });
 }
 
-/** Turns XP into bonus Guru coins at 100 XP = 1 coin. */
+/** Turns XP into bonus Guru coins at XP_PER_COIN XP = 1 coin. */
 export async function convertXp(coins: number) {
   const u = await currentUser();
   if (!u) return { ok: false, message: 'Please sign in again.' };

@@ -16,7 +16,7 @@ foreach ( de_coaching() as $c ) {
 $hx = array(
 	array( 'id' => 'cat', 'name' => 'CAT', 'sub' => 'Coaching 2027 · Test Series', 'status' => 'LIVE', 'img' => 'img_cat', 'coach' => 'cat-coaching-2027', 'plan' => 'cat-ts', 'tests' => '20 mocks · 30 sectionals · 3 topic tests each', 'cta' => 'Explore CAT', 'url' => de_page_url( 'cat' ) ),
 	array( 'id' => 'cet', 'name' => 'MBA-CET', 'sub' => 'Coaching 2028 · Test Series', 'status' => 'LIVE', 'img' => 'img_cet', 'coach' => 'cet-coaching-2028', 'plan' => 'cet-ts', 'tests' => '30 mocks · 40 sectionals · 3 topic tests each', 'cta' => 'Explore MBA-CET', 'url' => de_page_url( 'mba-cet' ) ),
-	array( 'id' => 'omet', 'name' => 'OMETs', 'sub' => 'SNAP · NMAT · XAT · CMAT', 'status' => 'LIVE', 'img' => 'img_omet', 'coach' => 'mba-plus', 'plan' => 'om-pack', 'tests' => '15 mocks per exam · sectionals · 3 topic tests each', 'cta' => 'Explore OMETs', 'url' => de_page_url( 'omet' ) ),
+	array( 'id' => 'omet', 'name' => 'OMETs', 'sub' => 'SNAP · NMAT · XAT · CMAT', 'status' => 'LIVE', 'img' => 'img_omet', 'coach' => 'mba-plus', 'plan' => 'om-single', 'tests' => '15 SNAP mocks · sectionals · 3 topic tests each', 'cta' => 'Explore OMETs', 'url' => de_page_url( 'omet' ) ),
 	array( 'id' => 'govt', 'name' => 'Govt exams', 'sub' => 'Bank PO · RBI · UPSC', 'status' => 'SOON', 'img' => 'img_govt', 'coach' => '', 'plan' => '', 'tests' => '', 'cta' => 'Get notified', 'url' => add_query_arg( 'exam', 'Bank PO', $contact ) ),
 );
 $trust = array( 'Free daily test, no card', 'AI analysis on every attempt', 'One login on web and app', 'Mumbai-based team' );
@@ -92,7 +92,7 @@ $price = function ( $p, $size = '' ) {
 									<span class="de-hero__pd"><?php de_e( $h['tests'] ); ?></span>
 								</div>
 								<?php $price( $p, 'dark' ); ?>
-								<a class="de-btn de-btn--white" <?php echo de_plan_action( $p, $h['id'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>>Buy</a>
+								<a class="de-btn de-btn--white" <?php echo de_plan_action( $p, $h['id'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( de_plan_cta( $p, 'Buy' ) ); ?></a>
 							</div>
 						<?php endif; ?>
 						<?php if ( ! $c && ! $p ) : ?>
@@ -136,11 +136,7 @@ $price = function ( $p, $size = '' ) {
 						<?php endforeach; ?>
 					</dl>
 					<?php $price( $p ); ?>
-					<?php if ( 'om-single' === $t['plan'] ) : ?>
-						<a class="de-btn de-btn--primary de-btn--block" href="<?php echo esc_url( $t['url'] ); ?>">Choose your OMET</a>
-					<?php else : ?>
-						<a class="de-btn de-btn--primary de-btn--block" <?php echo de_plan_action( $p, $t['exam'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>>Buy now</a>
-					<?php endif; ?>
+						<a class="de-btn de-btn--block <?php echo empty( $p['soon'] ) ? 'de-btn--primary' : 'de-btn--outline'; ?>" <?php echo de_plan_action( $p, $t['exam'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( de_plan_cta( $p, 'Buy now' ) ); ?></a>
 				</article>
 			<?php endforeach; ?>
 		</div>

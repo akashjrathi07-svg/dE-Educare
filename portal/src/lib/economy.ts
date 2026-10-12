@@ -11,7 +11,7 @@
 
 export const DAILY_COINS = { free: 10, test_series: 50, coaching: null } as const; // null = unlimited
 
-export const XP_PER_COIN = 100;
+export const XP_PER_COIN = 10;
 
 /** What each Guru action costs. */
 export const COIN_COST = {
