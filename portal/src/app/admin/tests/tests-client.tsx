@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chips, Field, Status, useAction, useToast } from '../ui';
-import { readFile, readText } from '../read-sheet';
+import { readFile, readText, type ImageUploader } from '../read-sheet';
+import { uploadImage } from '../media-actions';
 import { mergeDetails } from '@/lib/question-import';
 import { checkUpload, uploadTests, type UploadSettings } from './upload';
 import { createTest, setTestStatus, type TestInput } from './actions';
@@ -187,6 +188,14 @@ export function StatusMenu({ id, status, when }: { id: string; status: string; w
   );
 }
 
+/** Stores a picture from a Word file and returns its URL (null if it is not a web image, e.g. an old equation). */
+const uploadPicture: ImageUploader = async (name, data) => {
+  const fd = new FormData();
+  fd.append('file', new Blob([data as BlobPart]), name);
+  const r = await uploadImage(fd).catch(() => null);
+  return r && r.ok ? r.url : null;
+};
+
 type UploadCheck = Awaited<ReturnType<typeof checkUpload>>;
 
 /** Upload whole tests from Excel/CSV or Word, and optionally make a plan (10 mocks, test series) from them. */
@@ -223,7 +232,7 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
   const pick = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) { toast('File is larger than 8 MB. Split it into parts.'); return; }
-    try { setFileName(file.name); setTable(await readFile(file)); } catch { toast('Could not read that file. Save it as .xlsx, .csv or .docx and try again.'); }
+    try { setFileName(file.name); setTable(await readFile(file, { upload: uploadPicture })); } catch { toast('Could not read that file. Save it as .xlsx, .csv or .docx and try again.'); }
   };
   const pickDetails = async (file: File | undefined) => {
     if (!file) return;
@@ -236,8 +245,9 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
       <div className="row" style={{ justifyContent: 'space-between' }}><b style={{ fontSize: 17 }}>Upload tests</b><Link className="btn ghost sm" href={closeHref}>Close</Link></div>
       <div className="note" style={{ fontSize: 13 }}>
         One file can hold one test or a whole series. The questions are added to the question bank and the tests are created in one step.
-        In <b>Word</b>, start each test with a line <b>Test: CAT Mock 1</b> and each section with <b>Section: QA</b>, then the questions (numbered, options (A)–(D), <b>Answer:</b>, <b>Solution:</b>).
-        In <b>Excel</b>, add columns <b>Test</b> and <b>Section</b> next to Question, Option A–D, Answer, Solution, Topic and Difficulty.
+        In <b>Word</b>, start each test with a line <b>Test: CAT Mock 1</b> and each section with <b>Section: QA</b>, then for each question: <b>Topic:</b> (stays until the next Topic line), the numbered question, its options a)–d) (add e) only if the question has five; it gets exactly the options you write), <b>Answer:</b> and <b>Explanation:</b>.
+        For an RC passage or DILR set, write <b>D.51-55)</b> followed by the passage just before question 51: questions 51 to 55 share it and always come together. Pictures in the Word file are imported.
+        In <b>Excel</b>, add columns <b>Test</b> and <b>Section</b> next to Question, Option A–E, Answer, Solution, Topic and Difficulty.
         {' '}Templates: <a href="/test-upload-template.docx" download>Word test template</a> (questions, options, answers, solutions) with the <a href="/question-details-template.xlsx" download>Excel details template</a> (topic, subtopic, difficulty, time, marks), or everything in one <a href="/test-upload-template.xlsx" download>Excel sheet</a>.
       </div>
 
@@ -261,12 +271,12 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
       {tab === 'file' ? (
         <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
           <input type="file" accept=".xlsx,.csv,.docx,.txt,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
-          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Images in Word files are not imported; add an image link in the details sheet instead'}</span>
+          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Pictures in Word files are uploaded with the questions'}</span>
         </label>
       ) : (
         <>
           <textarea className="input mono" rows={12} style={{ fontSize: 13 }} value={text} onChange={e => setText(e.target.value)}
-            placeholder={'Test: CAT Mock 1\nSection: QA\n1. A price rises by 20% and then falls by 20%. What is the net change?\n(A) No change  (B) 4% decrease  (C) 4% increase  (D) 2% decrease\nAnswer: B\nSolution: 1.2 × 0.8 = 0.96\n\nSection: DILR\nDirections: Five friends sit in a row…\n1. Who sits at the left end?\n(A) A (B) B (C) C (D) D\nAnswer: B'} />
+            placeholder={'Test: CAT Mock 1\nSection: QA\nTopic: Percentages\nQ.1) A price rises by 20% and then falls by 20%. What is the net change?\na) No change\nb) 4% decrease\nc) 4% increase\nd) 2% decrease\nAnswer: b\nExplanation: 1.2 × 0.8 = 0.96\n\nSection: DILR\nTopic: Arrangements\nD.2-3) Five friends sit in a row…\nQ.2) Who sits at the left end?\na) A  b) B  c) C  d) D  e) E\nAnswer: b\nQ.3) Who sits in the middle?\na) A  b) B  c) C  d) D  e) E\nAnswer: c'} />
           <div className="row" style={{ justifyContent: 'flex-end' }}><button type="button" className="btn ghost" disabled={!text.trim()} onClick={() => { setFileName('Pasted text'); setTable(readText(text)); }}>{checking ? 'Checking…' : 'Check tests'}</button></div>
         </>
       )}

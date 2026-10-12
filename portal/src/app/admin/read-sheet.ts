@@ -2,14 +2,27 @@
 import { parseCsv, parseTextQuestions } from '@/lib/question-import';
 
 /** Reads an uploaded file into rows: Excel (.xlsx), Word (.docx), CSV, tab-separated, or plain text questions. */
-export async function readFile(file: File): Promise<string[][]> {
-  if (/\.docx$/i.test(file.name)) return parseTextQuestions(await docxText(file));
+export async function readFile(file: File, opts: { upload?: ImageUploader } = {}): Promise<string[][]> {
+  if (/\.docx$/i.test(file.name)) {
+    const { text, images } = await docxText(file);
+    return parseTextQuestions(await withImageUrls(text, images, opts.upload));
+  }
   if (/\.xlsx$/i.test(file.name)) {
     const { readSheet } = await import('read-excel-file/browser');
     const rows = await readSheet(file);
     return rows.map(r => r.map(c => (c == null ? '' : c instanceof Date ? c.toISOString().slice(0, 10) : String(c))));
   }
   return readText(await file.text());
+}
+
+export type ImageUploader = (name: string, data: Uint8Array) => Promise<string | null>;
+
+/** Uploads the pictures found in a Word file and puts their URLs where they appeared ([[img:/media/…]]). */
+async function withImageUrls(text: string, images: Map<string, { name: string; data: Uint8Array }>, upload?: ImageUploader) {
+  const urls = new Map<string, string | null>();
+  for (const [key, img] of images) urls.set(key, upload ? await upload(img.name, img.data) : null);
+  // Pictures that could not be stored (e.g. old Word equation objects) are left out.
+  return text.replace(/\[\[img:(rId[^\]]+)\]\]/g, (_, key) => (urls.get(key) ? `[[img:${urls.get(key)}]]` : ''));
 }
 
 /** Text pasted or uploaded: a sheet (tabs or commas with a heading row) or questions typed like a worksheet. */
@@ -36,9 +49,9 @@ function fmt(n: number, kind: string) {
  * The text of a Word file, one line per paragraph. Word's automatic numbering ("1.", "a)")
  * is not stored as text, so it is rebuilt from the document's numbering settings.
  */
-async function docxText(file: File): Promise<string> {
+async function docxText(file: File): Promise<{ text: string; images: Map<string, { name: string; data: Uint8Array }> }> {
   const { unzipSync, strFromU8 } = await import('fflate');
-  const zip = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: f => ['word/document.xml', 'word/numbering.xml', 'word/styles.xml'].includes(f.name) });
+  const zip = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: f => ['word/document.xml', 'word/numbering.xml', 'word/styles.xml', 'word/_rels/document.xml.rels'].includes(f.name) || f.name.startsWith('word/media/') });
   if (!zip['word/document.xml']) throw new Error('Not a Word document');
   const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const parse = (x: string) => new DOMParser().parseFromString(x, 'application/xml');
@@ -68,15 +81,34 @@ async function docxText(file: File): Promise<string> {
       if (np && id) styleNum.set(attr(st, 'styleId') ?? '', { numId: id, ilvl: Number(attr(kids(np, 'ilvl')[0], 'val') ?? 0) });
     }
   }
+  // Pictures: relationship id → file in word/media.
+  const images = new Map<string, { name: string; data: Uint8Array }>();
+  const rels = new Map<string, string>();
+  if (zip['word/_rels/document.xml.rels']) {
+    for (const rel of Array.from(parse(strFromU8(zip['word/_rels/document.xml.rels'])).getElementsByTagName('Relationship'))) {
+      if (/\/image$/.test(rel.getAttribute('Type') ?? '')) rels.set(rel.getAttribute('Id') ?? '', 'word/' + (rel.getAttribute('Target') ?? '').replace(/^\/?word\//, ''));
+    }
+  }
+  const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const picture = (rid: string | null) => {
+    const path = rid ? rels.get(rid) : undefined;
+    if (!rid || !path || !zip[path]) return '';
+    images.set(rid, { name: path.split('/').pop() ?? 'image', data: zip[path] });
+    return `\n[[img:${rid}]]\n`;
+  };
   const counters = new Map<string, number[]>();
   const doc = parse(strFromU8(zip['word/document.xml']));
   const lines: string[] = [];
   for (const p of kids(doc, 'p')) {
     let text = '';
-    for (const node of Array.from(p.getElementsByTagNameNS(W, '*'))) {
-      if (node.localName === 't') text += node.textContent ?? '';
-      else if (node.localName === 'tab') text += ' ';
-      else if (node.localName === 'br') text += '\n';
+    for (const node of Array.from(p.getElementsByTagName('*'))) {
+      const ns = node.namespaceURI;
+      if (ns === W && node.localName === 't') text += node.textContent ?? '';
+      else if (ns === W && node.localName === 'tab') text += ' ';
+      else if (ns === W && node.localName === 'br') text += '\n';
+      // DrawingML pictures (<a:blip r:embed>) and older VML ones (<v:imagedata r:id>).
+      else if (node.localName === 'blip') text += picture(node.getAttributeNS(R, 'embed') ?? node.getAttribute('r:embed'));
+      else if (node.localName === 'imagedata') text += picture(node.getAttributeNS(R, 'id') ?? node.getAttribute('r:id'));
     }
     const numPr = kids(p, 'numPr')[0];
     const fromStyle = styleNum.get(attr(kids(p, 'pStyle')[0], 'val') ?? '');
@@ -96,5 +128,5 @@ async function docxText(file: File): Promise<string> {
     }
     lines.push(text);
   }
-  return lines.join('\n');
+  return { text: lines.join('\n'), images };
 }

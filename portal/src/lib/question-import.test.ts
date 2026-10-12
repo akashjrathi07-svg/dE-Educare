@@ -37,7 +37,7 @@ describe('validation', () => {
   });
 
   it('needs a number for TITA and sorts MSQ answers', () => {
-    expect(run('CAT,QA,Algebra,TITA,Easy,45,3,0,,,x?,,,,,abc').errors[0].message).toContain('numeric');
+    expect(run('CAT,QA,Algebra,TITA,Easy,45,3,0,,,x?,,,,,abc').errors[0].message).toMatch(/numeric/i);
     expect(run('CAT,QA,Algebra,MSQ,Hard,45,3,1,,,x?,1,2,3,4,C|A').ready[0].correct).toBe('A|C');
   });
 
@@ -165,6 +165,68 @@ Answer: A`);
     expect(r.errors).toEqual([]);
     expect(r.ready.map(q => [q.sectionCode, q.topic, q.subtopic, q.difficulty, q.ideal, q.marksWrong])).toEqual([
       ['QA', 'Geometry', null, 'hard', 120, 1], ['QA', 'Algebra', 'Percent', 'easy', 60, 0], ['VARC', 'Reading Comprehension', 'Main idea', 'medium', 90, 1],
+    ]);
+  });
+});
+
+describe('vendor format: Topic, D.51-55) directions, Q.51), five options', () => {
+  it('groups only the questions in the directions range and reads options a) to e)', () => {
+    const t = parseTextQuestions(`Test: Bank PO Mock 1
+Section: QA
+Topic: Algebra
+D.51-52) Study the following graph carefully to answer the questions that follow:
+[[img:/media/11111111-2222-3333-4444-555555555555]]
+Q.51) In which city is the difference second lowest?
+a) Jalandhar
+b) Delhi
+c) Chandigarh
+d) Hoshiarpur
+e) Ropar
+Answer: b
+Explanation: Read the graph.
+Q.52) What is the ratio?
+a) 3: 2
+b) 2: 3
+c) 
+d) 
+Answer: a
+Topic: Geometry
+Q.53) Not part of the set?
+a) yes
+b) no`);
+    const h = t[0];
+    const c = (r: string[], k: string) => r[h.indexOf(k)];
+    const [q51, q52, q53] = t.slice(1);
+    expect(c(q51, 'option_e')).toBe('Ropar');
+    expect(c(q51, 'set_text')).toMatch(/^Study the following graph[\s\S]*\[\[img:\/media\//);
+    expect(c(q52, 'set_id')).toBe(c(q51, 'set_id'));
+    expect(c(q52, 'option_c')).toBe('');
+    expect(c(q53, 'set_id')).toBe('');
+    expect([c(q51, 'topic'), c(q52, 'topic'), c(q53, 'topic')]).toEqual(['Algebra', 'Algebra', 'Geometry']);
+    const excel = [
+      ['Question Number', 'Correct Answer(s)', 'Subject', 'Marks', ' Negative Marks', 'Type', ' Difficulty Level', 'Partial Marks'],
+      [51, 'b', 'Maths > Quant (QA) > Algebra', 2, 0.6, 'Single', 'Very Easy', ''],
+      [53, 'A, B', 'Quant (QA)', 2, 0.6, 'Multiple', 'Very Hard', 0.5],
+    ].map(r => r.map(String));
+    const m = mergeDetails(t, excel);
+    const r = validateRows(m.table, EXAMS, { defaults: { exam: 'CAT', topic: 'General' }, newTopics: true });
+    expect(r.errors).toEqual([]);
+    expect(r.ready.map(q => [q.type, q.correct, q.difficulty, q.marksCorrect, q.marksWrong, q.options.length])).toEqual([
+      ['MCQ', 'B', 'easy', 2, 0.6, 5], ['MCQ', 'A', 'medium', 1, 0, 2], ['MSQ', 'A|B', 'hard', 2, 0.6, 2],
+    ]);
+    expect(r.ready.map(q => q.tags)).toEqual([['very easy'], [], ['very hard']]);
+  });
+
+  it('reads Section > Topic > Subtopic paths and concept columns, so Guru can find questions', () => {
+    const r = validateRows([
+      ['Subject', 'Question', 'A', 'B', 'Answer', 'Concepts', 'Year'],
+      ['Maths > Quant (QA) > Arithmetic > Successive discounts', 'Q?', '1', '2', 'A', 'percent change; multiplying factors', 'CAT 2023 Slot 2'],
+      ['Maths > Quantitative > Time and Work', 'Q?', '1', '2', 'B', '', ''],
+    ], EXAMS, { defaults: { exam: 'CAT', section: 'QA' }, newTopics: true });
+    expect(r.errors).toEqual([]);
+    expect(r.ready.map(q => [q.sectionCode, q.topic, q.subtopic, q.tags, q.source])).toEqual([
+      ['QA', 'Arithmetic', 'Successive discounts', ['percent change', 'multiplying factors'], 'CAT 2023 Slot 2'],
+      ['QA', 'Time and Work', null, [], null],
     ]);
   });
 });

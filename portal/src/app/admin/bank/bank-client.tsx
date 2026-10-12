@@ -5,12 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chips, Field, useAction, useToast } from '../ui';
 import { checkImport, resolveReports, runImport, saveQuestion } from './actions';
 import { mergeDetails, type ImportDefaults } from '@/lib/question-import';
-import { readFile, readText } from '../read-sheet';
+import { readFile, readText, type ImageUploader } from '../read-sheet';
+import { uploadImage } from '../media-actions';
 
 type Exam = { code: string; name: string; plus: number; minus: number; sections: { code: string; name: string; topics: string[] }[] };
 type Form = Record<string, string>;
 
-const LETTERS = ['A', 'B', 'C', 'D'] as const;
+const LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 const DIFF_TAG: Record<string, string> = { easy: 'ok', medium: 'mid', hard: 'bad' };
 
 function blank(exams: Exam[], code: string, keep?: Form): Form {
@@ -19,7 +20,7 @@ function blank(exams: Exam[], code: string, keep?: Form): Form {
   return {
     question_id: '', exam: e.code, section: s.code, topic: keep?.topic && s.topics.includes(keep.topic) ? keep.topic : s.topics[0] ?? '', subtopic: '', type: 'MCQ', difficulty: keep?.difficulty ?? 'medium',
     ideal_time_sec: '90', marks_correct: String(e.plus), marks_wrong: String(e.minus), set_id: keep?.set_id ?? '', set_text: keep?.set_text ?? '', question_text: '', image_url: '',
-    option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', solution_text: '', solution_video_url: '', tags: '', source: 'Original', language: 'English', status: 'live',
+    option_a: '', option_b: '', option_c: '', option_d: '', option_e: '', correct_answer: 'A', solution_text: '', solution_video_url: '', tags: '', source: 'Original', language: 'English', status: 'live',
   };
 }
 
@@ -39,6 +40,9 @@ function QuestionForm({ exams, initial, closeHref }: { exams: Exam[]; initial: F
   const editing = !!initial.question_id;
   const tita = f.type === 'TITA', msq = f.type === 'MSQ';
   const answers = f.correct_answer.split('|').filter(Boolean);
+  // Option E only for exams and questions that have five options.
+  const [fiveOpts, setFiveOpts] = useState(!!initial.option_e);
+  const letters = fiveOpts ? LETTERS : LETTERS.slice(0, 4);
 
   const save = (again: boolean) => run(() => saveQuestion(f, f.status as 'live' | 'draft'), r => {
     if (!r.ok) return;
@@ -80,16 +84,24 @@ function QuestionForm({ exams, initial, closeHref }: { exams: Exam[]; initial: F
           </Field>
           <Field label="Question" req span><textarea className="input" rows={4} value={f.question_text} placeholder="Type the question. Use $…$ for maths." onChange={e => set({ question_text: e.target.value })} /></Field>
           <Field label="Image URL" span><input className="input" value={f.image_url} placeholder="https:// (chart or diagram)" onChange={e => set({ image_url: e.target.value })} /></Field>
-          {!tita && LETTERS.map(l => (
+          {!tita && letters.map(l => (
             <Field key={l} label={'Option ' + l} req={l === 'A' || l === 'B'}>
               <input className="input" value={f['option_' + l.toLowerCase()]} onChange={e => set({ ['option_' + l.toLowerCase()]: e.target.value })} />
             </Field>
           ))}
+          {!tita && (
+            <Field label="Options">
+              <button type="button" className="btn ghost sm" onClick={() => {
+                if (fiveOpts) set({ option_e: '', correct_answer: f.correct_answer.split('|').filter(x => x !== 'E').join('|') || (msq ? '' : 'A') });
+                setFiveOpts(!fiveOpts);
+              }}>{fiveOpts ? 'Remove option E' : '+ Add option E'}</button>
+            </Field>
+          )}
           {tita ? (
             <Field label="Correct answer (number)" req><input className="input" type="number" step="any" value={f.correct_answer} onChange={e => set({ correct_answer: e.target.value })} /></Field>
           ) : (
             <Field label={msq ? 'Correct options (all that apply)' : 'Correct option'} req group span>
-              <Chips options={LETTERS} value={msq ? answers as (typeof LETTERS)[number][] : (f.correct_answer as (typeof LETTERS)[number])}
+              <Chips options={letters} value={msq ? answers as (typeof LETTERS)[number][] : (f.correct_answer as (typeof LETTERS)[number])}
                 onChange={v => set({ correct_answer: Array.isArray(v) ? [...v].sort().join('|') : v })} />
             </Field>
           )}
@@ -148,6 +160,14 @@ function Preview({ f, exam, secName }: { f: Form; exam: Exam; secName: string })
   );
 }
 
+/** Stores a picture from a Word file and returns its URL (null if it is not a web image, e.g. an old equation). */
+const uploadPicture: ImageUploader = async (name, data) => {
+  const fd = new FormData();
+  fd.append('file', new Blob([data as BlobPart]), name);
+  const r = await uploadImage(fd).catch(() => null);
+  return r && r.ok ? r.url : null;
+};
+
 type Check = Awaited<ReturnType<typeof checkImport>>;
 
 function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; defaultExam: string; closeHref: string }) {
@@ -187,7 +207,7 @@ function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; default
   const pick = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast('File is larger than 5 MB. Split it into parts.'); return; }
-    try { setName(file.name); setTable(await readFile(file)); } catch { toast('Could not read that file. Save it as .xlsx or .csv and try again.'); }
+    try { setName(file.name); setTable(await readFile(file, { upload: uploadPicture })); } catch { toast('Could not read that file. Save it as .xlsx or .csv and try again.'); }
   };
   const pickDetails = async (file: File | undefined) => {
     if (!file) return;

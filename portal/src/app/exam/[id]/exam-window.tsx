@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { attemptState } from '@/lib/server/attempts';
+import { RichText } from '@/components/rich-text';
 
 type State = Extract<NonNullable<Awaited<ReturnType<typeof attemptState>>>, { submitted: false }>;
 type Q = State['questions'][number];
@@ -228,10 +229,10 @@ export function ExamWindow({ initial }: { initial: State }) {
             <span className="mono muted" style={{ fontSize: 12 }}>{st.sections[q.sectionIndex]?.name} · {typeLabel} · +{mc}{mw ? ` / −${mw}` : ''}</span>
           </div>
           <div className={'exam-content' + (split ? ' split' : '')}>
-            {split && <div className="exam-passage pre">{q.setText}</div>}
+            {split && <RichText className="exam-passage pre" text={q.setText} />}
             <div className="exam-main">
-              {!split && q.setText && <div className="card pad pre" style={{ fontSize: 14, lineHeight: 1.6, background: 'var(--sunk)' }}>{q.setText}</div>}
-              <div className="exam-text">{text}</div>
+              {!split && q.setText && <RichText className="card pad pre" style={{ fontSize: 14, lineHeight: 1.6, background: 'var(--sunk)' }} text={q.setText} />}
+              <RichText className="exam-text" text={text} />
               {q.image && <img src={q.image} alt="Question figure" style={{ maxWidth: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />}
               {q.type === 'TITA' ? (
                 <Tita value={a ?? ''} onChange={v => setAnswer(q.id, v === '' ? null : v)} />
@@ -249,7 +250,7 @@ export function ExamWindow({ initial }: { initial: State }) {
                     return (
                       <button key={o.key} type="button" className="opt" role={q.type === 'MSQ' ? 'checkbox' : 'radio'} aria-checked={sel} onClick={pick}>
                         <span className={'radio' + (q.type === 'MSQ' ? ' sq' : '')} />
-                        <span style={{ fontSize: 15, fontWeight: 700 }}><span className="mono muted">{o.key}.</span> {o.text}</span>
+                        <span style={{ fontSize: 15, fontWeight: 700 }}><span className="mono muted">{o.key}.</span> <RichText text={o.text} style={{ display: 'inline' }} /></span>
                       </button>
                     );
                   })}

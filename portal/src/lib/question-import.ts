@@ -24,7 +24,7 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
-export const COLUMNS = ['question_id', 'exam', 'section', 'topic', 'subtopic', 'type', 'difficulty', 'ideal_time_sec', 'marks_correct', 'marks_wrong', 'set_id', 'set_text', 'question_text', 'image_url', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'solution_video_url', 'tags', 'source', 'language'] as const;
+export const COLUMNS = ['question_id', 'exam', 'section', 'topic', 'subtopic', 'type', 'difficulty', 'ideal_time_sec', 'marks_correct', 'marks_wrong', 'set_id', 'set_text', 'question_text', 'image_url', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct_answer', 'solution_text', 'solution_video_url', 'tags', 'source', 'language'] as const;
 
 export type ExamRef = { code: string; name: string; sections: { code: string; name: string; topics: string[] }[] };
 export type ImportRow = {
@@ -43,15 +43,16 @@ export type ImportOptions = { defaults?: ImportDefaults; newTopics?: boolean };
 
 /** Friendly column names people use in their own sheets, mapped to template columns. */
 const ALIASES: Record<string, string> = {
-  id: 'question_id', qid: 'question_id', questionid: 'question_id', subject: 'section', chapter: 'topic', subtopics: 'subtopic',
+  id: 'question_id', qid: 'question_id', questionid: 'question_id', subject: 'subject', chapter: 'topic', subtopics: 'subtopic',
   questiontype: 'type', answertype: 'type', level: 'difficulty', time: 'ideal_time_sec', idealtime: 'ideal_time_sec', timesec: 'ideal_time_sec',
   marks: 'marks_correct', positive: 'marks_correct', negative: 'marks_wrong', negativemarks: 'marks_wrong', passage: 'set_text', set: 'set_id', setid: 'set_id',
-  question: 'question_text', questions: 'question_text', text: 'question_text', image: 'image_url', a: 'option_a', b: 'option_b', c: 'option_c', d: 'option_d',
+  question: 'question_text', questions: 'question_text', text: 'question_text', image: 'image_url', a: 'option_a', b: 'option_b', c: 'option_c', d: 'option_d', e: 'option_e', optione: 'option_e', option5: 'option_e', optioneoptional: 'option_e',
   optiona: 'option_a', optionb: 'option_b', optionc: 'option_c', optiond: 'option_d', option1: 'option_a', option2: 'option_b', option3: 'option_c', option4: 'option_d',
-  answer: 'correct_answer', ans: 'correct_answer', correct: 'correct_answer', correctoption: 'correct_answer', key: 'correct_answer',
+  answer: 'correct_answer', ans: 'correct_answer', correct: 'correct_answer', correctanswers: 'correct_answer', correctanswer: 'correct_answer', answerkey: 'correct_answer', correctoption: 'correct_answer', key: 'correct_answer',
   solution: 'solution_text', explanation: 'solution_text', video: 'solution_video_url', solutionvideo: 'solution_video_url',
   test: 'test', testname: 'test', mock: 'test', paper: 'test', sectionname: 'section',
   qno: 'qno', q: 'qno', no: 'qno', questionno: 'qno', questionnumber: 'qno', qnumber: 'qno', sno: 'qno', srno: 'qno',
+  concept: 'tags', concepts: 'tags', keywords: 'tags', skill: 'tags', skills: 'tags', tag: 'tags', origin: 'source', pyq: 'source', year: 'source', subtopicname: 'subtopic', topicname: 'topic',
   marksifcorrect: 'marks_correct', marksforcorrect: 'marks_correct', imagelink: 'image_url', imageurl: 'image_url', idealtimesec: 'ideal_time_sec', difficultylevel: 'difficulty',
 };
 function headerName(h: string) {
@@ -66,7 +67,7 @@ function answerKeys(raw: string, options: { key: string; text: string }[]) {
   const byText = options.find(o => norm(o.text) && norm(o.text) === norm(v));
   if (byText) return [byText.key];
   const cleaned = v.toUpperCase().replace(/OPTION|ANSWER|ANS|[().:\s]/g, ' ').trim();
-  return cleaned.split(/[|,;&/ ]+|AND/).map(k => k.trim()).filter(Boolean).map(k => (/^[1-4]$/.test(k) ? 'ABCD'[Number(k) - 1] : k));
+  return cleaned.split(/[|,;&/ ]+|AND/).map(k => k.trim()).filter(Boolean).map(k => (/^[1-5]$/.test(k) ? 'ABCDE'[Number(k) - 1] : k));
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -102,7 +103,7 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
   if (!table.length) return { ready: [], errors: [{ row: 1, message: 'The file is empty.' }], total: 0 };
   const header = table[0].map(h => headerName(String(h ?? '')));
   const defaults: Record<string, string> = { ...(opts.defaults ?? {}) };
-  const missing = ['exam', 'section', 'topic', 'question_text', 'correct_answer'].filter(c => !header.includes(c) && !defaults[c]?.trim());
+  const missing = ['exam', 'section', 'topic', 'question_text', 'correct_answer'].filter(c => !header.includes(c) && !defaults[c]?.trim() && !(c !== 'exam' && c !== 'question_text' && c !== 'correct_answer' && header.includes('subject')));
   if (missing.length) return { ready: [], errors: [{ row: 1, message: `Missing column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Use the template, or pick ${missing.length > 1 ? 'them' : 'it'} above for the whole file.` }], total: 0 };
   const own = (r: string[], name: string) => {
     const i = header.indexOf(name);
@@ -117,26 +118,37 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
     const err = (m: string) => errors.push({ row, message: m });
     const exam = findExam(exams, col(r, 'exam'));
     if (!exam) return err(`exam "${col(r, 'exam')}" not found. Use one of: ${exams.map(e => e.code).join(', ')}.`);
-    const secIn = col(r, 'section');
+    // "Subject" can be a path like "Maths > Quantitative > Time and Work" or "QA > Arithmetic > Percentages":
+    // a part that names a section fills Section, the next part Topic and the one after it Subtopic.
+    const subject = col(r, 'subject').split('>').map(x => x.trim()).filter(Boolean);
+    // "Quant (QA)" names a section by its name or by the code in brackets.
+    const secOf = (v: string) => { const inner = /\(([^)]+)\)\s*$/.exec(v)?.[1] ?? '', bare = v.replace(/\([^)]*\)\s*$/, '');
+      return exam.sections.find(s => [v, inner, bare].some(x => x && (norm(s.code) === norm(x) || norm(s.name) === norm(x)))); };
+    const secAt = subject.findIndex(x => secOf(x));
+    const path = secAt >= 0 ? subject.slice(secAt + 1) : subject.slice(-1);
+    const secIn = col(r, 'section') || (secAt >= 0 ? secOf(subject[secAt])!.code : '');
     const sec = exam.sections.find(s => norm(s.code) === norm(secIn) || norm(s.name) === norm(secIn))
       // "Quantitative Aptitude" for "Quant (QA)", "VARC" for "Verbal Ability & RC (VARC)"…
       ?? (norm(secIn).length >= 2 ? exam.sections.find(s => norm(s.name).includes(norm(secIn)) || norm(secIn).includes(norm(s.code)) && norm(s.code).length >= 2) : undefined);
     if (!sec) return err(`section "${secIn}" is not a ${exam.code} section. Use: ${exam.sections.map(s => s.code).join(', ')}.`);
-    const topic = col(r, 'topic');
+    const topic = own(r, 'topic') || path[0] || col(r, 'topic');
     if (!topic) return err('topic is required.');
     const known = sec.topics.find(t => norm(t) === norm(topic));
     if (sec.topics.length && !known && !opts.newTopics) {
       const hint = closest(sec.topics, topic);
       return err(`topic "${topic}" not found in ${sec.code}.${hint ? ` Did you mean "${hint}"?` : ''} Or tick "Add new topics".`);
     }
-    const options = (['a', 'b', 'c', 'd'] as const).map((k, j) => ({ key: 'ABCD'[j], text: col(r, 'option_' + k) })).filter(o => o.text);
+    const options = (['a', 'b', 'c', 'd', 'e'] as const).map((k, j) => ({ key: 'ABCDE'[j], text: col(r, 'option_' + k) })).filter(o => o.text);
     let correct = col(r, 'correct_answer');
     // Type: the row's own value, else no options + a number means TITA, else the default, else MCQ (MSQ for several answers).
     const typeIn = own(r, 'type') || (!options.length && Number.isFinite(Number(correct)) && correct !== '' ? 'TITA' : defaults.type || (answerKeys(correct, options).length > 1 ? 'MSQ' : 'MCQ'));
-    const type = typeIn.toUpperCase().replace(/^SINGLE.*|^OBJECTIVE$/, 'MCQ').replace(/^MULTI.*/, 'MSQ').replace(/^(NUMERIC.*|INTEGER|NAT)$/, 'TITA');
-    if (!['MCQ', 'TITA', 'MSQ'].includes(type)) return err(`type "${typeIn}" must be MCQ, TITA or MSQ.`);
-    const diff = (col(r, 'difficulty') || 'medium').toLowerCase().replace(/^(e|easy.*)$/, 'easy').replace(/^(m|moderate|medium.*)$/, 'medium').replace(/^(h|difficult|tough|hard.*)$/, 'hard');
-    if (!['easy', 'medium', 'hard'].includes(diff)) return err('difficulty must be Easy, Medium or Hard.');
+    const type = typeIn.toUpperCase().replace(/^SINGLE.*|^OBJECTIVE$/, 'MCQ').replace(/^MULTI.*/, 'MSQ').replace(/^(NUMERIC.*|INTEGER|NAT|SHORT.*)$/, 'TITA');
+    if (!['MCQ', 'TITA', 'MSQ'].includes(type)) return err(`type "${typeIn}" must be Single (MCQ), Multiple (MSQ) or Numeric (TITA).`);
+    const diffIn = (col(r, 'difficulty') || 'medium').toLowerCase().trim();
+    // Very Easy / Very Hard are stored as Easy / Hard plus a tag, so Guru and tests can still pick them out.
+    const extreme = /^very\s*(easy|hard)$/.test(diffIn) ? diffIn.replace(/\s+/, ' ') : '';
+    const diff = diffIn.replace(/^very\s*easy$/, 'easy').replace(/^very\s*hard$/, 'hard').replace(/^(e|easy.*)$/, 'easy').replace(/^(m|moderate|medium.*)$/, 'medium').replace(/^(h|difficult|tough|hard.*)$/, 'hard');
+    if (!['easy', 'medium', 'hard'].includes(diff)) return err('difficulty must be Very Easy, Easy, Medium, Hard or Very Hard.');
     const ideal = Number(col(r, 'ideal_time_sec') || 90);
     if (!Number.isFinite(ideal) || ideal < 5 || ideal > 1800) return err('ideal_time_sec must be a number of seconds, e.g. 90.');
     const mc = Number(col(r, 'marks_correct') || 1), mw = Math.abs(Number(col(r, 'marks_wrong') || 0));
@@ -144,9 +156,9 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
     const text = col(r, 'question_text');
     if (!text) return err('question_text is required.');
     if (type === 'TITA') {
-      if (!correct || !Number.isFinite(Number(correct))) return err('TITA questions need a numeric correct_answer.');
+      if (!correct || !Number.isFinite(Number(correct))) return err(type === 'TITA' && /^SHORT/i.test(typeIn) ? 'Short (text) answers are not supported yet; use a number answer (Numeric).' : 'Numeric (TITA) questions need a number as the answer.');
     } else {
-      if (options.length < 2 || !options.find(o => o.key === 'A') || !options.find(o => o.key === 'B')) return err('MCQ and MSQ questions need at least option_a and option_b.');
+      if (options.length < 2 || !options.find(o => o.key === 'A') || !options.find(o => o.key === 'B')) return err('MCQ and MSQ questions need at least options A and B.');
       const keys = answerKeys(correct, options);
       if (!keys.length) return err('correct_answer is required.');
       if (type === 'MCQ' && keys.length !== 1) return err('MCQ correct_answer must be one letter, e.g. B.');
@@ -163,10 +175,10 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
     if (setId && setText) setTexts.set(setId, setText);
     const lang = norm(col(r, 'language') || 'english');
     ready.push({
-      row, externalId: col(r, 'question_id') || null, exam: exam.code, sectionCode: sec.code, topic: known ?? topic, subtopic: col(r, 'subtopic') || null,
+      row, externalId: col(r, 'question_id') || null, exam: exam.code, sectionCode: sec.code, topic: known ?? topic, subtopic: col(r, 'subtopic') || [own(r, 'topic') ? path[path.length - 1] : path[1]].find(s => s && norm(s) !== norm(topic)) || null,
       type: type as ImportRow['type'], difficulty: diff as ImportRow['difficulty'], ideal: Math.round(ideal), marksCorrect: mc, marksWrong: type === 'TITA' && !col(r, 'marks_wrong') ? 0 : mw,
       setId, setText, text, image: image || null, options: type === 'TITA' ? [] : options, correct, solution: col(r, 'solution_text') || null, video: video || null,
-      tags: col(r, 'tags').split(',').map(t => t.trim()).filter(Boolean), source: col(r, 'source') || null,
+      tags: [...new Set([...col(r, 'tags').split(/[,;]/).map(t => t.trim()).filter(Boolean), ...(extreme ? [extreme] : [])])], source: col(r, 'source') || null,
       language: lang.startsWith('hi') ? 'hi' : lang.startsWith('both') ? 'both' : 'en',
       testName: own(r, 'test') || null,
     });
@@ -178,7 +190,7 @@ export function validateRows(table: string[][], exams: ExamRef[], opts: ImportOp
   return { ready: ready.filter(q => !bad.has(q.row)), errors: errors.sort((a, b) => a.row - b.row), total: table.length - 1 };
 }
 
-const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url', 'test', 'section', 'qno'];
+const TEXT_HEADER = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct_answer', 'solution_text', 'set_id', 'set_text', 'topic', 'difficulty', 'image_url', 'test', 'section', 'qno'];
 
 /**
  * Reads questions typed or pasted from Word / PDF into a table that validateRows understands.
@@ -201,41 +213,68 @@ export function parseTextQuestions(text: string): string[][] {
   if (firstTest > 0) lines = lines.slice(firstTest);
   const rows: string[][] = [TEXT_HEADER];
   const QSTART = /^\s*(?:Q(?:uestion)?\s*\.?\s*)?(\d{1,4})\s*[.):]\s+(.*)$/i;
-  const OPT = /(?:^|\s)\(?([A-Da-d])[).]\s+/g;
+  const OPT = /(?:^|\s)\(?([A-Ea-e])[).]\s+/g;
   const LABEL = /^\s*(answer|ans|correct answer|key|solution|sol|explanation|exp|topic|chapter|difficulty|level|passage|directions?|image|test|section)\s*[:.\-–]\s*(.*)$/i;
-  let passage = '', setNo = 0, setId = '', test = '', section = '';
+  let passage = '', setNo = 0, setId = '', test = '', section = '', topic = '';
+  // "D.51-55) …" directions belong to questions 51 to 55 only.
+  let range: [number, number] | null = null;
+  const pending = { diff: '', image: '' };
+  const DRANGE = /^\s*D(?:irections?)?\s*\.?\s*(\d{1,4})\s*(?:-|–|to)\s*(\d{1,4})\s*[).:]\s*(.*)$/i;
   type Q = { text: string[]; opts: string[]; ans: string; sol: string[]; topic: string; diff: string; image: string; no: string; in: 'q' | 'opt' | 'sol' | 'passage' };
   // Held in an object so TypeScript doesn't narrow it inside the loop.
   const cur: { q: Q | null } = { q: null };
   const flush = () => {
     if (cur.q && cur.q.text.join(' ').trim()) {
-      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image, test, section, cur.q.no]);
+      rows.push([cur.q.text.join('\n').trim(), ...[0, 1, 2, 3, 4].map(i => (cur.q!.opts[i] ?? '').trim()), cur.q.ans.trim(), cur.q.sol.join('\n').trim(), passage ? setId : '', passage ? passage.trim() : '', cur.q.topic, cur.q.diff, cur.q.image, test, section, cur.q.no]);
     }
     cur.q = null;
   };
-  const start = (first: string, no = '') => { flush(); cur.q = { text: first ? [first] : [], opts: [], ans: '', sol: [], topic: '', diff: '', image: '', no, in: 'q' }; };
+  const start = (first: string, no = '') => {
+    flush();
+    // A question outside the numbers of the current "D.51-55)" directions is not part of that set.
+    const n = Number(no);
+    if (range && no && (n < range[0] || n > range[1])) { passage = ''; range = null; }
+    cur.q = { text: first ? [first] : [], opts: [], ans: '', sol: [], topic, diff: pending.diff, image: pending.image, no, in: 'q' };
+    pending.diff = ''; pending.image = '';
+  };
   const addOptions = (line: string) => {
     // "(A) 10% (B) 12%" → two options; text before the first marker continues the previous option.
     const parts = line.split(OPT);
     if (parts[0].trim() && cur.q!.opts.length) cur.q!.opts[cur.q!.opts.length - 1] += ' ' + parts[0].trim();
-    for (let i = 1; i < parts.length; i += 2) cur.q!.opts['ABCD'.indexOf(parts[i].toUpperCase())] = parts[i + 1].trim();
+    for (let i = 1; i < parts.length; i += 2) cur.q!.opts['ABCDE'.indexOf(parts[i].toUpperCase())] = parts[i + 1].trim();
   };
 
   let blank = false;
-  const isOptLine = (l: string | undefined) => !!l && /^\(?[A-Da-d][).]\s+/.test(l.trim());
+  const isOptLine = (l: string | undefined) => !!l && /^\(?[A-Ea-e][).]\s+/.test(l.trim());
   for (const [li, raw] of lines.entries()) {
     const line = raw.trim();
     if (!line) { blank = true; if (cur.q && cur.q.in === 'passage') cur.q.in = 'q'; continue; }
+    // An empty option ("c) ") is skipped.
+    if (/^\(?[A-Ea-e][).]$/.test(line)) { blank = false; continue; }
+    const dr = line.match(DRANGE);
+    if (dr) {
+      flush();
+      passage = dr[3].trim(); setNo++; setId = 'TXT-' + Date.now().toString(36).toUpperCase() + '-' + setNo;
+      range = [Number(dr[1]), Number(dr[2])];
+      blank = false; cur.q = null;
+      continue;
+    }
     const lab = line.match(LABEL);
     if (lab) {
       const k = lab[1].toLowerCase(), v = lab[2].trim();
       // "Test: CAT Mock 2" and "Section: QA" apply to every question after them.
-      if (k === 'test' || k === 'section') { flush(); if (k === 'test') { test = v; section = ''; } else section = v; passage = ''; blank = false; cur.q = null; continue; }
-      if (/^(passage|directions?)$/.test(k)) { flush(); passage = v; setNo++; setId = 'TXT-' + Date.now().toString(36).toUpperCase() + '-' + setNo; blank = false; cur.q = null; continue; }
-      if (!cur.q) start('');
+      if (k === 'test' || k === 'section') { flush(); if (k === 'test') { test = v; section = ''; } else section = v; passage = ''; range = null; topic = ''; blank = false; cur.q = null; continue; }
+      if (/^(passage|directions?)$/.test(k)) { flush(); passage = v; range = null; setNo++; setId = 'TXT-' + Date.now().toString(36).toUpperCase() + '-' + setNo; blank = false; cur.q = null; continue; }
+      // "Topic:" before questions applies to them until the next Topic, Section or Test line.
+      if (/^(topic|chapter)$/.test(k)) { topic = v; if (cur.q && !cur.q.ans && cur.q.in === 'q') cur.q.topic = v; blank = false; continue; }
+      if (!cur.q) {
+        // Before any question: Difficulty and Image apply to the next one.
+        if (/^(difficulty|level)$/.test(k)) { pending.diff = v; blank = false; continue; }
+        if (k === 'image') { pending.image = v; blank = false; continue; }
+        start('');
+      }
       if (/^(answer|ans|correct answer|key)$/.test(k)) { cur.q!.ans = v; cur.q!.in = 'q'; }
       else if (/^(solution|sol|explanation|exp)$/.test(k)) { cur.q!.sol = v ? [v] : []; cur.q!.in = 'sol'; }
-      else if (/^(topic|chapter)$/.test(k)) cur.q!.topic = v;
       else if (/^(difficulty|level)$/.test(k)) cur.q!.diff = v;
       else if (k === 'image') cur.q!.image = v;
       blank = false;
@@ -243,14 +282,14 @@ export function parseTextQuestions(text: string): string[][] {
     }
     const qs = line.match(QSTART);
     if (qs) { start(qs[2], qs[1]); blank = false; continue; }
-    const isOpt = /^\(?[A-Da-d][).]\s+/.test(line);
+    const isOpt = /^\(?[A-Ea-e][).]\s+/.test(line);
     // A plain line followed by options is a new question, even right after a solution.
     if (cur.q && cur.q.in === 'sol' && !isOpt && isOptLine(lines.slice(li + 1).find(l => l.trim()))) { start(line); blank = false; continue; }
     if (cur.q && cur.q.in === 'sol' && !isOpt) { cur.q.sol.push(line); blank = false; continue; }
     if (isOpt && cur.q) { addOptions(line); cur.q.in = 'opt'; blank = false; continue; }
     if (!cur.q) {
       // Text before any numbered question: a passage if one was announced, else an unnumbered question.
-      if (passage && setNo && !rows.slice(1).some(r => r[7] === setId)) passage += '\n' + line;
+      if (passage && setNo && !rows.slice(1).some(r => r[TEXT_HEADER.indexOf('set_id')] === setId)) passage += '\n' + line;
       else start(line);
     } else if (cur.q.ans && cur.q.in === 'q') {
       // After a question's answer, the next plain line is the next (unnumbered) question.
@@ -280,7 +319,7 @@ export function mergeDetails(content: string[][], details: string[][]): { table:
   if (content.length < 2 || details.length < 2) return { table: content, matched: 0, unmatched: [] };
   const ch = content[0].map(h => headerName(String(h ?? '')));
   const dh = details[0].map(h => headerName(String(h ?? '')));
-  const FIELDS = ['topic', 'subtopic', 'difficulty', 'ideal_time_sec', 'marks_correct', 'marks_wrong', 'tags', 'source', 'type', 'image_url', 'language'];
+  const FIELDS = ['topic', 'subtopic', 'subject', 'difficulty', 'ideal_time_sec', 'marks_correct', 'marks_wrong', 'tags', 'source', 'type', 'image_url', 'language', 'correct_answer', 'solution_text', 'solution_video_url'];
   const cell = (h: string[], r: string[], k: string) => { const i = h.indexOf(k); return i < 0 ? '' : String(r[i] ?? '').trim(); };
   const num = (v: string) => v.replace(/[^0-9]/g, '');
   // Question numbers: as written in Word, else counted from 1 inside each test.

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { fmt, type Analysis } from '@/lib/analysis';
 import { askGuru } from '@/components/guru';
 import { ReportQuestion } from './report-question';
+import { RichText } from '@/components/rich-text';
 
 const TABS = [['overview', 'Overview'], ['time', 'Time & solutions'], ['section', 'Section-wise'], ['topic', 'Topic-wise'], ['difficulty', 'Difficulty'], ['swot', 'SWOT']] as const;
 const DIFF: Record<string, string> = { easy: 'ok', medium: 'mid', hard: 'bad' };
@@ -118,11 +119,11 @@ export function ResultTabs({ data, solutionsOpen, percentile, practice = false }
                   </div>
                   {open === r.n && (
                     <div className="sol">
-                      {r.setText && <div className="pre muted" style={{ fontSize: 13, lineHeight: 1.55 }}>{r.setText}</div>}
-                      <div className="pre" style={{ lineHeight: 1.55, fontWeight: 600 }}>{r.text}</div>
+                      {r.setText && <RichText className="pre muted" style={{ fontSize: 13, lineHeight: 1.55 }} text={r.setText} />}
+                      <RichText className="pre" style={{ lineHeight: 1.55, fontWeight: 600 }} text={r.text} />
                       <div className="muted" style={{ fontSize: 13 }}>Your answer: <b style={{ color: 'var(--ink)' }}>{r.yours}</b> · Correct: <b style={{ color: 'var(--ok)' }}>{r.right}</b></div>
                       {solutionsOpen
-                        ? <div className="pre" style={{ lineHeight: 1.6 }}>{r.solution || 'Solution coming soon.'}</div>
+                        ? <RichText className="pre" style={{ lineHeight: 1.6 }} text={r.solution || 'Solution coming soon.'} />
                         : <div className="muted">Solutions open after the test window closes.</div>}
                       {solutionsOpen && r.video && <a href={r.video} target="_blank" rel="noopener noreferrer" className="link">Watch the video solution →</a>}
                       <div className="row" style={{ gap: 16, fontSize: 12, fontWeight: 800, color: 'var(--muted)' }}>
