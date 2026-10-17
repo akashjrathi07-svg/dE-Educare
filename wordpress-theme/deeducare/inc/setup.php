@@ -51,6 +51,7 @@ function de_update_page_text() {
 		// EMI is offered on coaching only, not on mocks and test series.
 		'Prices include GST · UPI, cards and EMI' => 'Prices include GST · UPI, cards and netbanking',
 		'UPI, cards, netbanking and EMI through a secure payment gateway. Your plan unlocks instantly on web and app.' => 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app. EMI is available on coaching programmes.',
+		'No. The OMET Combo (₹3,000) covers SNAP, NMAT, XAT and CMAT with 15 mocks each. An individual OMET pack is ₹1,000.' => 'The SNAP Test Series is ₹1,500 (15 SNAP mocks, sectionals and topic tests). The OMET Combo, covering SNAP, NMAT, XAT and CMAT with 15 mocks each, is coming soon.',
 		'Programme fees per student. Send an enquiry for batch start dates, timings and payment options.' => 'Programme fees per student. EMI available on all coaching programmes. Send an enquiry for batch start dates, timings and payment options.',
 	);
 	foreach ( array_keys( de_buildable_pages() ) as $slug ) {

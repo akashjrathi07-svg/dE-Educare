@@ -2,12 +2,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Chips, Field, Status, useAction, useToast } from '../ui';
+import { Chips, DropZone, Field, useAction, useToast } from '../ui';
 import { readFile, readText, type ImageUploader } from '../read-sheet';
 import { uploadImage } from '../media-actions';
 import { mergeDetails } from '@/lib/question-import';
 import { checkUpload, uploadTests, type UploadSettings } from './upload';
-import { createTest, setTestStatus, type TestInput } from './actions';
+import { createTest, type TestInput } from './actions';
 
 type Sec = { code: string; name: string; questions: number; minutes: number | null; topics: string[] };
 type Exam = { code: string; name: string; plus: number; rules: Record<string, unknown>; marking: string; totalMinutes: number | null; sections: Sec[] };
@@ -133,9 +133,9 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
               ))}
             </div>
           </Field>
-          <Field label="Show on the Tests screen under" span>
+          <Field label="Also list on the Tests screen under" span hint="Optional. Tests always show in the folders of the courses ticked above.">
             <select className="input" value={f.nodeId} onChange={e => set({ nodeId: e.target.value })}>
-              <option value="">Not listed (direct link only)</option>{nodes.filter(n => n.exam === f.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
+              <option value="">Only in its courses' folders</option>{nodes.filter(n => n.exam === f.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
             </select>
           </Field>
           <Field label="Show solutions" group><Chips options={['after_submit', 'after_window']} labels={{ after_submit: 'Right after submit', after_window: 'After the test window closes' }} value={f.solutions} onChange={v => set({ solutions: v as TestInput['solutions'] })} /></Field>
@@ -167,23 +167,6 @@ export function Builder({ exams, courses, nodes, pool, closeHref }: { exams: Exa
         </div>
         <Link href={`/admin/interfaces?exam=${encodeURIComponent(exam.code)}`} style={{ color: '#AFC0FF', fontSize: 13, fontWeight: 800 }}>Edit the {exam.name} interface →</Link>
       </div>
-    </div>
-  );
-}
-
-export function StatusMenu({ id, status, when }: { id: string; status: string; when: string }) {
-  const { busy, run } = useAction();
-  const label = status === 'scheduled' ? 'Scheduled' : status === 'live' ? 'Live' : status === 'draft' ? 'Draft' : 'Archived';
-  return (
-    <div className="row" style={{ '--gap': '6px', flexWrap: 'nowrap' } as React.CSSProperties}>
-      <Status s={label} />
-      <select className="input" style={{ width: 28, padding: '4px', fontSize: 11 }} aria-label="Change status" title={when ? 'Goes live ' + when : 'Change status'} value="" disabled={busy}
-        onChange={e => e.target.value && run(() => setTestStatus(id, e.target.value as 'live' | 'draft' | 'archived'))}>
-        <option value="">⋯</option>
-        {status !== 'live' && <option value="live">Publish now</option>}
-        {status !== 'draft' && <option value="draft">Move to draft</option>}
-        {status !== 'archived' && <option value="archived">Archive</option>}
-      </select>
     </div>
   );
 }
@@ -269,10 +252,8 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
 
       <Chips options={['file', 'paste']} labels={{ file: 'Excel, CSV or Word file', paste: 'Paste from Word or PDF' }} value={tab} onChange={v => { setTab(v as 'file' | 'paste'); setTable(null); setFileName(''); }} />
       {tab === 'file' ? (
-        <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
-          <input type="file" accept=".xlsx,.csv,.docx,.txt,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
-          <b>{fileName || 'Choose an .xlsx, .csv or .docx file'}</b><span className="note">{checking ? 'Checking every question…' : 'Pictures in Word files are uploaded with the questions'}</span>
-        </label>
+        <DropZone accept=".xlsx,.csv,.docx,.txt" onFile={pick} title={fileName || 'Drag an .xlsx, .csv or .docx file here, or click to choose'}
+          sub={checking ? 'Checking every question…' : 'Pictures in Word files are uploaded with the questions'} />
       ) : (
         <>
           <textarea className="input mono" rows={12} style={{ fontSize: 13 }} value={text} onChange={e => setText(e.target.value)}
@@ -284,9 +265,7 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
       <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
         <span className="eyebrow">Question details (Excel, optional)</span>
         <div className="row" style={{ '--gap': '10px' } as React.CSSProperties}>
-          <label className="btn ghost sm" style={{ cursor: 'pointer' }}>
-            <input type="file" accept=".xlsx,.csv" className="sr" onChange={e => pickDetails(e.target.files?.[0])} />{details ? 'Change details file' : 'Add details file'}
-          </label>
+          <div style={{ flex: '0 1 260px' }}><DropZone compact accept=".xlsx,.csv" onFile={pickDetails} title={details ? 'Change details file' : 'Drag the details .xlsx here'} sub={details ? undefined : 'or click to choose'} /></div>
           {details && <button type="button" className="btn ghost sm" onClick={() => setDetails(null)}>Remove</button>}
           <span className="note" style={{ fontSize: 13 }}>
             {details ? `${details.name} · ${merged?.matched ?? 0} questions got their details${merged?.unmatched.length ? ` · ${merged.unmatched.length} rows matched no question (${merged.unmatched.slice(0, 3).join('; ')})` : ''}`
@@ -335,9 +314,9 @@ export function UploadTests({ exams, courses, nodes, closeHref }: { exams: Exam[
                 <label className="row" style={{ fontSize: 13, fontWeight: 700 }}><input type="checkbox" disabled={!st.newCourse} checked={!!st.newCourse?.live} onChange={e => st.newCourse && set({ newCourse: { ...st.newCourse, live: e.target.checked } })} /> On sale now</label>
               </div>
             </Field>
-            <Field label="Show on the Tests screen under" span>
+            <Field label="Also list on the Tests screen under" span hint="Optional. Tests always show in the folders of the courses ticked above.">
               <select className="input" value={st.nodeId} onChange={e => set({ nodeId: e.target.value })}>
-                <option value="">Not listed (direct link and plans only)</option>{nodes.filter(n => n.exam === st.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
+                <option value="">Only in its courses' folders</option>{nodes.filter(n => n.exam === st.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
               </select>
             </Field>
             <Field label="Publish" group><Chips options={['now', 'draft']} labels={{ now: 'Publish now', draft: 'Save as draft' }} value={st.publish} onChange={v => set({ publish: v as 'now' | 'draft' })} /></Field>

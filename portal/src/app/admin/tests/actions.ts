@@ -143,3 +143,104 @@ export async function setTestStatus(id: string, status: 'live' | 'draft' | 'arch
   revalidatePath('/tests');
   return { ok: true, message: `${t.name} is now ${status === 'live' ? 'live' : status}` };
 }
+
+export type TestEdit = {
+  name: string; slug: string; minutes: number; free: boolean; courses: string[]; nodeId: string;
+  solutions: 'after_submit' | 'after_window'; windowEnd: string; ranking: 'all_india' | 'batch' | 'none';
+  status: 'live' | 'draft' | 'archived' | 'schedule'; date: string; time: string;
+};
+
+const done = () => { revalidatePath('/admin/tests'); revalidatePath('/tests'); revalidatePath('/admin/courses'); };
+const uuids = (ids: string[]) => (Array.isArray(ids) ? ids.filter(x => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 500) : []);
+
+/** Changes a test's details: name, link, duration, who can take it, where it is listed, solutions, ranking and status. */
+export async function updateTest(id: string, e: TestEdit) {
+  await staffOrThrow('tests');
+  const name = e.name.trim().slice(0, 120);
+  if (!name) return { ok: false, message: 'Give the test a name' };
+  const slug = e.slug.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,55}[a-z0-9]$/.test(slug)) return { ok: false, message: 'Test ID can use small letters, numbers and dashes, e.g. cat-m-11' };
+  if ((await sql`select 1 from tests where slug = ${slug} and id <> ${id}`).length) return { ok: false, message: `Test ID ${slug} is already used by another test` };
+  const minutes = Math.round(Number(e.minutes));
+  if (!(minutes >= 1 && minutes <= 600)) return { ok: false, message: 'Duration must be between 1 and 600 minutes' };
+  if (!['after_submit', 'after_window'].includes(e.solutions) || !['all_india', 'batch', 'none'].includes(e.ranking)) return { ok: false, message: 'Pick solutions and ranking' };
+  if (e.solutions === 'after_window' && !/^\d{4}-\d\d-\d\d$/.test(e.windowEnd)) return { ok: false, message: 'Pick when the test window closes' };
+  if (e.status === 'schedule' && !/^\d{4}-\d\d-\d\d$/.test(e.date)) return { ok: false, message: 'Pick a go-live date' };
+  if (!['live', 'draft', 'archived', 'schedule'].includes(e.status)) return { ok: false, message: 'Pick a status' };
+  const status = e.status === 'schedule' ? 'live' : e.status;
+  const liveFrom = e.status === 'schedule' ? istTimestamp(e.date, e.time || '09:00') : null;
+  const windowEnd = e.solutions === 'after_window' ? istTimestamp(e.windowEnd, '23:59') : null;
+  const courses = uuids(e.courses);
+  const [t] = await sql`select id, duration_min from tests where id = ${id}`;
+  if (!t) return { ok: false, message: 'Test not found' };
+  await sql.begin(async tx => {
+    await tx`update tests set name = ${name}, slug = ${slug}, duration_min = ${minutes}, is_free = ${e.free}, node_id = ${e.nodeId || null},
+      solutions_visibility = ${e.solutions}, window_end = ${windowEnd}, ranking = ${e.ranking}, status = ${status}, live_from = ${liveFrom} where id = ${id}`;
+    // A whole-test timer change keeps section timers in proportion when the test has them.
+    if (t.duration_min !== minutes) await tx`update test_sections set duration_min = greatest(1, round(duration_min * ${minutes}::numeric / ${t.duration_min})) where test_id = ${id} and duration_min is not null`;
+    await tx`delete from course_tests where test_id = ${id} and not (course_id = any(${courses}::uuid[]))`;
+    for (const c of courses) await tx`insert into course_tests (course_id, test_id) values (${c}, ${id}) on conflict do nothing`;
+  });
+  done();
+  return { ok: true, message: `${name} saved` };
+}
+
+/** Adds tests to a course, moves them from one course to another, or takes them out of a course. */
+export async function setTestCourses(ids: string[], op: 'add' | 'move' | 'remove', courseId: string, fromCourseId = '') {
+  await staffOrThrow('tests');
+  const tests = uuids(ids);
+  if (!tests.length) return { ok: false, message: 'Tick at least one test' };
+  const [c] = await sql`select name from courses where id = ${courseId}`;
+  if (!c) return { ok: false, message: 'Pick a course' };
+  await sql.begin(async tx => {
+    if (op === 'remove') { await tx`delete from course_tests where course_id = ${courseId} and test_id = any(${tests}::uuid[])`; return; }
+    for (const t of tests) await tx`insert into course_tests (course_id, test_id) values (${courseId}, ${t}) on conflict do nothing`;
+    if (op === 'move' && fromCourseId && fromCourseId !== courseId) await tx`delete from course_tests where course_id = ${fromCourseId} and test_id = any(${tests}::uuid[])`;
+  });
+  done();
+  const n = `${tests.length} test${tests.length === 1 ? '' : 's'}`;
+  return { ok: true, message: op === 'remove' ? `${n} taken out of ${c.name}` : op === 'move' ? `${n} moved to ${c.name}` : `${n} added to ${c.name}` };
+}
+
+/** Makes independent copies of tests (same questions and timing, own attempts and ranks), optionally only in one course. */
+export async function duplicateTests(ids: string[], courseId: string) {
+  await staffOrThrow('tests');
+  const tests = uuids(ids);
+  if (!tests.length) return { ok: false, message: 'Tick at least one test' };
+  const made: string[] = [];
+  await sql.begin(async tx => {
+    for (const id of tests) {
+      const [src] = await tx`select * from tests where id = ${id}`;
+      if (!src) continue;
+      let slug = src.slug.replace(/-copy(-\d+)?$/, '') + '-copy';
+      for (let n = 2; (await tx`select 1 from tests where slug = ${slug}`).length; n++) slug = src.slug.replace(/-copy(-\d+)?$/, '') + '-copy-' + n;
+      const [t] = await tx`
+        insert into tests (slug, name, type, exam_id, node_id, duration_min, is_free, solutions_visibility, ranking, status, live_from, window_end, blueprint, sort)
+        values (${slug}, ${src.name}, ${src.type}, ${src.exam_id}, ${courseId ? null : src.node_id}, ${src.duration_min}, ${src.is_free}, ${src.solutions_visibility}, ${src.ranking},
+                ${src.status}, ${src.live_from}, ${src.window_end}, ${src.blueprint}, ${src.sort}) returning id`;
+      const secs = await tx`select * from test_sections where test_id = ${id} order by sort`;
+      for (const s of secs) {
+        const [ns] = await tx`insert into test_sections (test_id, section_id, name, sort, duration_min) values (${t.id}, ${s.section_id}, ${s.name}, ${s.sort}, ${s.duration_min}) returning id`;
+        await tx`insert into test_questions (test_id, test_section_id, question_id, sort) select ${t.id}, ${ns.id}, question_id, sort from test_questions where test_section_id = ${s.id}`;
+      }
+      if (courseId) await tx`insert into course_tests (course_id, test_id) values (${courseId}, ${t.id})`;
+      else await tx`insert into course_tests (course_id, test_id) select course_id, ${t.id} from course_tests where test_id = ${id}`;
+      made.push(slug);
+    }
+  });
+  done();
+  return { ok: true, message: `Copied ${made.length} test${made.length === 1 ? '' : 's'}: ${made.slice(0, 3).join(', ')}${made.length > 3 ? '…' : ''}` };
+}
+
+/** Deletes tests for good, with their attempts. Credits students spent on them are given back. */
+export async function deleteTests(ids: string[]) {
+  await staffOrThrow('tests');
+  const tests = uuids(ids);
+  if (!tests.length) return { ok: false, message: 'Tick at least one test' };
+  const rows = await sql.begin(async tx => {
+    await tx`update test_credits set used_test_id = null, used_at = null where used_test_id = any(${tests}::uuid[])`;
+    return tx`delete from tests where id = any(${tests}::uuid[]) and owner_id is null returning name`;
+  });
+  done();
+  return { ok: true, message: rows.length === 1 ? `${rows[0].name} deleted` : `${rows.length} tests deleted` };
+}

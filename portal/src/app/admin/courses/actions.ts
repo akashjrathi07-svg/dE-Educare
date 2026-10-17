@@ -10,6 +10,8 @@ export type CourseInput = {
   category: string;
   /** Tests this plan unlocks (10 mocks, a test series…). */
   testIds: string[];
+  /** Optional Tests-screen folder that should list all of this course's tests. */
+  nodeId?: string;
 };
 
 const INCLUDES = ['Full mocks', 'Sectionals', 'Topic tests', 'Previous papers', 'Daily tests', 'Live classes', 'Recordings', 'Study material'];
@@ -46,6 +48,7 @@ export async function saveCourse(c: CourseInput) {
     // The plan unlocks exactly the ticked tests.
     await tx`delete from course_tests where course_id = ${id} and not (test_id = any(${testIds}::uuid[]))`;
     for (const t of testIds) await tx`insert into course_tests (course_id, test_id) values (${id}, ${t}) on conflict do nothing`;
+    if (c.nodeId) await tx`update catalog_nodes set course_id = ${id}, test_types = null where id = ${c.nodeId}`;
   });
   revalidatePath('/admin/tests');
   revalidatePath('/tests');
