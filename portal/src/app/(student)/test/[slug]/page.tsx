@@ -15,7 +15,7 @@ export default async function TestLaunch({ params, searchParams }: { params: Pro
   const { slug } = await params;
   const { err } = await searchParams;
   const u = await requireUser(`/test/${slug}`);
-  const [t] = await sql`select id from tests where slug = ${slug} and status = 'live'`;
+  const [t] = await sql`update tests set views = views + 1 where slug = ${slug} and status = 'live' returning id`;
   if (!t) return <div className="empty">This test isn’t available yet. <Link href="/tests">Browse tests</Link></div>;
   const [b0, [open], last, access, allCredits] = await Promise.all([
     loadTest(t.id),

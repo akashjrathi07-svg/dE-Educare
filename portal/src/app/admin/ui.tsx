@@ -130,3 +130,23 @@ export function useAction() {
   }, [toast, router]);
   return { busy, run };
 }
+
+/** A file box that takes a click or a dragged-in file (Excel, CSV, Word…). */
+export function DropZone({ accept, onFile, title, sub, height = 120, compact }: { accept: string; onFile: (f: File | undefined) => void; title: string; sub?: string; height?: number; compact?: boolean }) {
+  const [over, setOver] = useState(false);
+  const ok = (f: File) => accept.split(',').some(a => (a.startsWith('.') ? f.name.toLowerCase().endsWith(a) : f.type === a));
+  const toast = useToast();
+  return (
+    <label className={'dropzone' + (over ? ' over' : '')} style={{ height: compact ? 'auto' : height, padding: compact ? '12px 16px' : undefined, cursor: 'pointer', textAlign: 'center' }}
+      onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault(); setOver(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f && !ok(f)) { toast(`${f.name} is not a ${accept.replace(/,/g, ', ')} file`); return; }
+        onFile(f);
+      }}>
+      <input type="file" accept={accept} className="sr" onChange={e => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
+      <b>{title}</b>{sub && <span className="note">{sub}</span>}
+    </label>
+  );
+}

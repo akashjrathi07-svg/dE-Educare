@@ -41,7 +41,7 @@ function de_plans() {
 		),
 		'omet' => array(
 			array( 'id' => 'om-pack', 'name' => 'OMET Combo', 'tag' => 'ALL 4 EXAMS', 'soon' => true, 'price' => '₹3,000', 'amount' => 3000, 'mrp' => 4500, 'desc' => '15 mocks each for SNAP, NMAT, XAT and CMAT, sectionals for every section and 3 topic tests per topic, each in its own pattern and timing.', 'feat' => array( '15 mocks per exam (60 in all)', 'Sectionals for every section', '3 topic tests per topic', 'Exam-specific interfaces' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Combo', 'dark' => true ),
-			array( 'id' => 'om-single', 'name' => 'SNAP Test Series', 'price' => '₹1,000', 'amount' => 1000, 'mrp' => 1500, 'desc' => '15 SNAP mocks, sectionals and topic tests in the real SNAP pattern and timing.', 'feat' => array( '15 full-length SNAP mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For SNAP aspirants.', 'cta' => 'Get the SNAP Test Series' ),
+			array( 'id' => 'om-single', 'name' => 'SNAP Test Series', 'price' => '₹1,500', 'amount' => 1500, 'mrp' => 2000, 'desc' => '15 SNAP mocks, sectionals and topic tests in the real SNAP pattern and timing.', 'feat' => array( '15 full-length SNAP mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For SNAP aspirants.', 'cta' => 'Get the SNAP Test Series' ),
 		),
 	) );
 }
@@ -333,7 +333,7 @@ function de_omet_view( $key ) {
 			array( 'How many attempts does ' . $name . ' allow?', $attempts . '.' ),
 			array( 'How is ' . $name . ' different from CAT?', $o['ov'] ),
 			array( 'Which colleges accept ' . $name . '?', implode( ', ', $o['colleges'] ) . ', and more.' ),
-			array( 'Do I need separate packs for each OMET?', 'No. The OMET Combo (₹3,000) covers SNAP, NMAT, XAT and CMAT with 15 mocks each. An individual OMET pack is ₹1,000.' ),
+			array( 'Do I need separate packs for each OMET?', 'The SNAP Test Series is ₹1,500 (15 SNAP mocks, sectionals and topic tests). The OMET Combo, covering SNAP, NMAT, XAT and CMAT with 15 mocks each, is coming soon.' ),
 			array( 'Can I use CAT mocks to prepare for OMETs?', 'Yes for concepts, but each OMET has its own timing and marking. Take at least three exam-specific mocks before your test.' ),
 			array( 'Do ' . $name . ' tests get AI analysis?', 'Yes. Every attempt gets section scores, time per question and a written plan from Guru.' ),
 		),

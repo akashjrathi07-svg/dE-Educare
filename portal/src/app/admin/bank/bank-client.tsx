@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Chips, Field, useAction, useToast } from '../ui';
+import { Chips, DropZone, Field, useAction, useToast } from '../ui';
 import { checkImport, resolveReports, runImport, saveQuestion } from './actions';
 import { mergeDetails, type ImportDefaults } from '@/lib/question-import';
 import { readFile, readText, type ImageUploader } from '../read-sheet';
@@ -265,10 +265,7 @@ function ImportPanel({ exams, defaultExam, closeHref }: { exams: Exam[]; default
             <li>Use your own Excel sheet with headings like <b>Question, Option A–D, Answer, Solution, Topic, Difficulty</b>, or the <a href="/question-import-template.csv" download>full template</a>.</li>
             <li>Upload the .xlsx or .csv file. Every row is checked first; nothing is saved yet.</li>
           </ol>
-          <label className="dropzone" style={{ height: 120, cursor: 'pointer' }}>
-            <input type="file" accept=".xlsx,.csv,.tsv,.txt,.docx,text/csv" className="sr" onChange={e => pick(e.target.files?.[0])} />
-            <b>{name || 'Choose an Excel, CSV or Word file'}</b><span className="note">{checking ? 'Checking every row…' : 'Up to 2,000 questions at a time'}</span>
-          </label>
+          <DropZone accept=".xlsx,.csv,.tsv,.txt,.docx" onFile={pick} title={name || 'Drag an Excel, CSV or Word file here, or click to choose'} sub={checking ? 'Checking every row…' : 'Up to 2,000 questions at a time'} />
         </>
       ) : (
         <>

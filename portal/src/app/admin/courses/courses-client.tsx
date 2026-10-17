@@ -1,9 +1,10 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Chips, Drawer, Field, Head, Status, useAction } from '../ui';
 import { saveCourse, type CourseInput } from './actions';
 
-type Course = CourseInput & { slug: string; exam: string; students: number };
+type Course = CourseInput & { slug: string; exam: string; students: number; folders: string[] };
 
 const VALIDITY = { till_exam: 'Till exam date', '6m': '6 months', '12m': '12 months' };
 const GURU = { '10/day': '10 a day', '50/day': '50 a day', unlimited: 'Unlimited' };
@@ -13,7 +14,7 @@ const blank = (examId: string | null): CourseInput => ({ id: null, name: '', exa
 type TestRow = { id: string; name: string; slug: string; type: string; examId: string; q: number; draft: boolean; free: boolean };
 const TYPE: Record<string, string> = { full_mock: 'Full mocks', sectional: 'Sectionals', topic: 'Topic tests', daily: 'Daily tests', pyq: 'Previous papers', custom: 'Other', practice: 'Other' };
 
-export function CoursesClient({ courses, exams, tests }: { courses: Course[]; exams: { id: string; name: string }[]; tests: TestRow[] }) {
+export function CoursesClient({ courses, exams, tests, nodes }: { courses: Course[]; exams: { id: string; name: string }[]; tests: TestRow[]; nodes: { id: string; path: string; examId: string }[] }) {
   const [form, setForm] = useState<CourseInput | null>(null);
   const [filter, setFilter] = useState('');
   const { busy, run } = useAction();
@@ -89,6 +90,12 @@ export function CoursesClient({ courses, exams, tests }: { courses: Course[]; ex
                 })()}
               </div>
             </div>
+          </Field>
+          {form.id && <Link className="btn ghost sm" style={{ alignSelf: 'flex-start' }} href={`/admin/tests?course=${form.id}`}>Manage this course's tests (edit, copy, move) →</Link>}
+          <Field label="Tests-screen folder" hint={(() => { const f = courses.find(x => x.id === form.id)?.folders ?? []; return f.length ? `Its tests show in: ${f.join(', ')}. Students who bought it also see it under My courses.` : 'Students who bought it see its tests under My courses. Pick a folder to also list them there for everyone.'; })()}>
+            <select className="input" value={form.nodeId ?? ''} onChange={e => set({ nodeId: e.target.value })}>
+              <option value="">Keep as it is</option>{nodes.filter(n => !form.examId || n.examId === form.examId).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
+            </select>
           </Field>
           <Field label="Validity" group><Chips options={Object.keys(VALIDITY)} labels={VALIDITY} value={form.validity} onChange={v => set({ validity: v as string })} /></Field>
           <Field label="Includes" group hint="Shown on the plan card"><Chips options={INCLUDES} value={form.includes} onChange={v => set({ includes: v as string[] })} /></Field>
