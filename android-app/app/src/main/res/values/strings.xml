@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">DE Educare</string>
+    <string name="launcherName">DE Educare</string>
+    <string name="providerAuthority">com.deeducare.app.fileprovider</string>
+    <!-- Must match the portal's https://portal.deeducare.com/.well-known/assetlinks.json -->
+    <string name="assetStatements" translatable="false">
+        [{
+            \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+            \"target\": {\"namespace\": \"web\", \"site\": \"https://portal.deeducare.com\"}
+        }]
+    </string>
+</resources>

@@ -182,7 +182,7 @@ export function Guru({ firstName, quota }: { firstName: string; quota: { limit: 
 
   return (
     <aside ref={panel} className="guru" aria-label="Guru, AI mentor">
-      <div className="row" style={{ gap: 12, padding: '16px 18px', borderBottom: '1px solid var(--line)', flexWrap: 'nowrap' }}>
+      <div className="row guru-head" style={{ gap: 12, padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
         <span className="orb" />
         <div className="stack" style={{ flex: 1, '--gap': '0' } as React.CSSProperties}>
           <span style={{ font: '800 17px var(--sans)', letterSpacing: '-.02em' }}>Guru</span>

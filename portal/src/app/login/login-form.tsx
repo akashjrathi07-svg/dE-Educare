@@ -19,7 +19,7 @@ export function LoginForm({ next, signup }: { next: string; signup: boolean }) {
             <input id="phone" name="phone" className="input lg" inputMode="numeric" autoComplete="tel-national" placeholder="98765 43210" defaultValue={state.phone?.replace('+91', '') ?? ''} required maxLength={14} autoFocus />
           </div>
           <button className="btn lg block" disabled={pending}>{pending ? 'Sending…' : 'Send OTP'}</button>
-          <p className="note">We’ll text you a 6-digit code. By continuing you agree to the terms and privacy policy.</p>
+          <p className="note">We’ll text you a 6-digit code. By continuing you agree to the terms and <a href="/privacy">privacy policy</a>.</p>
         </div>
       ) : (
         <div className="stack" style={{ '--gap': '12px' } as React.CSSProperties}>

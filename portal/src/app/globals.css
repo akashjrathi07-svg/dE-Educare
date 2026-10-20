@@ -296,10 +296,14 @@ button.tr:hover, a.tr:hover { background: var(--sunk); color: var(--ink); }
 .guru-msgs { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
 .bubble { max-width: 88%; padding: 11px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; text-wrap: pretty; background: var(--chip); align-self: flex-start; }
 .bubble.me { align-self: flex-end; background: var(--pri); color: #fff; }
+.guru-head { flex-wrap: nowrap; }
+/* Phones (and the Android app): Guru opens full screen above the bottom menu. */
+@media (max-width: 640px) { .guru { inset: 0; width: 100%; max-width: none; height: 100dvh; border-radius: 0; border: 0; z-index: 45; padding-bottom: env(safe-area-inset-bottom); } .fab { bottom: calc(78px + env(safe-area-inset-bottom)); } }
+@media (max-width: 520px) { .guru-head { flex-wrap: wrap; row-gap: 10px; } .guru-head > .seg { order: 3; flex: 1 0 100%; } .guru-head > .seg button { flex: 1; } }
 .bubble-say { display: block; margin: 6px 0 -2px auto; border: 0; background: none; font-size: 13px; cursor: pointer; opacity: .65; padding: 0; }
 .bubble-say:hover { opacity: 1; }
 /* Guru Teach mode */
-.guru:has(.teach) { width: 460px; }
+@media (min-width: 641px) { .guru:has(.teach) { width: 460px; } }
 .teach-idea { padding: 12px 14px; border-radius: 14px; background: var(--priSoft); font-size: 15px; font-weight: 700; line-height: 1.5; }
 .teach-steps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 10px; }
 .teach-steps li { counter-increment: st; display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; animation: guru-in .3s ease; }
