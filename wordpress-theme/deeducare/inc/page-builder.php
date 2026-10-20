@@ -255,7 +255,7 @@ function de_page_cet() {
 function de_page_exam( $exam ) {
 	$E     = de_exams()[ $exam ];
 	$daily = de_daily_url( $exam );
-	$coach = 'cat' === $exam ? 'cat-coaching-2027' : 'cet-coaching-2028';
+	$coach = 'cat' === $exam ? 'cat-coaching-2027' : 'cet-crash';
 	$o     = '';
 
 	$stats = '';
@@ -303,12 +303,12 @@ function de_block_secnav( $items ) {
 
 /** Coaching cards for one exam, with the enquiry form beside them. */
 function de_block_exam_coaching( $exam ) {
-	$ids  = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'mba-plus', 'cat-coaching-2027' ) )[ $exam ];
+	$ids  = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-crash', 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'cat-coaching-2027', 'mba-plus' ) )[ $exam ];
 	$by   = array();
 	foreach ( de_coaching() as $c ) {
 		$by[ $c['id'] ] = $c;
 	}
-	$label = array( 'cat' => 'CAT 2027 coaching with live classes and mentors', 'cet' => 'MBA-CET 2028 coaching with live classes and mentors', 'omet' => 'Coaching that covers every OMET' )[ $exam ];
+	$label = array( 'cat' => 'CAT 2027 coaching with live classes and mentors', 'cet' => 'MBA-CET 2027 crash course and CET coaching with live classes', 'omet' => 'CAT coaching that prepares you for OMETs too' )[ $exam ];
 	$cards = '';
 	foreach ( $ids as $i => $id ) {
 		$p      = $by[ $id ];
@@ -401,7 +401,7 @@ function de_block_exam_info( $v, $exam, $after_syllabus = '' ) {
 		}
 		$syl .= deb( 'details', array( 'className' => 'de-acc__item' ), '<details class="wp-block-details de-acc__item"><summary>' . esc_html( $s['name'] . ' · ' . $s['meta'] ) . '</summary>' . $inner . '</details>' );
 	}
-	$o .= deb_group( deb_eyebrow( 'SYLLABUS' ) . deb_heading( deb_t( $v['name'] . ' syllabus and topic tests' ), 2, 'de-h2' ) . deb_group( $syl, 'de-acc' ), 'de-stack-14', 'div', 'syllabus' );
+	$o .= deb_group( deb_eyebrow( 'SYLLABUS' ) . deb_heading( deb_t( $v['name'] . ( empty( $v['catalog']['mocksOnly'] ) ? ' syllabus and topic tests' : ' syllabus' ) ), 2, 'de-h2' ) . deb_group( $syl, 'de-acc' ), 'de-stack-14', 'div', 'syllabus' );
 	$o .= $after_syllabus;
 
 	$info  = $v['info'];
@@ -481,7 +481,7 @@ function de_page_omet() {
 				deb_p( deb_t( $E['eyebrow'] ), 'de-pill-label' )
 				. deb_heading( deb_t( $E['title'] ), 1, 'de-exam-hero__h' )
 				. deb_p( deb_t( $E['intro'] ), 'de-lead' )
-				. deb_buttons( array( array( 'Enquire about MBA+', '#enquire-mba-plus', 'primary' ), array( 'Take a free SNAP test', de_daily_url( 'snap' ), 'outline' ) ), 'de-row' )
+				. deb_buttons( array( array( 'Enquire about coaching', '#enquire-cat-coaching-2027', 'primary' ), array( 'Take a free SNAP test', de_daily_url( 'snap' ), 'outline' ) ), 'de-row' )
 				. deb_buttons( $jump, 'de-row de-omet-jump' ),
 				'de-exam-hero__copy'
 			)
@@ -505,10 +505,9 @@ function de_page_omet() {
 		// Overview, pattern… repeat for each OMET, so their anchors get the exam prefix (#snap-pattern).
 		$info  = preg_replace( '/("anchor":"|id=")(overview|pattern|syllabus|facts|colleges|strategy|faq)"/', '$1' . $k . '-$2"', de_block_exam_info( $v, 'omet' ) );
 		$main .= deb_group(
-			deb_heading( deb_t( $v['name'] . ' mock test ' . ( 'xat' === $k ? '2027' : '2026' ) . ' – online practice' ), 2, 'de-h2 de-h2--lg' )
+			deb_heading( deb_t( $v['name'] . ( empty( $v['catalog']['soon'] ) ? ' mock test ' . ( 'xat' === $k ? '2027' : '2026' ) . ' – online practice' : ' ' . ( 'xat' === $k ? '2027' : '2026' ) . ': pattern, dates and colleges · mocks coming soon' ) ), 2, 'de-h2 de-h2--lg' )
 			. de_block_exam_qa( $v )
-			. deb_heading( deb_t( 'Free ' . $v['name'] . ' tests' ), 3, 'de-h3' )
-			. deb_live( 'exam-free-tests', $k )
+			. ( empty( $v['catalog']['soon'] ) ? deb_heading( deb_t( 'Free ' . $v['name'] . ' tests' ), 3, 'de-h3' ) . deb_live( 'exam-free-tests', $k ) : '' )
 			. deb_live( 'exam-tests', $k )
 			. $info,
 			'de-exam-stack de-omet-sec',
@@ -608,6 +607,7 @@ function de_build_pages( $force = false, $only = array() ) {
 		$page = de_site_page( $slug );
 		if ( ! $page ) {
 			$id     = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_name' => $slug, 'post_title' => $title, 'post_content' => wp_slash( call_user_func( $builder ) ), 'page_template' => 'page-sections', 'meta_input' => array( '_de_built' => DE_THEME_VERSION ) ) );
+			update_post_meta( $id, '_de_built_hash', md5( get_post_field( 'post_content', $id, 'raw' ) ) );
 			$done[] = array( $title, 'created' );
 		} else {
 			$id  = $page->ID;
@@ -619,6 +619,7 @@ function de_build_pages( $force = false, $only = array() ) {
 			// wp_slash: saving strips one level of backslashes, which would break escapes like \u002d in block settings.
 			wp_update_post( array( 'ID' => $id, 'post_content' => wp_slash( call_user_func( $builder ) ), 'page_template' => 'page-sections' ) );
 			update_post_meta( $id, '_de_built', DE_THEME_VERSION );
+			update_post_meta( $id, '_de_built_hash', md5( get_post_field( 'post_content', $id, 'raw' ) ) );
 			$done[] = array( $page->post_title, $old ? 'rebuilt (old version saved in revisions)' : 'filled' );
 		}
 		if ( 'home' === $slug && $id ) {

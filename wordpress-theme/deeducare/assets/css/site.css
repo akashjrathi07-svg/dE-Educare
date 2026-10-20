@@ -1016,3 +1016,52 @@ body.admin-bar .de-secnav { top: 99px; }
 	.de-ts__counts dd { font-size: 19px; }
 	.de-pred__inputs { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 }
+
+/* ---------- Interactive extras (2.1.4) ---------- */
+.de-progress { position: fixed; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--de-periwinkle), var(--de-amber)); transform: scaleX(0); transform-origin: 0 50%; z-index: 120; pointer-events: none; }
+.de-plan, .de-price-card, .de-card, .de-point, .de-fact { transition: transform .22s var(--de-ease), box-shadow .22s var(--de-ease); }
+.de-plan:hover, .de-price-card:hover, .de-point:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(14, 18, 48, .10); }
+.de-btn { transition: background .15s, color .15s, transform .12s, box-shadow .2s; }
+.de-btn:active { transform: scale(.97); }
+.de-btn--amber:hover, .de-btn--primary:hover { box-shadow: 0 8px 20px rgba(31, 58, 138, .18); }
+.de-stat { transition: background .2s; }
+.de-stat:hover { background: var(--de-blue-soft); }
+
+/* Plan finder */
+.de-finder { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 0; margin-top: 18px; border-radius: 24px; overflow: hidden; border: 1px solid var(--de-line); background: #fff; }
+.de-finder__q { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.de-finder__row { display: flex; flex-direction: column; gap: 8px; }
+.de-finder__label { font: 800 12px var(--de-sans); color: var(--de-muted); text-transform: uppercase; letter-spacing: .06em; }
+.de-finder .de-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.de-finder .de-chip { transition: background .15s, color .15s, transform .12s; }
+.de-finder .de-chip:hover { transform: translateY(-1px); border-color: var(--de-ink); }
+.de-finder__out { background: var(--de-ink); color: #fff; padding: 24px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.de-finder__name { font: 800 24px/1.15 var(--de-sans); }
+.de-finder__price { font: 800 30px var(--de-sans); color: var(--de-amber); }
+.de-finder__desc { margin: 0; color: rgba(255, 255, 255, .8); font-size: 14px; }
+.de-finder__why { margin: 0 0 6px; font-size: 13px; color: #AFC0FF; font-weight: 700; }
+.de-finder__alt { color: #fff; font-size: 13px; font-weight: 800; text-align: center; opacity: .85; }
+.de-finder__alt:hover { color: var(--de-amber); opacity: 1; }
+@media (max-width: 860px) { .de-finder { grid-template-columns: 1fr; } }
+
+/* Score planner */
+.de-planner { background: #fff; border: 1px solid var(--de-line); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.de-planner__f { display: flex; flex-direction: column; gap: 6px; font: 700 13px var(--de-sans); color: var(--de-text); }
+.de-planner__f output { font-weight: 800; color: var(--de-ink); }
+.de-planner input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--de-blue) var(--fill, 50%), var(--de-chip) var(--fill, 50%)); outline-offset: 4px; }
+.de-planner input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--de-blue); box-shadow: 0 2px 6px rgba(14, 18, 48, .2); cursor: grab; }
+.de-planner input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid var(--de-blue); cursor: grab; }
+.de-planner__res { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
+.de-planner__res div { background: var(--de-page); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+.de-planner__res b { font: 800 22px var(--de-sans); color: var(--de-ink); }
+.de-planner__res span { font: 700 11px var(--de-sans); color: var(--de-faint); }
+.de-planner__tip { font-size: 12.5px; color: var(--de-muted); line-height: 1.45; }
+
+/* Coming-soon mocks card on the OMET page */
+.de-soon-card { display: flex; flex-direction: column; gap: 10px; padding: 24px; border: 1px dashed var(--de-line-btn); }
+.de-soon-card .de-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.de-plan, .de-price-card, .de-card, .de-point, .de-btn, .de-finder .de-chip { transition: none; }
+	.de-plan:hover, .de-price-card:hover, .de-point:hover { transform: none; }
+}

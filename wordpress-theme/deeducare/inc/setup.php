@@ -28,7 +28,88 @@ add_action( 'init', function () {
 	update_option( 'de_pages_built', DE_THEME_VERSION );
 	de_build_pages();
 	de_update_page_text();
+	de_refresh_pages();
 }, 20 );
+
+/**
+ * Sections whose content is the theme's data (prices, programmes, plans, FAQs), refreshed on update.
+ * Keys are block anchors (#coaching) or class names (de-exam-hero). Everything else on the page stays as edited.
+ */
+function de_refreshed_sections() {
+	return array(
+		'home'    => array( 'coaching', 'faq' ),
+		'cat'     => array( 'coaching' ),
+		'mba-cet' => array( 'de-exam-hero', 'coaching', 'faq' ),
+		'omet'    => array( 'de-exam-hero', 'coaching', 'snap', 'nmat', 'xat', 'cmat' ),
+	);
+}
+
+/** After a theme update: pages nobody edited are rebuilt in full; edited pages get only the theme's data sections. */
+function de_refresh_pages() {
+	$pages = de_buildable_pages();
+	foreach ( de_refreshed_sections() as $slug => $keys ) {
+		$page = de_site_page( $slug );
+		if ( ! $page || ! isset( $pages[ $slug ] ) || '' === trim( $page->post_content ) ) {
+			continue;
+		}
+		$fresh = call_user_func( $pages[ $slug ][1] );
+		$hash  = get_post_meta( $page->ID, '_de_built_hash', true );
+		$new   = $hash && md5( $page->post_content ) === $hash ? $fresh : de_replace_sections( $page->post_content, $fresh, $keys );
+		if ( $new !== $page->post_content ) {
+			wp_update_post( array( 'ID' => $page->ID, 'post_content' => wp_slash( $new ) ) );
+			update_post_meta( $page->ID, '_de_built_hash', md5( get_post_field( 'post_content', $page->ID, 'raw' ) ) );
+		}
+	}
+}
+
+/** Swaps the blocks marked by $keys (anchor or class name) in $content for the same blocks in $fresh. */
+function de_replace_sections( $content, $fresh, $keys ) {
+	$key_of = function ( $b ) use ( $keys ) {
+		$attrs = $b['attrs'] ?? array();
+		if ( ! empty( $attrs['anchor'] ) && in_array( $attrs['anchor'], $keys, true ) ) {
+			return $attrs['anchor'];
+		}
+		foreach ( preg_split( '/\s+/', $attrs['className'] ?? '' ) as $c ) {
+			if ( $c && in_array( $c, $keys, true ) ) {
+				return $c;
+			}
+		}
+		return '';
+	};
+	$found = array();
+	$scan  = function ( $blocks ) use ( &$scan, &$found, $key_of ) {
+		foreach ( $blocks as $b ) {
+			$k = $key_of( $b );
+			if ( $k && ! isset( $found[ $k ] ) ) {
+				$found[ $k ] = $b;
+				continue;
+			}
+			$scan( $b['innerBlocks'] ?? array() );
+		}
+	};
+	$scan( parse_blocks( $fresh ) );
+	$done = array();
+	$walk = function ( $blocks ) use ( &$walk, &$found, &$done, $key_of ) {
+		foreach ( $blocks as $i => $b ) {
+			$k = $key_of( $b );
+			if ( $k && isset( $found[ $k ] ) && ! isset( $done[ $k ] ) ) {
+				$blocks[ $i ] = $found[ $k ];
+				$done[ $k ]   = true;
+				continue;
+			}
+			if ( ! empty( $b['innerBlocks'] ) ) {
+				$inner = $walk( $b['innerBlocks'] );
+				if ( $inner !== $b['innerBlocks'] ) {
+					// innerContent holds the inner blocks as null placeholders, so only innerBlocks change.
+					$blocks[ $i ]['innerBlocks'] = $inner;
+				}
+			}
+		}
+		return $blocks;
+	};
+	$blocks = $walk( parse_blocks( $content ) );
+	return $done ? serialize_blocks( $blocks ) : $content;
+}
 
 /**
  * Theme 2.1.0 saved pages without wp_slash(), so block settings lost their backslashes

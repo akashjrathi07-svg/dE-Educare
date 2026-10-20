@@ -17,6 +17,7 @@ export const XP_PER_COIN = 10;
 export const COIN_COST = {
   chat: 1,
   voice: 3,           // voice replies teach like a tutor: concept, example, quick check
+  teach: 3,           // a full lesson: idea, steps, worked example, traps and a check question
   doubt: 2,           // photo or typed doubt with a worked solution
   analysis: { topic: 1, daily: 1, practice: 1, custom: 1, sectional: 2, full_mock: 3, pyq: 3 } as Record<string, number>,
   reportSmall: 5,     // full progress report over up to 10 tests
@@ -25,7 +26,7 @@ export const COIN_COST = {
 } as const;
 
 export const COIN_LABEL: Record<string, string> = {
-  chat: 'Guru chat', voice: 'Guru voice', doubt: 'Doubt solved', analysis: 'Test analysis', report: 'Progress report', practice: 'Practice set',
+  chat: 'Guru chat', voice: 'Guru voice', teach: 'Guru lesson', doubt: 'Doubt solved', analysis: 'Test analysis', report: 'Progress report', practice: 'Practice set',
   xp_convert: 'Converted from XP', prize: 'Monthly prize', streak: 'Streak bonus', grant: 'Added by DE Educare', reward: 'Rewards store',
 };
 

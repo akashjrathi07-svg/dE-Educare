@@ -60,19 +60,31 @@ function de_render_tests( $view, $exam, $scope ) {
 	$series   = $c['sm'] ? 'mocks' : 'sectional';
 	$last     = function ( $ids ) { return $ids[ count( $ids ) - 1 ]; };
 	?>
+	<?php if ( ! empty( $c['soon'] ) ) : ?>
+		<div class="de-card de-soon-card">
+			<span class="de-eyebrow de-eyebrow--muted">MOCK TESTS · COMING SOON</span>
+			<h2 class="de-h2"><?php de_e( $c['label'] . ' mocks are coming soon' ); ?></h2>
+			<p class="de-p15"><?php de_e( 'Full-length ' . $c['label'] . ' mocks in the real pattern, marking and timing, with AI analysis after every attempt. Leave your number and we will tell you the day they go live.' ); ?></p>
+			<div class="de-row"><a class="de-btn de-btn--primary" href="<?php echo esc_url( add_query_arg( 'exam', $c['label'], de_page_url( 'contact' ) ) ); ?>">Notify me</a><a class="de-btn de-btn--outline" href="#snap">Practise with SNAP mocks</a></div>
+		</div>
+		<?php return; ?>
+	<?php endif; ?>
+	<?php $only = ! empty( $c['mocksOnly'] ); ?>
 	<div class="de-split de-split--end">
 		<div class="de-stack-6">
 			<span class="de-eyebrow de-eyebrow--muted">TEST SERIES</span>
-			<h2 class="de-h2"><?php de_e( $c['label'] . ' mocks, sectionals and topic tests' ); ?></h2>
+			<h2 class="de-h2"><?php de_e( $c['label'] . ( $only ? ' mocks: ' . $c['mocks']['n'] . ' full-length tests' : ' mocks, sectionals and topic tests' ) ); ?></h2>
 			<p class="de-p15">Every test opens in an exam-style window. Submit and Guru analyses your attempt in seconds: section scores, accuracy, time, weak topics and the next tests to take.</p>
 		</div>
 		<a class="de-sync" href="<?php echo esc_url( de_login_url() ); ?>">Sign in to save attempts</a>
 	</div>
 
+	<?php if ( ! $only ) : ?>
 	<div class="de-seg" role="tablist" aria-label="<?php esc_attr_e( 'Test types', 'deeducare' ); ?>">
 		<button <?php echo de_tab_attrs( $g_portal, 'mocks', true ); // phpcs:ignore ?>><?php de_e( $c['tabs'][0] ); ?></button>
 		<button <?php echo de_tab_attrs( $g_portal, 'series', false ); // phpcs:ignore ?>><?php de_e( $c['tabs'][1] ); ?></button>
 	</div>
+	<?php endif; ?>
 
 	<div <?php echo de_panel_attrs( $g_portal, 'mocks', true ); // phpcs:ignore ?> class="de-stack-16">
 		<div class="de-tests">
@@ -80,9 +92,10 @@ function de_render_tests( $view, $exam, $scope ) {
 				<?php de_test_card( $c['mocks']['prefix'] . ' ' . $i, $c['pfx'] . '-m-' . $i, $c['mocks']['q'], $c['mocks']['mins'], 1 === $i, $last( $c['mockPlan'] ) ); ?>
 			<?php endfor; ?>
 		</div>
-		<p class="de-note de-note--sm"><?php de_e( $c['mocks']['prefix'] . ' 1 is free. Unlock the rest with a plan below.' ); ?></p>
+		<p class="de-note de-note--sm"><?php de_e( $c['mocks']['prefix'] . ' 1 is free. ' . ( $only ? 'Unlock all ' . $c['mocks']['n'] . ' with the plan below.' : 'Unlock the rest with a plan below.' ) ); ?></p>
 	</div>
 
+	<?php if ( $only ) { return; } ?>
 	<div <?php echo de_panel_attrs( $g_portal, 'series', false ); // phpcs:ignore ?> class="de-stack-16">
 		<div class="de-chips" role="tablist">
 			<?php if ( $c['sm'] ) : ?>
@@ -344,16 +357,16 @@ function de_render_plans( $exam ) {
 
 /** Coaching programmes for this exam, with the enquiry form beside them. */
 function de_render_coaching( $exam ) {
-	$ids   = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'mba-plus', 'cat-coaching-2027' ) )[ $exam ];
+	$ids   = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-crash', 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'cat-coaching-2027', 'mba-plus' ) )[ $exam ];
 	$plans = array_values( array_filter( de_coaching(), function ( $c ) use ( $ids ) { return in_array( $c['id'], $ids, true ); } ) );
 	usort( $plans, function ( $a, $b ) use ( $ids ) { return array_search( $a['id'], $ids, true ) - array_search( $b['id'], $ids, true ); } );
-	$label = array( 'cat' => 'CAT 2027', 'cet' => 'MBA-CET 2028', 'omet' => 'OMETs' )[ $exam ];
+	$label = array( 'cat' => 'CAT 2027 coaching with live classes and mentors', 'cet' => 'MBA-CET 2027 crash course and CET coaching with live classes', 'omet' => 'CAT coaching that prepares you for OMETs too' )[ $exam ];
 	$icons = array( array( 'icon-mentor.webp', 'Live classes' ), array( 'icon-books.webp', 'Books' ), array( 'icon-checklist.webp', 'Mocks' ), array( 'icon-support.webp', 'Mentorship' ) );
 	?>
 	<div class="de-stack-16 de-anchor" id="coaching" data-reveal>
 		<div class="de-stack-8">
 			<span class="de-eyebrow de-eyebrow--blue">COACHING · NEW BATCHES</span>
-			<h2 class="de-h2"><?php de_e( 'omet' === $exam ? 'Coaching that covers every OMET' : $label . ' coaching with live classes and mentors' ); ?></h2>
+			<h2 class="de-h2"><?php de_e( $label ); ?></h2>
 			<p class="de-p15">Live lectures, a recording of every class, books, the full test series and one-on-one mentorship, online or in our Mumbai classroom. Send an enquiry for batch start dates.</p>
 			<ul class="de-feats" aria-label="Included">
 				<?php foreach ( $icons as $ic ) : ?>
@@ -393,6 +406,9 @@ function de_render_coaching( $exam ) {
 /** Free tests for this exam: today's daily test, the free mock and previous papers. */
 function de_render_free_tests( $view, $exam, $with_ids, $head = true ) {
 	$c     = $view['catalog'];
+	if ( ! empty( $c['soon'] ) ) {
+		return;
+	}
 	$daily = 'omet' === $exam ? strtolower( $view['name'] ) : $exam;
 	$label = wp_date( 'j M' );
 	?>
@@ -418,7 +434,7 @@ function de_render_free_tests( $view, $exam, $with_ids, $head = true ) {
 			<?php foreach ( $c['pyq'] as $k => $p ) : ?>
 				<?php de_test_card( $p[0], $c['pfx'] . '-pyq-' . $k, $p[1], $p[2], true, null ); ?>
 			<?php endforeach; ?>
-			<?php if ( ! empty( $c['secs'][0] ) ) : ?>
+			<?php if ( ! empty( $c['secs'][0] ) && empty( $c['mocksOnly'] ) ) : ?>
 				<?php de_test_card( $c['secs'][0][1] . ' Sectional 1', $c['pfx'] . '-ss-0-1', $c['secs'][0][2], $c['secMins'], true, null ); ?>
 			<?php endif; ?>
 		</div>

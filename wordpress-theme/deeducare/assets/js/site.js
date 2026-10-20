@@ -407,6 +407,120 @@
 			.catch( function () {} );
 	}
 
+	/* ---------- Plan finder: three choices → one recommended plan ---------- */
+	$$( '[data-finder]' ).forEach( function ( box ) {
+		var recs = JSON.parse( box.getAttribute( 'data-recs' ) || '{}' );
+		var pick = function ( k ) { var b = $( '[data-finder-' + k + '][aria-pressed="true"]', box ); return b ? b.getAttribute( 'data-finder-' + k ) : ''; };
+		var choose = function () {
+			var exam = pick( 'exam' ), stage = pick( 'stage' ), want = pick( 'want' );
+			var id, alt, why;
+			if ( want === 'coach' ) {
+				id = { cat: 'cat-coaching-2027', cet: stage === 'final' ? 'cet-crash' : 'cet-coaching-2028', both: 'mba-plus', snap: 'cat-coaching-2027' }[ exam ];
+				alt = exam === 'snap' ? 'om-single' : exam === 'cet' ? 'cet-ts' : exam === 'both' ? 'cet-crash' : 'cat-ts';
+				why = { cat: 'Live classes, mentors and the full CAT Test Series.', cet: stage === 'final' ? 'Close to the exam? The crash course covers speed and attempt strategy fast.' : 'A full year of CET classes with the CET Test Series.', both: 'One programme for CAT and MBA-CET together.', snap: 'SNAP has no separate coaching: CAT coaching covers its syllabus. Add SNAP 15 Mocks before the exam.' }[ exam ];
+			} else if ( exam === 'snap' ) {
+				id = 'om-single'; why = 'SNAP rewards speed: 15 full-length mocks in the real SNAP timing.';
+			} else if ( exam === 'cet' ) {
+				id = 'cet-ts'; alt = stage === 'final' ? 'cet-crash' : ''; why = 'CET is about attempts: 30 mocks and 40 sectionals build speed.';
+			} else {
+				id = want === 'mocks' && stage !== 'start' ? 'cat-10' : 'cat-ts';
+				alt = exam === 'both' ? 'cet-ts' : ( id === 'cat-10' ? 'cat-ts' : '' );
+				why = id === 'cat-10' ? 'You know the syllabus: full-length mocks give you exam-day practice.' : stage === 'start' ? 'Starting out? Topic tests and sectionals come before full mocks.' : 'Sectionals and topic tests fix weak areas between mocks.';
+				if ( exam === 'both' ) { why += ' Add the CET Test Series for MBA-CET.'; }
+			}
+			var r = recs[ id ];
+			if ( ! r ) { return; }
+			$( '[data-finder-name]', box ).textContent = r.name;
+			$( '[data-finder-price]', box ).textContent = r.price;
+			$( '[data-finder-desc]', box ).textContent = r.desc;
+			$( '[data-finder-why]', box ).textContent = why;
+			var cta = $( '[data-finder-cta]', box );
+			cta.textContent = r.cta;
+			if ( r.lead ) { cta.setAttribute( 'href', '#enquire-' + r.lead ); } else { cta.setAttribute( 'href', r.url ); }
+			var a2 = $( '[data-finder-alt]', box ), ra = alt && recs[ alt ];
+			a2.hidden = ! ra;
+			if ( ra ) { a2.textContent = 'Also consider ' + ra.name + ' · ' + ra.price + ' →'; a2.setAttribute( 'href', ra.lead ? '#enquire-' + ra.lead : ra.url ); }
+			var out = $( '.de-finder__out', box );
+			if ( out.animate && ! reduceMotion ) { out.animate( [ { transform: 'scale(.98)', opacity: .6 }, { transform: 'none', opacity: 1 } ], { duration: 260, easing: 'ease-out' } ); }
+		};
+		box.addEventListener( 'click', function ( e ) {
+			var b = e.target.closest( '.de-chip' );
+			if ( ! b ) { return; }
+			$$( '.de-chip', b.parentNode ).forEach( function ( c ) { c.setAttribute( 'aria-pressed', c === b ? 'true' : 'false' ); } );
+			choose();
+		} );
+		choose();
+	} );
+
+	/* ---------- Score planner: attempts × accuracy → score, pace and (CAT) percentile ---------- */
+	$$( '[data-planner]' ).forEach( function ( box ) {
+		var q = +box.getAttribute( 'data-q' ), plus = +box.getAttribute( 'data-plus' ), minus = +box.getAttribute( 'data-minus' ), min = +box.getAttribute( 'data-min' );
+		var table = box.hasAttribute( 'data-table' ) ? JSON.parse( box.getAttribute( 'data-table' ) ) : null;
+		var att = $( '[data-pl-att]', box ), acc = $( '[data-pl-acc]', box );
+		var toPct = function ( score ) {
+			for ( var k = 0; k < table.length - 1; k++ ) {
+				var hs = table[ k ][ 0 ], hp = table[ k ][ 1 ], ls = table[ k + 1 ][ 0 ], lp = table[ k + 1 ][ 1 ];
+				if ( score >= hs ) { return hp; }
+				if ( score >= ls ) { return lp + ( ( score - ls ) / ( hs - ls ) ) * ( hp - lp ); }
+			}
+			return table[ table.length - 1 ][ 1 ];
+		};
+		var calc = function () {
+			var a = +att.value, c = Math.round( a * ( +acc.value ) / 100 ), w = a - c;
+			var score = Math.round( ( c * plus - w * minus ) * 100 ) / 100;
+			$( '[data-pl-att-out]', box ).textContent = a;
+			$( '[data-pl-acc-out]', box ).textContent = acc.value;
+			$( '[data-pl-score]', box ).textContent = score;
+			$( '[data-pl-time]', box ).textContent = a ? Math.round( ( min * 60 ) / a ) : '—';
+			if ( table ) { $( '[data-pl-pct]', box ).textContent = toPct( score ).toFixed( 1 ); }
+			var tip = minus === 0 ? 'No negative marking: attempt every question, guess the rest in the last minutes.'
+				: ( +acc.value < 60 ? 'Below 60% accuracy, each extra attempt can cost marks. Fewer, surer attempts score more.' : 'Good accuracy. Raising attempts by 5 adds about ' + Math.max( 0, Math.round( 5 * ( ( +acc.value / 100 ) * plus - ( 1 - +acc.value / 100 ) * minus ) ) ) + ' marks.' );
+			$( '[data-pl-tip]', box ).textContent = tip;
+			[ att, acc ].forEach( function ( r ) { r.style.setProperty( '--fill', ( ( r.value - r.min ) / ( r.max - r.min ) ) * 100 + '%' ); } );
+		};
+		att.addEventListener( 'input', calc );
+		acc.addEventListener( 'input', calc );
+		calc();
+	} );
+
+	/* ---------- Numbers count up when they scroll into view (200, 150 min, ₹1,800 …) ---------- */
+	if ( ! reduceMotion && 'IntersectionObserver' in window ) {
+		var cio = new IntersectionObserver( function ( entries ) {
+			entries.forEach( function ( en ) {
+				if ( ! en.isIntersecting ) { return; }
+				cio.unobserve( en.target );
+				var el = en.target, txt = el.getAttribute( 'data-count-text' ), m = txt.match( /^(\D*)([\d,]+)(.*)$/ );
+				var end = parseInt( m[ 2 ].replace( /,/g, '' ), 10 ), comma = m[ 2 ].indexOf( ',' ) > -1, t0 = null;
+				var step = function ( t ) {
+					if ( ! t0 ) { t0 = t; }
+					var p = Math.min( 1, ( t - t0 ) / 900 ), v = Math.round( end * ( 1 - Math.pow( 1 - p, 3 ) ) );
+					el.textContent = m[ 1 ] + ( comma ? v.toLocaleString( 'en-IN' ) : v ) + m[ 3 ];
+					if ( p < 1 ) { requestAnimationFrame( step ); } else { el.textContent = txt; }
+				};
+				requestAnimationFrame( step );
+			} );
+		}, { threshold: 0.6 } );
+		$$( '.de-stat__v, .de-fact__v, .de-qa__facts dd, .de-ts__counts dd, .de-price-card__price, .de-plan__price' ).forEach( function ( el ) {
+			if ( el.children.length ) { return; }
+			var txt = el.textContent.trim();
+			if ( ! /^\D{0,2}[\d,]{2,}(\s|$|%|\+)/.test( txt ) ) { return; }
+			el.setAttribute( 'data-count-text', txt );
+			cio.observe( el );
+		} );
+	}
+
+	/* ---------- Reading progress bar ---------- */
+	var bar = document.createElement( 'div' );
+	bar.className = 'de-progress';
+	bar.setAttribute( 'aria-hidden', 'true' );
+	document.body.appendChild( bar );
+	var onScroll = function () {
+		var h = document.documentElement.scrollHeight - window.innerHeight;
+		bar.style.transform = 'scaleX(' + ( h > 0 ? Math.min( 1, window.scrollY / h ) : 0 ) + ')';
+	};
+	window.addEventListener( 'scroll', onScroll, { passive: true } );
+	onScroll();
+
 	/* ---------- Scroll reveal: fade up 22px over 650ms. Content is never hidden before this runs. ---------- */
 	if ( ! reduceMotion && 'IntersectionObserver' in window ) {
 		var io = new IntersectionObserver( function ( entries ) {
