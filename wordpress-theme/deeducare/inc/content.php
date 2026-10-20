@@ -40,8 +40,8 @@ function de_plans() {
 			array( 'id' => 'cet-ts', 'name' => 'CET Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹1,800', 'amount' => 1800, 'mrp' => 2500, 'desc' => '30 full-length mocks, 40 sectionals (10 per section) and 3 topic tests for every topic, with section-wise analysis.', 'feat' => array( '30 mocks, 40 sectionals', '3 topic tests per topic', 'Section-wise speed analysis', '50 Guru coins a day' ), 'best' => 'From foundation to exam-ready.', 'cta' => 'Get the Test Series', 'dark' => true ),
 		),
 		'omet' => array(
-			array( 'id' => 'om-pack', 'name' => 'OMET Combo', 'tag' => 'ALL 4 EXAMS', 'soon' => true, 'price' => '₹3,000', 'amount' => 3000, 'mrp' => 4500, 'desc' => '15 mocks each for SNAP, NMAT, XAT and CMAT, sectionals for every section and 3 topic tests per topic, each in its own pattern and timing.', 'feat' => array( '15 mocks per exam (60 in all)', 'Sectionals for every section', '3 topic tests per topic', 'Exam-specific interfaces' ), 'best' => 'For students writing more than one OMET.', 'cta' => 'Get the OMET Combo', 'dark' => true ),
-			array( 'id' => 'om-single', 'name' => 'SNAP Test Series', 'price' => '₹1,500', 'amount' => 1500, 'mrp' => 2000, 'desc' => '15 SNAP mocks, sectionals and topic tests in the real SNAP pattern and timing.', 'feat' => array( '15 full-length SNAP mocks', 'Sectional tests', '3 topic tests per topic' ), 'best' => 'For SNAP aspirants.', 'cta' => 'Get the SNAP Test Series' ),
+			array( 'id' => 'om-single', 'name' => 'SNAP 15 Mocks', 'tag' => 'SNAP 2026', 'price' => '₹1,000', 'amount' => 1000, 'mrp' => 1500, 'desc' => '15 full-length SNAP mocks in the real SNAP pattern, marking and timing, with Guru’s AI analysis after every mock.', 'feat' => array( '15 full-length SNAP mocks', 'Real SNAP pattern, marking and timing', 'All-India percentile', 'AI analysis after every mock' ), 'best' => 'For SNAP aspirants.', 'cta' => 'Get SNAP 15 Mocks' ),
+			array( 'id' => 'om-pack', 'name' => 'NMAT, XAT & CMAT Mocks', 'tag' => 'COMING SOON', 'soon' => true, 'price' => '₹ —', 'desc' => 'Full-length mocks for NMAT, XAT and CMAT, each in its own pattern, marking and timing.', 'feat' => array( 'NMAT, XAT and CMAT mocks', 'Each exam’s own pattern and timing', 'AI analysis after every mock' ), 'best' => 'Tap Notify me to hear first.', 'cta' => 'Notify me' ),
 		),
 	) );
 }
@@ -129,8 +129,8 @@ function de_exams() {
 			'name'    => 'MBA-CET',
 			'slug'    => 'mba-cet',
 			'eyebrow' => 'MAH MBA CET · MAHARASHTRA',
-			'title'   => 'MBA-CET Coaching 2028 and MAH-CET Mock Tests',
-			'intro'   => 'MBA-CET is a speed test: 200 questions in 150 minutes, no negative marking. Our coaching and 30 full mocks with 40 sectionals are built to raise your attempts without losing accuracy.',
+			'title'   => 'MBA-CET 2027 Crash Course, Coaching and MAH-CET Mock Tests',
+			'intro'   => 'MBA-CET is a speed test: 200 questions in 150 minutes, no negative marking. Join the CET 2027 Crash Course (₹12,999) or CET Coaching 2028, and practise with 30 full mocks and 40 sectionals built to raise your attempts without losing accuracy.',
 			'freeCta' => 'Take a free CET test',
 			'img'     => 'img_cet',
 			'tone'    => '#2C3FA8',
@@ -173,6 +173,7 @@ function de_exams() {
 				),
 			),
 			'faq'     => array(
+				array( 'Do you have a crash course for MBA-CET 2027?', 'Yes. The CET Crash Course 2027 costs ₹12,999 and includes live crash-course classes for LR, AR, QA and VA, recordings, the CET Test Series (30 mocks, 40 sectionals), speed drills and doubt sessions. Send an enquiry for batch dates.' ),
 				array( 'Do you offer MBA-CET coaching for 2028?', 'Yes. CET Coaching 2028 costs ₹30,000 and includes live lectures for LR, AR, QA and VA, recordings, the CET Test Series (30 mocks, 40 sectionals), books, one-on-one mentorship and CAP round guidance.' ),
 				array( 'What MAH-CET percentile do I need for JBIMS?', 'In recent CAP rounds JBIMS has closed at about 99.9 percentile for Maharashtra open-category candidates, Sydenham at about 99.5 and PUMBA at about 98. Cutoffs vary by category and year; try the college predictor on Free resources.' ),
 				array( 'Is there negative marking in MBA-CET?', 'No. Every question carries one mark and wrong answers cost nothing, so attempt every question.' ),
@@ -202,12 +203,12 @@ function de_exams() {
 			'name'    => 'OMETs',
 			'slug'    => 'omet',
 			'eyebrow' => 'SNAP · NMAT · XAT · CMAT',
-			'title'   => 'OMET Mock Tests 2026–27: SNAP, NMAT, XAT and CMAT',
-			'intro'   => 'Each OMET has its own rules: SNAP’s speed, NMAT’s section order, XAT’s decision making, CMAT’s innovation section. 15 mocks per exam in its own pattern, with sectionals and topic tests. Pick an exam to see its pattern and plans.',
+			'title'   => 'SNAP Mock Tests 2026 and OMET Preparation',
+			'intro'   => 'SNAP 15 Mocks are live: 15 full-length mocks in the real SNAP pattern, marking and timing for ₹1,000, with AI analysis after every mock. NMAT, XAT and CMAT mocks are coming soon. Pick an exam to see its pattern, dates and colleges.',
 			'freeCta' => 'Take a free OMET test',
 			'img'     => 'img_omet',
 			'tone'    => 'oklch(0.42 0.12 280)',
-			'stats'   => array( array( '4', 'Exams' ), array( 'SNAP', 'Symbiosis' ), array( 'NMAT', 'NMIMS' ), array( 'XAT', 'XLRI' ) ),
+			'stats'   => array( array( '15', 'SNAP mocks' ), array( '60 Q', '60 min each' ), array( '₹1,000', 'SNAP 15 Mocks' ), array( 'Soon', 'NMAT · XAT · CMAT' ) ),
 		),
 	);
 }
@@ -308,8 +309,8 @@ function de_omet_view( $key ) {
 		'ov'      => array(
 			'h'        => $name . ' at a glance',
 			'p'        => $o['ov'],
-			'tlH'      => 'How to use the OMET pack',
-			'points'   => array( array( '01', 'Exam-specific mocks', 'Each mock follows its own exam’s timing and marking.' ), array( '02', 'Sectionals', 'Focused practice on each section.' ), array( '03', 'AI analysis', 'Guru reviews every attempt and plans your next test.' ) ),
+			'tlH'      => 'How to use OMET mocks',
+			'points'   => array( array( '01', 'Exam-specific mocks', 'Each mock follows its own exam’s timing and marking.' ), array( '02', 'Real exam interface', 'The same screen, timer and palette as the actual test.' ), array( '03', 'AI analysis', 'Guru reviews every attempt and plans your next test.' ) ),
 			'timeline' => array( array( 'AFTER CAT', 'Switch formats', 'Take one mock of each OMET to learn the differences.', '#1F3A8A' ), array( 'DEC – JAN', 'Exam by exam', 'Two mocks before each exam date.', 'oklch(0.6 0.19 40)' ) ),
 		),
 		'pat'     => array( 'h' => $name . ' exam pattern', 'rows' => $o['rows'], 'marks' => $o['marks'] ),
@@ -333,7 +334,7 @@ function de_omet_view( $key ) {
 			array( 'How many attempts does ' . $name . ' allow?', $attempts . '.' ),
 			array( 'How is ' . $name . ' different from CAT?', $o['ov'] ),
 			array( 'Which colleges accept ' . $name . '?', implode( ', ', $o['colleges'] ) . ', and more.' ),
-			array( 'Do I need separate packs for each OMET?', 'The SNAP Test Series is ₹1,500 (15 SNAP mocks, sectionals and topic tests). The OMET Combo, covering SNAP, NMAT, XAT and CMAT with 15 mocks each, is coming soon.' ),
+			array( 'Which OMET mocks are available?', 'SNAP 15 Mocks are live for ₹1,000: 15 full-length SNAP mocks with AI analysis. Mocks for NMAT, XAT and CMAT are coming soon; tap Notify me to hear first.' ),
 			array( 'Can I use CAT mocks to prepare for OMETs?', 'Yes for concepts, but each OMET has its own timing and marking. Take at least three exam-specific mocks before your test.' ),
 			array( 'Do ' . $name . ' tests get AI analysis?', 'Yes. Every attempt gets section scores, time per question and a written plan from Guru.' ),
 		),
@@ -341,13 +342,16 @@ function de_omet_view( $key ) {
 			'pfx'        => 'om-' . $key,
 			'label'      => $name,
 			'tabs'       => array( $name . ' Mocks', $name . ' Sectionals & topics' ),
+			// SNAP is mocks only; the other OMETs' mocks are coming soon.
+			'mocksOnly'  => true,
+			'soon'       => 'snap' !== $key,
 			'mocks'      => array( 'n' => 15, 'prefix' => $name . ' Mock', 'q' => $o['q'], 'mins' => $o['mins'] ),
-			'mockPlan'   => array( 'om-pack', 'om-single' ),
+			'mockPlan'   => array( 'snap' === $key ? 'om-single' : 'om-pack' ),
 			'sm'         => null,
 			'secs'       => $secs,
 			'secN'       => 4,
 			'secMins'    => 20,
-			'seriesPlan' => array( 'om-pack', 'om-single' ),
+			'seriesPlan' => array( 'snap' === $key ? 'om-single' : 'om-pack' ),
 			'pyq'        => array( array( $name . ' sample paper', $o['q'], $o['mins'] ) ),
 		),
 	);
@@ -358,7 +362,7 @@ function de_home_faqs() {
 		array( 'Is the same login used on the app and the website?', 'Yes. Your DE Educare ID is your mobile number. Log in on the website, the student portal or the app to see the same purchases, scores and Guru history.' ),
 		array( 'Which exams does DE Educare cover?', 'CAT, MBA-CET and OMETs (SNAP, NMAT, XAT, CMAT) today. Bank PO, RBI and UPSC test series are launching soon.' ),
 		array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 Mocks is full-length practice. The Test Series adds sectionals, topic tests, analytics and 50 Guru coins a day.' ),
-		array( 'Do you offer coaching classes?', 'Yes. CAT Coaching 2027 (₹40,000), CET Coaching 2028 (₹30,000) and MBA+ for CAT, CET and OMETs together (₹60,000) include live lectures, recorded sessions, mocks, books, one-on-one mentorship and admission guidance. Send an enquiry for batch dates.' ),
+		array( 'Do you offer coaching classes?', 'Yes. CAT Coaching 2027 (₹40,000), CET Coaching 2028 (₹30,000), the CAT + CET Combo (₹60,000) and the CET Crash Course 2027 (₹12,999) include live lectures, recorded sessions, mocks, books, one-on-one mentorship and admission guidance. Send an enquiry for batch dates.' ),
 		array( 'What is Guru?', 'Guru is the AI mentor built into the portal. It analyses every attempt, solves doubts from a photo, builds practice sets and teaches by chat or voice.' ),
 		array( 'How do Guru coins work?', 'Guru uses coins: 1 for a chat message, 3 for a voice tutor reply, 2 for a photo doubt, 1–3 for a test analysis and 1 per 10 questions for a practice set. You get 10 coins a day free, 50 on a test series and unlimited on coaching. Daily coins refill at midnight; bonus coins earned from XP never expire.' ),
 		array( 'Is the daily free test really free?', 'Yes, always. A new test is added every day with an instant scorecard and AI analysis.' ),
@@ -442,27 +446,35 @@ function de_coaching() {
 		),
 		array(
 			'id'    => 'mba-plus',
-			'name'  => 'MBA+ (CAT + CET + OMET)',
-			'for'   => 'One programme for every MBA entrance',
+			'name'  => 'CAT + CET Combo',
+			'for'   => 'CAT 2027 and MBA-CET coaching together',
 			'fee'   => 60000,
 			'tag'   => 'BEST VALUE',
-			'feat'  => array( 'Everything in CAT and CET Coaching', 'OMET Combo: SNAP, NMAT, XAT, CMAT', 'GD, PI and WAT preparation', 'Admission guidance across all exams', 'Unlimited Guru, the AI mentor' ),
+			'feat'  => array( 'Everything in CAT Coaching 2027', 'Everything in CET coaching', 'CAT and CET Test Series', 'GD, PI and WAT preparation', 'Admission guidance for IIMs and CAP rounds', 'Unlimited Guru, the AI mentor' ),
+		),
+		array(
+			'id'    => 'cet-crash',
+			'name'  => 'CET Crash Course 2027',
+			'for'   => 'For MAH MBA-CET 2027 · fast-track before the exam',
+			'fee'   => 12999,
+			'tag'   => 'CET 2027',
+			'feat'  => array( 'Live crash-course classes for LR, AR, QA and VA', 'Recorded session of every class', 'CET Test Series: 30 mocks, 40 sectionals', 'Speed drills, shortcuts and attempt strategy', 'Doubt-solving sessions', 'Unlimited Guru, the AI mentor' ),
 		),
 	);
 }
 
-/** Rows of the coaching comparison on the home page: label, then CAT, CET, MBA+. */
+/** Rows of the coaching comparison on the home page: label, then one column per programme in de_coaching(). */
 function de_coaching_rows() {
 	return array(
-		array( 'Exam year', 'CAT 2027', 'MBA-CET 2028', 'CAT 2027 + CET 2028 + OMETs' ),
-		array( 'Live lectures', 'Quant, DILR, VARC', 'LR, AR, QA, VA', 'All CAT and CET sections' ),
-		array( 'Recorded sessions', '✓', '✓', '✓' ),
-		array( 'Mocks and test series', 'CAT Test Series', 'CET Test Series', 'CAT + CET + OMET Combo' ),
-		array( 'Books and study material', '✓', '✓', '✓' ),
-		array( 'One-on-one mentorship', '✓', '✓', '✓' ),
-		array( 'GD, PI and WAT preparation', '✓', '—', '✓' ),
-		array( 'Admission guidance', 'IIMs and top B-schools', 'CAP rounds', 'All exams' ),
-		array( 'Guru AI mentor', 'Unlimited', 'Unlimited', 'Unlimited' ),
+		array( 'Exam year', 'CAT 2027', 'MBA-CET 2028', 'CAT 2027 + MBA-CET', 'MBA-CET 2027' ),
+		array( 'Live lectures', 'Quant, DILR, VARC', 'LR, AR, QA, VA', 'All CAT and CET sections', 'LR, AR, QA, VA (crash course)' ),
+		array( 'Recorded sessions', '✓', '✓', '✓', '✓' ),
+		array( 'Mocks and test series', 'CAT Test Series', 'CET Test Series', 'CAT + CET Test Series', 'CET Test Series' ),
+		array( 'Books and study material', '✓', '✓', '✓', 'Crash-course notes' ),
+		array( 'One-on-one mentorship', '✓', '✓', '✓', 'Doubt sessions' ),
+		array( 'GD, PI and WAT preparation', '✓', '—', '✓', '—' ),
+		array( 'Admission guidance', 'IIMs and top B-schools', 'CAP rounds', 'IIMs and CAP rounds', 'CAP rounds' ),
+		array( 'Guru AI mentor', 'Unlimited', 'Unlimited', 'Unlimited', 'Unlimited' ),
 	);
 }
 
@@ -474,8 +486,8 @@ function de_test_series() {
 	return array(
 		array( 'plan' => 'cat-ts', 'exam' => 'cat', 'name' => 'CAT Test Series', 'counts' => array( array( '20', 'Mocks' ), array( '30', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'cat' ) . '#plans' ),
 		array( 'plan' => 'cet-ts', 'exam' => 'cet', 'name' => 'CET Test Series', 'counts' => array( array( '30', 'Mocks' ), array( '40', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'mba-cet' ) . '#plans' ),
-		array( 'plan' => 'om-single', 'exam' => 'snap', 'name' => 'SNAP Test Series', 'counts' => array( array( '15', 'Mocks' ), array( '✓', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#snap' ),
-		array( 'plan' => 'om-pack', 'exam' => 'omet', 'name' => 'OMET Combo', 'counts' => array( array( '15', 'Mocks per exam' ), array( 'All', 'Sectionals' ), array( '3', 'Topic tests each' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
+		array( 'plan' => 'om-single', 'exam' => 'snap', 'name' => 'SNAP 15 Mocks', 'counts' => array( array( '15', 'Full mocks' ), array( '60', 'Questions each' ), array( 'AI', 'Analysis' ) ), 'url' => de_page_url( 'omet' ) . '#snap' ),
+		array( 'plan' => 'om-pack', 'exam' => 'omet', 'name' => 'NMAT, XAT & CMAT Mocks', 'counts' => array( array( 'NMAT', 'Mocks' ), array( 'XAT', 'Mocks' ), array( 'CMAT', 'Mocks' ) ), 'url' => de_page_url( 'omet' ) . '#plans' ),
 	);
 }
 

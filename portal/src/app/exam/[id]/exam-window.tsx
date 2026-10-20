@@ -36,6 +36,21 @@ export function ExamWindow({ initial }: { initial: State }) {
   const [confirm, setConfirm] = useState<'submit' | 'section' | null>(null);
   const [busy, setBusy] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
+  // Full screen: asked for on the first tap in the exam (browsers need a tap), and from the top bar.
+  const [full, setFull] = useState(false);
+  const toggleFull = useCallback(() => {
+    const el = document.documentElement;
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    else el.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    const on = () => setFull(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', on);
+    const first = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); };
+    window.addEventListener('pointerdown', first, { once: true });
+    // Leaving the exam (submit → results) also leaves full screen.
+    return () => { document.removeEventListener('fullscreenchange', on); window.removeEventListener('pointerdown', first); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); };
+  }, []);
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [netError, setNetError] = useState(false);
 
@@ -200,11 +215,12 @@ export function ExamWindow({ initial }: { initial: State }) {
           {netError && <span style={{ fontSize: 12, fontWeight: 800, color: 'oklch(0.8 0.15 70)' }}>Offline · answers will sync</span>}
           {st.rules.lang && <button type="button" className="btn sm" style={{ background: 'rgba(255,255,255,.14)' }} onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}>{lang === 'en' ? 'English ▾ हिंदी' : 'हिंदी ▾ English'}</button>}
           {st.rules.calc && <button type="button" className="btn sm" style={{ background: 'rgba(255,255,255,.14)' }} onClick={() => setCalcOpen(o => !o)} aria-pressed={calcOpen}>Calculator</button>}
+          <button type="button" className="btn sm" style={{ background: 'rgba(255,255,255,.14)' }} onClick={toggleFull} aria-pressed={full} title={full ? 'Exit full screen' : 'Full screen'}>{full ? 'Exit full screen' : 'Full screen'}</button>
           <div className="stack" style={{ alignItems: 'flex-end', '--gap': '0' } as React.CSSProperties}>
             <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,.6)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{sectional ? 'Section time left' : 'Time left'}</span>
             <span className="mono" style={{ font: '600 22px var(--mono)', color: left < 300 ? 'oklch(0.75 0.17 30)' : '#fff' }} role="timer" aria-live="off">{fmtClock(left)}</span>
           </div>
-          <button type="button" className="btn sm" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.25)' }} onClick={async () => { await flush(); router.push('/tests'); }}>Exit</button>
+          <button type="button" className="btn sm" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.25)' }} onClick={async () => { await flush(); if (document.fullscreenElement) await document.exitFullscreen().catch(() => {}); router.push('/tests'); }}>Exit</button>
         </div>
       </div>
 
@@ -232,12 +248,14 @@ export function ExamWindow({ initial }: { initial: State }) {
             {split && <RichText className="exam-passage pre" text={q.setText} />}
             <div className="exam-main">
               {!split && q.setText && <RichText className="card pad pre" style={{ fontSize: 14, lineHeight: 1.6, background: 'var(--sunk)' }} text={q.setText} />}
-              <RichText className="exam-text" text={text} />
-              {q.image && <img src={q.image} alt="Question figure" style={{ maxWidth: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />}
+              <div className={'exam-figure' + (q.image ? ' has-img' : '')}>
+                <RichText className="exam-text" text={text} />
+                {q.image && <img src={q.image} alt="Question figure" style={{ maxWidth: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />}
+              </div>
               {q.type === 'TITA' ? (
                 <Tita value={a ?? ''} onChange={v => setAnswer(q.id, v === '' ? null : v)} />
               ) : (
-                <div className="stack" role={q.type === 'MSQ' ? 'group' : 'radiogroup'} aria-label="Options">
+                <div className={'stack' + (options.every(o => !o.text.includes('[[img:') && o.text.length <= 60) ? ' opts-grid' : '')} role={q.type === 'MSQ' ? 'group' : 'radiogroup'} aria-label="Options">
                   {options.map(o => {
                     const sel = q.type === 'MSQ' ? (a ?? '').split('|').includes(o.key) : a === o.key;
                     const pick = () => {
@@ -256,6 +274,7 @@ export function ExamWindow({ initial }: { initial: State }) {
                   })}
                 </div>
               )}
+              <RoughWork key={q.id} id={`${st.attemptId}:${q.id}`} />
             </div>
           </div>
           <div className="exam-foot">
@@ -380,5 +399,18 @@ function Calculator({ onClose }: { onClose: () => void }) {
         {keys.map(k => <button key={k} type="button" onClick={() => (/[0-9.]/.test(k) ? num(k) : k === '=' ? equals() : operator(k))}>{k}</button>)}
       </div>
     </div>
+  );
+}
+
+/** Rough work for one question, kept on this device only (like the scribble sheet at the exam centre). Not graded. */
+function RoughWork({ id }: { id: string }) {
+  const key = 'de-rough:' + id;
+  const [text, setText] = useState(() => { try { return localStorage.getItem(key) ?? ''; } catch { return ''; } });
+  return (
+    <label className="rough">
+      <span>Rough work <small>· not graded, stays on this device</small></span>
+      <textarea value={text} placeholder="Jot down working, eliminated options or a quick table…"
+        onChange={e => { setText(e.target.value); try { localStorage.setItem(key, e.target.value); } catch { /* storage off */ } }} />
+    </label>
   );
 }

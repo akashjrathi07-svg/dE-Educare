@@ -34,7 +34,7 @@ foreach ( $plans as $p ) {
 		}
 	}
 }
-$coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-coaching-2028', 'omet' => 'mba-plus' )[ $exam ];
+$coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-crash', 'omet' => 'cat-coaching-2027' )[ $exam ];
 $coach    = null;
 foreach ( de_coaching() as $c ) {
 	if ( $c['id'] === $coach_id ) {

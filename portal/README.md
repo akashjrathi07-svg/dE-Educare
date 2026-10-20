@@ -106,6 +106,7 @@ Every API below accepts either the `de_session` cookie (portal and website) or a
 | `POST /api/app/auth/logout` | Ends that session |
 | `GET /api/guru` | Recent Guru messages, first name and today's coins |
 | `POST /api/guru` `{text, page, mode}` | Streams Guru's reply as plain text. `mode` is `chat` (1 coin) or `voice` (3 coins, teacher style). Headers `X-Guru-Left` and `X-Guru-Bonus` give the new balance |
+| `POST /api/guru/teach` `{topic, level, style, page}` | A lesson as JSON for Guru's Teach mode (idea, steps, worked example, traps, check question, what to learn next). `level` is `basic`, `standard` or `advanced`; `style` is `new`, `simpler`, `another` or `deeper`. 3 coins, refunded if no lesson comes back |
 | `POST /api/public/guru-preview` `{q}` | For visitors who are not signed in: 3 questions a day, then `{done: true}` |
 
 `page` names where the student is (for example `Website · CAT`, `App · Mock result`, `Live class · Quant`), and Guru uses it as context. The AI mentor for live lectures should use the same `/api/guru` messages and coins, with its own `page` value, so a student's lecture questions show up in the same history on web and app.

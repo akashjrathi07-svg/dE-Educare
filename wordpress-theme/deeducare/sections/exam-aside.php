@@ -19,7 +19,7 @@ foreach ( $plans as $p ) {
 		}
 	}
 }
-$coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-coaching-2028', 'omet' => 'mba-plus' )[ $group ];
+$coach_id = array( 'cat' => 'cat-coaching-2027', 'cet' => 'cet-crash', 'omet' => 'cat-coaching-2027' )[ $group ];
 $coach    = null;
 foreach ( de_coaching() as $c ) {
 	if ( $c['id'] === $coach_id ) {
@@ -46,6 +46,32 @@ $daily = de_daily_url( 'omet' === $group ? $key : $group );
 			<?php endforeach; ?>
 		</ul>
 		<a class="de-btn de-btn--amber de-btn--block de-btn--lg" <?php echo de_plan_action( $top, $group ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( de_plan_cta( $top, $top['cta'] ) ); ?></a>
+	</div>
+	<?php
+	// Score planner: attempts and accuracy → expected score and time per question, in this exam's marking.
+	$pat = array(
+		'cat' => array( 'q' => 68, 'plus' => 3, 'minus' => 1, 'min' => 120, 'att' => 40 ),
+		'cet' => array( 'q' => 200, 'plus' => 1, 'minus' => 0, 'min' => 150, 'att' => 160 ),
+	);
+	if ( 'omet' === $group ) {
+		$om  = de_omets()[ $key ] ?? de_omets()['snap'];
+		$num = function ( $v ) { return abs( (float) str_replace( array( '−', '+' ), array( '-', '' ), $v ) ); };
+		$pat['omet'] = array( 'q' => $om['q'], 'plus' => $num( $om['marks'][0][0] ) ?: 1, 'minus' => $num( $om['marks'][1][0] ), 'min' => $om['mins'], 'att' => (int) round( $om['q'] * 0.75 ) );
+	}
+	$pp = $pat[ $group ];
+	?>
+	<div class="de-planner" data-planner data-q="<?php echo (int) $pp['q']; ?>" data-plus="<?php echo esc_attr( $pp['plus'] ); ?>" data-minus="<?php echo esc_attr( $pp['minus'] ); ?>" data-min="<?php echo (int) $pp['min']; ?>"<?php echo 'cat' === $group ? ' data-table="' . esc_attr( wp_json_encode( de_percentile_table() ) ) . '"' : ''; ?>>
+		<span class="de-eyebrow de-eyebrow--sm de-blue">SCORE PLANNER</span>
+		<label class="de-planner__f"><span>Questions attempted <output data-pl-att-out><?php echo (int) $pp['att']; ?></output> / <?php echo (int) $pp['q']; ?></span>
+			<input type="range" min="0" max="<?php echo (int) $pp['q']; ?>" value="<?php echo (int) $pp['att']; ?>" data-pl-att></label>
+		<label class="de-planner__f"><span>Accuracy <output data-pl-acc-out>80</output>%</span>
+			<input type="range" min="20" max="100" value="80" data-pl-acc></label>
+		<div class="de-planner__res">
+			<div><b data-pl-score>—</b><span>Expected score</span></div>
+			<div><b data-pl-time>—</b><span>Seconds per attempt</span></div>
+			<?php if ( 'cat' === $group ) : ?><div><b data-pl-pct>—</b><span>Est. percentile</span></div><?php endif; ?>
+		</div>
+		<span class="de-planner__tip" data-pl-tip></span>
 	</div>
 	<a class="de-daily-card" href="<?php echo esc_url( $daily ); ?>">
 		<span class="de-daily-card__big">5Q</span>

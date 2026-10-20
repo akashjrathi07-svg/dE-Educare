@@ -108,7 +108,7 @@ function de_jsonld( $key, $url ) {
 	}
 
 	// Coaching programmes (home and the matching exam page).
-	$coach_for = array( 'home' => array( 'cat-coaching-2027', 'cet-coaching-2028', 'mba-plus' ), 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'mba-plus' ) );
+	$coach_for = array( 'home' => array( 'cat-coaching-2027', 'cet-coaching-2028', 'mba-plus', 'cet-crash' ), 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-crash', 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'mba-plus' ) );
 	foreach ( de_coaching() as $c ) {
 		if ( ! in_array( $c['id'], $coach_for[ $key ] ?? array(), true ) ) {
 			continue;

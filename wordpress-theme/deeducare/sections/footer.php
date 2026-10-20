@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $cols = array(
-	'COACHING'     => array( array( 'CAT Coaching 2027', home_url( '/#coaching' ) ), array( 'CET Coaching 2028', home_url( '/#coaching' ) ), array( 'MBA+ (CAT + CET + OMET)', home_url( '/#coaching' ) ), array( 'Enquire now', '#enquire' ) ),
+	'COACHING'     => array( array( 'CAT Coaching 2027', home_url( '/#coaching' ) ), array( 'CET Coaching 2028', home_url( '/#coaching' ) ), array( 'CAT + CET Combo', home_url( '/#coaching' ) ), array( 'CET Crash Course 2027', de_page_url( 'mba-cet' ) . '#coaching' ), array( 'Enquire now', '#enquire' ) ),
 	'MBA ENTRANCE' => array( array( 'CAT Test Series', de_page_url( 'cat' ) ), array( '10 CAT Mocks', de_page_url( 'cat' ) . '#plans' ), array( 'MBA-CET', de_page_url( 'mba-cet' ) ), array( 'OMETs', de_page_url( 'omet' ) ) ),
 	'FREE'         => array( array( 'Daily free test', de_daily_url( 'cat' ) ), array( 'Free questions', de_page_url( 'free-resources' ) ), array( 'Percentile & college predictor', de_page_url( 'free-resources' ) . '#predictor' ), array( 'Previous papers', de_page_url( 'free-resources' ) . '#free-tests' ) ),
 	'STUDENTS'     => array_values( array_filter( array( array( 'Sign in', de_login_url() ), array( 'Web portal', de_portal() ), de_setting( 'app_url' ) ? array( 'Mobile app', de_setting( 'app_url' ) ) : null, array( 'Contact us', de_page_url( 'contact' ) ) ) ) ),

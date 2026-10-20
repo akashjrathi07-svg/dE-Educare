@@ -41,6 +41,26 @@ export async function askClaude(system: string, messages: Msg[], fallback: strin
   }
 }
 
+/**
+ * One request whose answer must match a JSON schema (structured outputs). Returns null if no key is set,
+ * the call fails, the model declines, or the answer was cut off.
+ */
+export async function askClaudeJSON<T>(system: string, messages: Msg[], schema: Record<string, unknown>, opts: { maxTokens?: number; effort?: 'low' | 'medium' | 'high' } = {}): Promise<T | null> {
+  const c = anthropic();
+  if (!c) return null;
+  try {
+    const p = params(system, messages, opts.maxTokens ?? 16000, opts.effort ?? 'medium');
+    const res = await c.beta.messages.create({ ...p, output_config: { ...p.output_config, format: { type: 'json_schema', schema } } });
+    if (res.stop_reason === 'refusal' || res.stop_reason === 'max_tokens') return null;
+    const text = res.content.map(b => (b.type === 'text' ? b.text : '')).join('');
+    return JSON.parse(text) as T;
+  } catch (e) {
+    if (e instanceof SyntaxError) console.error('[guru] lesson JSON did not parse');
+    else logApiError(e);
+    return null;
+  }
+}
+
 /** Streams text chunks. Yields the fallback in one piece if the API is unavailable. */
 export async function* streamClaude(system: string, messages: Msg[], fallback: string): AsyncGenerator<string> {
   const c = anthropic();
