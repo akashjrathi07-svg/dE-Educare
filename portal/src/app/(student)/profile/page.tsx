@@ -188,6 +188,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <button className="btn">Save details</button>
           <button className="btn ghost" formAction={logoutAction}>Sign out</button>
+          <Link className="btn ghost" href="/delete-account" style={{ color: 'var(--bad)' }}>Delete account</Link>
         </div>
       </form>
     </>

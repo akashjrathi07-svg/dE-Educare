@@ -1,0 +1,96 @@
+# Builds the DE Educare Android app (Play Store bundle + installable APK).
+# Run it from GitHub → Actions → "Android app" → Run workflow. It also runs when android-app/ changes on main.
+#
+# Signing: add these repository secrets (Settings → Secrets and variables → Actions) to sign with your upload key:
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Without them, the first run creates a new upload key and attaches it (with its passwords) to the run as
+# "upload-key-KEEP-SAFE". Download it once, add it as the secrets above, and delete the artifact.
+name: Android app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android-app/**', '.github/workflows/android-app.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK packages
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Signing key
+        id: key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KS="$RUNNER_TEMP/upload.jks"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$KS"
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            KS_PASS=$(openssl rand -hex 16); KEY_PASS="$KS_PASS"; KEY_ALIAS=upload
+            keytool -genkeypair -v -keystore "$KS" -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KS_PASS" -keypass "$KEY_PASS" -dname "CN=DE Educare, O=DE EDUCARE LLP, L=Mumbai, C=IN" > /dev/null
+            mkdir -p "$RUNNER_TEMP/key"
+            cp "$KS" "$RUNNER_TEMP/key/upload.jks"
+            base64 -w0 "$KS" > "$RUNNER_TEMP/key/ANDROID_KEYSTORE_BASE64.txt"
+            printf 'ANDROID_KEYSTORE_PASSWORD=%s\nANDROID_KEY_ALIAS=%s\nANDROID_KEY_PASSWORD=%s\n' "$KS_PASS" "$KEY_ALIAS" "$KEY_PASS" > "$RUNNER_TEMP/key/passwords.txt"
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "::add-mask::$KS_PASS"
+          echo "::add-mask::$KEY_PASS"
+          {
+            echo "ANDROID_KEYSTORE_PATH=$KS"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KS_PASS"
+            echo "ANDROID_KEY_ALIAS=$KEY_ALIAS"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+          SHA=$(keytool -list -v -keystore "$KS" -alias "$KEY_ALIAS" -storepass "$KS_PASS" | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//')
+          {
+            echo "### Upload key SHA-256"
+            echo '```'
+            echo "$SHA"
+            echo '```'
+            echo "Add this (and later the Play Console **App signing key** SHA-256) to the portal's \`ANDROID_CERT_SHA256\` environment variable in Vercel, comma separated."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build
+        working-directory: android-app
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon bundleRelease assembleRelease
+          mkdir -p "$RUNNER_TEMP/out"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/de-educare-$VERSION_NAME.aab"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/out/de-educare-$VERSION_NAME.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: de-educare-android-${{ github.run_number }}
+          path: ${{ runner.temp }}/out/*
+
+      - name: New upload key (keep safe)
+        if: steps.key.outputs.new == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-key-KEEP-SAFE
+          path: ${{ runner.temp }}/key/*
+          retention-days: 7

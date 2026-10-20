@@ -29,6 +29,13 @@ export function normalisePhone(input: string): string | null {
   return /^[6-9]\d{9}$/.test(ten) ? '+91' + ten : null;
 }
 
+/** The fixed code for the store-review number, if this is that number and both settings are present. */
+function reviewLogin(phone: string): string | null {
+  const rp = normalisePhone(process.env.REVIEW_PHONE ?? '');
+  const code = process.env.REVIEW_OTP ?? '';
+  return rp && rp === phone && /^\d{6}$/.test(code) ? code : null;
+}
+
 export async function requestOtp(phoneInput: string): Promise<{ ok: true; phone: string; devCode?: string } | { ok: false; error: string }> {
   const phone = normalisePhone(phoneInput);
   if (!phone) return { ok: false, error: 'Enter a valid 10-digit Indian mobile number.' };
@@ -37,7 +44,13 @@ export async function requestOtp(phoneInput: string): Promise<{ ok: true; phone:
   if (recent[0] && Date.now() - new Date(recent[0].created_at).getTime() < OTP_RESEND_SEC * 1000) {
     return { ok: false, error: `Please wait ${OTP_RESEND_SEC} seconds before asking for a new code.` };
   }
-  const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  // App-store review login: one number set in REVIEW_PHONE signs in with the fixed REVIEW_OTP, no SMS.
+  const review = reviewLogin(phone);
+  const code = review ?? String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  if (review) {
+    await sql`insert into otp_requests (phone, code_hash, expires_at) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval)`;
+    return { ok: true, phone };
+  }
   await sql`insert into otp_requests (phone, code_hash, expires_at) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval)`;
   const sent = await sendOtpSms(phone, code);
   if (!sent.ok) return { ok: false, error: 'Could not send the SMS. Please try again.' };

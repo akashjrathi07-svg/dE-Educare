@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The portal the app opens. Change here (and in res/values/strings.xml) if the portal moves.
+def portalHost = 'portal.deeducare.com'
+
+// Release signing comes from environment variables (GitHub Actions secrets), never from files in the repo.
+def keystorePath = System.getenv('ANDROID_KEYSTORE_PATH')
+
+android {
+    namespace 'com.deeducare.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.deeducare.app'
+        minSdk 23
+        targetSdk 36
+        // GitHub Actions passes the run number so every build can be uploaded to Play Store.
+        versionCode((System.getenv('VERSION_CODE') ?: '1') as int)
+        versionName System.getenv('VERSION_NAME') ?: '1.0.0'
+        manifestPlaceholders = [hostName: portalHost]
+        resValue 'string', 'launchUrl', "https://${portalHost}/?source=app"
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (keystorePath) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
