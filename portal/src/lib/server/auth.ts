@@ -58,8 +58,10 @@ export async function requestOtp(phoneInput: string, prefer: OtpChannel = 'whats
     await sql`insert into otp_requests (phone, code_hash, expires_at, channel) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'review')`;
     return { ok: true, phone, channel: prefer };
   }
+  let waError: string | null = null;
   if (prefer === 'whatsapp' && whatsappReady()) {
     const wa = await sendWhatsAppOtp(phone, code);
+    if (!wa.ok) waError = wa.error;
     if (wa.ok) {
       await sql`insert into otp_requests (phone, code_hash, expires_at, channel, wa_message_id) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'whatsapp', ${wa.id})`;
       return { ok: true, phone, channel: 'whatsapp' };
@@ -67,7 +69,7 @@ export async function requestOtp(phoneInput: string, prefer: OtpChannel = 'whats
   }
   const sent = await sendOtpSms(phone, code);
   if (!sent.ok) return { ok: false, error: 'Could not send the code. Please try again.' };
-  await sql`insert into otp_requests (phone, code_hash, expires_at, channel) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, ${prefer === 'whatsapp' && whatsappReady() ? 'sms_fallback' : 'sms'})`;
+  await sql`insert into otp_requests (phone, code_hash, expires_at, channel, wa_error) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, ${waError ? 'sms_fallback' : 'sms'}, ${waError})`;
   return { ok: true, phone, channel: 'sms', devCode: sent.devCode };
 }
 
