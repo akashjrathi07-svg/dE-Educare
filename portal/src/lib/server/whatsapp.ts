@@ -17,7 +17,7 @@ export function whatsappReady() {
 }
 
 /** Sends the code. "ok" means Meta accepted it; a later "failed" status arrives on the webhook. */
-export async function sendWhatsAppOtp(phone: string, code: string): Promise<{ ok: true; id: string } | { ok: false }> {
+export async function sendWhatsAppOtp(phone: string, code: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const res = await fetch(`${API()}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
     headers: { authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'content-type': 'application/json' },
@@ -41,8 +41,9 @@ export async function sendWhatsAppOtp(phone: string, code: string): Promise<{ ok
   const body = res ? ((await res.json().catch(() => ({}))) as { messages?: { id: string }[]; error?: { code?: number; message?: string } }) : {};
   const id = body.messages?.[0]?.id;
   if (!res?.ok || !id) {
-    console.error('WhatsApp did not send the OTP:', res?.status, body.error?.code, body.error?.message ?? 'no response');
-    return { ok: false };
+    const error = `${res?.status ?? 'no response'} ${body.error?.code ?? ''} ${body.error?.message ?? ''}`.trim().slice(0, 300);
+    console.error('WhatsApp did not send the OTP:', error);
+    return { ok: false, error };
   }
   return { ok: true, id };
 }
