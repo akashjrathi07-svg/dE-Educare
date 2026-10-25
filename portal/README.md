@@ -48,6 +48,38 @@ In India every OTP SMS must use a template registered on the DLT portal (Jio, Ai
 
 If a code doesn't arrive, the Vercel log shows `MSG91 did not send the OTP:` with MSG91's reason (wrong template, sender ID not approved, no balance…), and the login screen asks the student to try again.
 
+## Login codes on WhatsApp
+
+When WhatsApp is set up, login codes go on WhatsApp first (Meta WhatsApp Cloud API, an "Authentication" template with a Copy code button); SMS stays the backup:
+
+- If Meta refuses the message, the code goes by SMS straight away.
+- If WhatsApp later reports it could not deliver (the number isn't on WhatsApp, for example), the webhook sends a fresh code by SMS.
+- 30 seconds after a WhatsApp code, the login screen offers **Get the code by SMS**. The app can ask for SMS with `channel: "sms"`.
+- Admin → Overview shows how many codes went by WhatsApp, by SMS, and by SMS after WhatsApp failed (last 7 days).
+
+**One-time setup in Meta** (business.facebook.com and developers.facebook.com):
+
+1. **Business Manager** for DE EDUCARE LLP → Security Centre → start **business verification** (GST or LLP certificate, website, phone). Before verification you can send to about 250 people a day.
+2. **developers.facebook.com → My Apps → Create app → type Business**, link it to the Business Manager, and add the **WhatsApp** product.
+3. **WhatsApp → API Setup → Add phone number**: a number that is not on the WhatsApp app (new SIM or landline), display name **DE Educare** (Meta approves the name). Copy its **Phone number ID**.
+4. **WhatsApp Manager → Message templates → Create**: category **Authentication**, name `login_code`, language **English**, code delivery **Copy code**, tick "Add security recommendation", expiry 10 minutes. Submit (usually approved within minutes).
+5. **Business settings → Users → System users → Add** (Admin) → **Add assets**: the app (full control) and the WhatsApp account → **Generate new token** with `whatsapp_business_messaging` and `whatsapp_business_management`, expiry **Never**. Copy the token.
+6. **WhatsApp → Payment settings**: add a payment method (about ₹0.12 per authentication message in India).
+7. **App → WhatsApp → Configuration → Webhook**: Callback URL `https://portal.deeducare.com/api/whatsapp/webhook`, Verify token = the same value as `WHATSAPP_VERIFY_TOKEN` below → Verify and save → subscribe to the **messages** field.
+
+**Vercel → Environment Variables** (Production), then redeploy:
+
+| Variable | Value |
+| --- | --- |
+| `WHATSAPP_TOKEN` | System user token from step 5 |
+| `WHATSAPP_PHONE_NUMBER_ID` | Phone number ID from step 3 (not the phone number) |
+| `WHATSAPP_TEMPLATE` | `login_code` (only if you named it differently) |
+| `WHATSAPP_TEMPLATE_LANG` | `en` (or the language code shown on the template, e.g. `en_US`) |
+| `WHATSAPP_APP_SECRET` | App → Settings → Basic → App secret |
+| `WHATSAPP_VERIFY_TOKEN` | Any long random text; the same text goes in the webhook form (step 7) |
+
+Until `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` are both set, every code goes by SMS as before. If a WhatsApp code fails, the Vercel log shows `WhatsApp did not send the OTP:` (Meta's error code and message) or `WhatsApp OTP failed:` (delivery report).
+
 ## Day-to-day in the admin
 
 - **Questions:** Question bank → **Add many (Excel or Word)**.

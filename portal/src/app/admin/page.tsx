@@ -17,7 +17,10 @@ export default async function Overview() {
       (select count(*)::int from attempts a join tests t on t.id = a.test_id where t.type = 'daily' and a.started_at >= (now() at time zone 'Asia/Kolkata')::date at time zone 'Asia/Kolkata') as daily,
       (select count(*)::int from question_reports where status = 'open') as reports,
       (select count(*)::int from tests where status = 'draft') as drafts,
-      (select count(*)::int from questions where coalesce(solution_text, '') = '') as nosol`,
+      (select count(*)::int from questions where coalesce(solution_text, '') = '') as nosol,
+      (select count(*) filter (where channel = 'whatsapp')::int from otp_requests where created_at > now() - interval '7 days') as otp_wa,
+      (select count(*) filter (where channel = 'sms')::int from otp_requests where created_at > now() - interval '7 days') as otp_sms,
+      (select count(*) filter (where channel = 'sms_fallback')::int from otp_requests where created_at > now() - interval '7 days') as otp_fb`,
   sql`
     select b.name, round(100.0 * count(m.user_id) / greatest(b.capacity, 1))::int as fill
     from batches b left join batch_members m on m.batch_id = b.id group by b.id order by fill desc limit 1`,
@@ -56,6 +59,9 @@ export default async function Overview() {
           <div key={key} className={'stat' + (hero ? ' hero' : '')}><span className="k">{key}</span><span className="v" style={{ fontSize: 38 }}>{v}</span><span className="s">{s}</span></div>
         ))}
       </div>
+      {u.role === 'admin' && (
+        <div className="note">Login codes, last 7 days: {inr(k.otp_wa)} on WhatsApp · {inr(k.otp_sms)} by SMS · {inr(k.otp_fb)} by SMS after WhatsApp could not deliver</div>
+      )}
       <div className="grid" style={{ '--min': '360px', alignItems: 'start', '--gap': '16px' } as React.CSSProperties}>
         <div className="list">
           <div className="list-row" style={{ fontSize: 15, fontWeight: 800 }}>Needs attention</div>
