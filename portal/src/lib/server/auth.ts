@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { sql } from './db';
 import { sendOtpSms } from './sms';
+import { sendWhatsAppOtp, whatsappReady } from './whatsapp';
 
 export const SESSION_COOKIE = 'de_session';
 const SESSION_DAYS = 60;
@@ -36,7 +37,13 @@ function reviewLogin(phone: string): string | null {
   return rp && rp === phone && /^\d{6}$/.test(code) ? code : null;
 }
 
-export async function requestOtp(phoneInput: string): Promise<{ ok: true; phone: string; devCode?: string } | { ok: false; error: string }> {
+export type OtpChannel = 'whatsapp' | 'sms';
+
+/**
+ * Sends a login code: on WhatsApp when it is set up (falling back to SMS if WhatsApp refuses), or by SMS when the
+ * student asks for SMS or WhatsApp is not set up. Returns the channel used.
+ */
+export async function requestOtp(phoneInput: string, prefer: OtpChannel = 'whatsapp'): Promise<{ ok: true; phone: string; channel: OtpChannel; devCode?: string } | { ok: false; error: string }> {
   const phone = normalisePhone(phoneInput);
   if (!phone) return { ok: false, error: 'Enter a valid 10-digit Indian mobile number.' };
   const recent = await sql`select created_at from otp_requests where phone = ${phone} and created_at > now() - interval '1 hour' order by created_at desc`;
@@ -48,13 +55,40 @@ export async function requestOtp(phoneInput: string): Promise<{ ok: true; phone:
   const review = reviewLogin(phone);
   const code = review ?? String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   if (review) {
-    await sql`insert into otp_requests (phone, code_hash, expires_at) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval)`;
-    return { ok: true, phone };
+    await sql`insert into otp_requests (phone, code_hash, expires_at, channel) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'review')`;
+    return { ok: true, phone, channel: prefer };
   }
-  await sql`insert into otp_requests (phone, code_hash, expires_at) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval)`;
+  if (prefer === 'whatsapp' && whatsappReady()) {
+    const wa = await sendWhatsAppOtp(phone, code);
+    if (wa.ok) {
+      await sql`insert into otp_requests (phone, code_hash, expires_at, channel, wa_message_id) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'whatsapp', ${wa.id})`;
+      return { ok: true, phone, channel: 'whatsapp' };
+    }
+  }
   const sent = await sendOtpSms(phone, code);
-  if (!sent.ok) return { ok: false, error: 'Could not send the SMS. Please try again.' };
-  return { ok: true, phone, devCode: sent.devCode };
+  if (!sent.ok) return { ok: false, error: 'Could not send the code. Please try again.' };
+  await sql`insert into otp_requests (phone, code_hash, expires_at, channel) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, ${prefer === 'whatsapp' && whatsappReady() ? 'sms_fallback' : 'sms'})`;
+  return { ok: true, phone, channel: 'sms', devCode: sent.devCode };
+}
+
+/**
+ * WhatsApp reported that a login code could not be delivered (number not on WhatsApp, blocked…):
+ * send a fresh code by SMS, if that code is still the student's latest unused one.
+ */
+export async function smsFallbackForWhatsApp(waMessageId: string) {
+  const [req] = await sql`
+    select o.id, o.phone from otp_requests o
+    where o.wa_message_id = ${waMessageId} and not o.used and o.expires_at > now()
+      and o.created_at = (select max(created_at) from otp_requests x where x.phone = o.phone)`;
+  if (!req) return false;
+  const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  const sent = await sendOtpSms(req.phone, code);
+  if (!sent.ok) return false;
+  await sql.begin(async tx => {
+    await tx`update otp_requests set used = true where id = ${req.id}`;
+    await tx`insert into otp_requests (phone, code_hash, expires_at, channel) values (${req.phone}, ${hash(req.phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'sms_fallback')`;
+  });
+  return true;
 }
 
 /** Checks the code and signs in. On the web a session cookie is set; for the app (`app: true`) the token is returned instead. */
