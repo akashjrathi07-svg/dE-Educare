@@ -62,6 +62,16 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 		'priority'    => 9,
 	) );
 
+	// Speed: the theme's own page cache (inc/perf.php).
+	$wp->add_section( 'de_speed', array( 'title' => __( 'Speed', 'deeducare' ), 'panel' => 'de_panel' ) );
+	$wp->add_setting( 'de_page_cache', array( 'default' => true, 'sanitize_callback' => 'wp_validate_boolean' ) );
+	$wp->add_control( 'de_page_cache', array(
+		'label'       => __( 'Page cache for visitors', 'deeducare' ),
+		'description' => __( 'Keeps a ready copy of each page for 10 minutes so pages open fast. Signed-in users always see the live page. Switches itself off when a caching plugin is active. Publishing anything clears it.', 'deeducare' ),
+		'type'        => 'checkbox',
+		'section'     => 'de_speed',
+	) );
+
 	$defaults = de_setting_defaults();
 	foreach ( $sections as $section_id => $section ) {
 		$wp->add_section( $section_id, array( 'title' => $section['title'], 'panel' => 'de_panel' ) );

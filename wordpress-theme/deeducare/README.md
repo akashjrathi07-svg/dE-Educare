@@ -53,6 +53,17 @@ The website and portal must share the parent domain (for example `deeducare.com`
 
 The portal must accept these routes. If a student already owns the plan, it should send them straight to the test.
 
+## Speed
+
+- **Page cache:** visitors who aren't signed in get a ready copy of each page (kept 10 minutes in
+  `wp-content/cache/deeducare/`). Signed-in users, form results and other links with a query string always
+  get the live page. Publishing or editing anything, saving the Customizer or new portal data clears it.
+  It switches itself off when a caching plugin is active (`WP_CACHE`), and can be turned off in
+  Customize → DE Educare → Speed. The `X-DE-Cache` response header shows `HIT` or `MISS`.
+- **Instant pages:** links start loading when a visitor hovers over or presses them (speculation rules).
+- Fonts served from the theme with the font rules inline, no emoji script or extra head links,
+  lazy-loaded images, deferred scripts.
+
 ## SEO
 
 - Each page gets its own title, meta description, canonical URL and Open Graph tags.
