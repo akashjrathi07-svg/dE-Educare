@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '2.1.4' );
+define( 'DE_THEME_VERSION', '2.1.5' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
@@ -29,23 +29,26 @@ add_action( 'after_setup_theme', function () {
 	add_theme_support( 'title-tag' );
 	add_theme_support( 'custom-logo', array( 'height' => 80, 'width' => 80, 'flex-width' => true ) );
 	add_theme_support( 'editor-styles' );
-	add_editor_style( array( de_fonts_url(), 'assets/css/site.css' ) );
+	add_editor_style( array( 'assets/fonts/fonts.css', 'assets/css/site.css' ) );
 } );
 
 /**
- * Google Fonts: Manrope 400–800 and IBM Plex Mono 500/600, as in the design.
+ * Fonts: Manrope 400–800 and IBM Plex Mono 500/600, served from the theme (assets/fonts) so pages
+ * don't wait on Google's servers. The main Manrope file is preloaded.
  */
 function de_fonts_url() {
-	return 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap';
+	return DE_THEME_URI . '/assets/fonts/fonts.css';
 }
 
 add_action( 'wp_head', function () {
-	echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-	echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+	printf( '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>' . "\n", esc_url( DE_THEME_URI . '/assets/fonts/manrope-latin.woff2' ) );
+	if ( de_setting( 'portal_url' ) ) {
+		printf( '<link rel="preconnect" href="%s" crossorigin>' . "\n", esc_url( untrailingslashit( de_setting( 'portal_url' ) ) ) );
+	}
 }, 1 );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'deeducare-fonts', de_fonts_url(), array(), null );
+	wp_enqueue_style( 'deeducare-fonts', de_fonts_url(), array(), DE_THEME_VERSION );
 	wp_enqueue_style( 'deeducare', DE_THEME_URI . '/assets/css/site.css', array( 'deeducare-fonts' ), DE_THEME_VERSION );
 	wp_enqueue_script( 'deeducare', DE_THEME_URI . '/assets/js/site.js', array(), DE_THEME_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 	wp_localize_script( 'deeducare', 'DE_SITE', array(

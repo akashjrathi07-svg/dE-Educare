@@ -11,8 +11,8 @@
   --live: oklch(0.6 0.21 27); --sink: oklch(0.62 0.2 30);
   --streak-bg: oklch(0.95 0.05 70); --streak-ink: oklch(0.4 0.12 50); --streak-line: oklch(0.9 0.07 70);
   --orb: radial-gradient(circle at 35% 30%, oklch(0.78 0.12 265), oklch(0.42 0.16 265) 70%);
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --sans: Manrope, system-ui, sans-serif;
+  --mono: var(--font-plex), 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: var(--font-manrope), Manrope, system-ui, sans-serif;
   color-scheme: light;
 }
 [data-theme='dark'] {

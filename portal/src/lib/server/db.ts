@@ -15,8 +15,9 @@ function connect() {
   // max_pipeline is a real postgres.js option that its type definitions leave out.
   const options: postgres.Options<Record<string, postgres.PostgresType>> & { max_pipeline: number } = {
     max: Number(process.env.DATABASE_POOL_MAX || 10),
-    idle_timeout: pooled ? 5 : 20,
-    max_lifetime: pooled ? 60 * 5 : null,
+    // Keep connections for a while between requests: opening one (TLS + pooler login) costs more than most queries.
+    idle_timeout: pooled ? 30 : 60,
+    max_lifetime: pooled ? 60 * 10 : null,
     connect_timeout: 10,
     // The transaction pooler does not support prepared statements.
     prepare: !pooled,

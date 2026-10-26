@@ -195,25 +195,40 @@ function de_portal_data( $key, $path, $mapper ) {
 	}
 	$option = 'de_pc_' . $key;
 	$cached = get_option( $option );
+	if ( ( $GLOBALS['de_portal_force'] ?? '' ) === $key ) {
+		return $memo[ $key ] = de_portal_fetch( $option, $path, $mapper, $cached, 5 );
+	}
 	if ( is_array( $cached ) && array_key_exists( 'd', $cached ) ) {
 		$age = time() - (int) $cached['t'];
 		if ( $age > ( $cached['ok'] ? 10 * MINUTE_IN_SECONDS : 2 * MINUTE_IN_SECONDS ) && ! get_transient( $option . '_lock' ) ) {
 			// One refresh at a time, after the response is sent.
 			set_transient( $option . '_lock', 1, MINUTE_IN_SECONDS );
-			add_action( 'shutdown', function () use ( $option, $path, $mapper, $cached ) {
+			if ( function_exists( 'fastcgi_finish_request' ) || function_exists( 'litespeed_finish_request' ) ) {
 				// Send the page first (PHP-FPM or LiteSpeed hosting), then refresh.
-				if ( function_exists( 'fastcgi_finish_request' ) ) {
-					fastcgi_finish_request();
-				} elseif ( function_exists( 'litespeed_finish_request' ) ) {
-					litespeed_finish_request();
-				}
-				de_portal_fetch( $option, $path, $mapper, $cached, 5 );
-			} );
+				add_action( 'shutdown', function () use ( $option, $path, $mapper, $cached ) {
+					function_exists( 'fastcgi_finish_request' ) ? fastcgi_finish_request() : litespeed_finish_request();
+					de_portal_fetch( $option, $path, $mapper, $cached, 5 );
+				} );
+			} else {
+				// Other hosting can't send the page early: refresh in a background WP-Cron request instead,
+				// so no visitor waits for the portal.
+				wp_schedule_single_event( time(), 'de_portal_refresh', array( $key ) );
+			}
 		}
 		return $memo[ $key ] = $cached['d'];
 	}
 	return $memo[ $key ] = de_portal_fetch( $option, $path, $mapper, null, 2 );
 }
+
+/** Background refresh (WP-Cron) for hosts without fastcgi_finish_request: calls the dataset's getter with a forced fetch. */
+add_action( 'de_portal_refresh', function ( $key ) {
+	$getters = array( 'plans' => 'de_portal_plans', 'reviews' => 'de_reviews', 'resources' => 'de_free_resources', 'free_tests' => 'de_portal_free_tests' );
+	if ( isset( $getters[ $key ] ) && function_exists( $getters[ $key ] ) ) {
+		$GLOBALS['de_portal_force'] = $key;
+		call_user_func( $getters[ $key ] );
+		unset( $GLOBALS['de_portal_force'] );
+	}
+} );
 
 /** Fetches and stores one portal dataset. Returns the data (the previous copy if the portal fails). */
 function de_portal_fetch( $option, $path, $mapper, $previous, $timeout ) {
