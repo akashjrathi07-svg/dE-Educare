@@ -55,11 +55,13 @@ The portal must accept these routes. If a student already owns the plan, it shou
 
 ## Speed
 
-- **Page cache:** visitors who aren't signed in get a ready copy of each page (kept 10 minutes in
-  `wp-content/cache/deeducare/`). Signed-in users, form results and other links with a query string always
-  get the live page. Publishing or editing anything, saving the Customizer or new portal data clears it.
-  It switches itself off when a caching plugin is active (`WP_CACHE`), and can be turned off in
-  Customize → DE Educare → Speed. The `X-DE-Cache` response header shows `HIT` or `MISS`.
+- **Page cache:** visitors who aren't signed in get a ready copy of each page from
+  `wp-content/cache/deeducare/`. A copy older than 10 minutes is still served at once while it is rebuilt in the
+  background; only a copy older than an hour makes a visitor wait. Publishing or editing anything, saving the
+  Customizer or new portal data marks the copies old and rebuilds the main pages straight away. Signed-in
+  users, form results and other links with a query string always get the live page. It switches itself off
+  when a caching plugin (LiteSpeed Cache, WP Rocket, W3 Total Cache…) is active, and can be turned off in
+  Customize → DE Educare → Speed. The `X-DE-Cache` response header shows `HIT`, `STALE` or `MISS`.
 - **Instant pages:** links start loading when a visitor hovers over or presses them (speculation rules).
 - Fonts served from the theme with the font rules inline, no emoji script or extra head links,
   lazy-loaded images, deferred scripts.
