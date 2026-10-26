@@ -7,10 +7,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '2.1.5' );
+define( 'DE_THEME_VERSION', '2.2.0' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
+// First: serves a cached page (if any) before the rest of the theme loads.
+require DE_THEME_DIR . '/inc/perf.php';
 require DE_THEME_DIR . '/inc/content.php';
 require DE_THEME_DIR . '/inc/helpers.php';
 require DE_THEME_DIR . '/inc/customizer.php';
@@ -36,10 +38,6 @@ add_action( 'after_setup_theme', function () {
  * Fonts: Manrope 400–800 and IBM Plex Mono 500/600, served from the theme (assets/fonts) so pages
  * don't wait on Google's servers. The main Manrope file is preloaded.
  */
-function de_fonts_url() {
-	return DE_THEME_URI . '/assets/fonts/fonts.css';
-}
-
 add_action( 'wp_head', function () {
 	printf( '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>' . "\n", esc_url( DE_THEME_URI . '/assets/fonts/manrope-latin.woff2' ) );
 	if ( de_setting( 'portal_url' ) ) {
@@ -48,7 +46,11 @@ add_action( 'wp_head', function () {
 }, 1 );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'deeducare-fonts', de_fonts_url(), array(), DE_THEME_VERSION );
+	// The @font-face rules are small, so they go inline in the head instead of a separate request.
+	$fonts = (string) file_get_contents( DE_THEME_DIR . '/assets/fonts/fonts.css' );
+	wp_register_style( 'deeducare-fonts', false, array(), DE_THEME_VERSION );
+	wp_enqueue_style( 'deeducare-fonts' );
+	wp_add_inline_style( 'deeducare-fonts', str_replace( "url('", "url('" . DE_THEME_URI . '/assets/fonts/', $fonts ) );
 	wp_enqueue_style( 'deeducare', DE_THEME_URI . '/assets/css/site.css', array( 'deeducare-fonts' ), DE_THEME_VERSION );
 	wp_enqueue_script( 'deeducare', DE_THEME_URI . '/assets/js/site.js', array(), DE_THEME_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 	wp_localize_script( 'deeducare', 'DE_SITE', array(
