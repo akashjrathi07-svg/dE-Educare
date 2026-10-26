@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from 'next';
+import { IBM_Plex_Mono, Manrope } from 'next/font/google';
 import './globals.css';
 import { currentUser } from '@/lib/server/auth';
 import { SwRegister } from '@/components/sw-register';
+
+// Fonts are bundled with the portal (no request to Google at page load), with system fonts shown until they arrive.
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-plex', display: 'swap' });
 
 export const metadata: Metadata = {
   title: { default: 'DE Educare', template: '%s · DE Educare' },
@@ -15,13 +20,7 @@ export const viewport: Viewport = { themeColor: '#1F3A8A' };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser().catch(() => null);
   return (
-    <html lang="en" data-theme={user?.theme ?? 'light'}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" data-theme={user?.theme ?? 'light'} className={`${manrope.variable} ${plexMono.variable}`}>
       <body>{children}<SwRegister /></body>
     </html>
   );
