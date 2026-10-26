@@ -67,7 +67,7 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 	$wp->add_setting( 'de_page_cache', array( 'default' => true, 'sanitize_callback' => 'wp_validate_boolean' ) );
 	$wp->add_control( 'de_page_cache', array(
 		'label'       => __( 'Page cache for visitors', 'deeducare' ),
-		'description' => __( 'Keeps a ready copy of each page for 10 minutes so pages open fast. Signed-in users always see the live page. Switches itself off when a caching plugin is active. Publishing anything clears it.', 'deeducare' ),
+		'description' => __( 'Keeps a ready copy of each page so pages open fast, and refreshes it in the background. Signed-in users always see the live page. Switches itself off when a caching plugin is active. Publishing anything refreshes it.', 'deeducare' ),
 		'type'        => 'checkbox',
 		'section'     => 'de_speed',
 	) );
