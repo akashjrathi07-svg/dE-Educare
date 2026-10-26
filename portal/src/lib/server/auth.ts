@@ -68,7 +68,11 @@ export async function requestOtp(phoneInput: string, prefer: OtpChannel = 'whats
     }
   }
   const sent = await sendOtpSms(phone, code);
-  if (!sent.ok) return { ok: false, error: 'Could not send the code. Please try again.' };
+  if (!sent.ok) {
+    // Keep a used row so admins can see why WhatsApp refused (the code was never delivered, so it can't sign in).
+    await sql`insert into otp_requests (phone, code_hash, expires_at, channel, wa_error, used) values (${phone}, ${hash(phone + ':' + crypto.randomUUID())}, now(), 'failed', ${waError ?? (whatsappReady() ? null : 'WhatsApp not set up')}, true)`;
+    return { ok: false, error: 'Could not send the code. Please try again.' };
+  }
   await sql`insert into otp_requests (phone, code_hash, expires_at, channel, wa_error) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, ${waError ? 'sms_fallback' : 'sms'}, ${waError})`;
   return { ok: true, phone, channel: 'sms', devCode: sent.devCode };
 }
