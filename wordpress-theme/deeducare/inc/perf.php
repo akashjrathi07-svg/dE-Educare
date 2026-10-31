@@ -1,14 +1,14 @@
 <?php
 /**
- * Speed: a built-in page cache for visitors who aren't signed in, instant page loads on hover
- * (speculation rules), and less WordPress output in every page head.
+ * Speed: a built-in page cache for visitors who aren't signed in, and less WordPress output in every page head.
  *
  * The page cache keeps a copy of each public page in wp-content/cache/deeducare/ and serves it before
- * WordPress builds the page. A copy older than 10 minutes is still served at once while a background
- * request rebuilds it, so visitors never wait for a rebuild (only a copy older than an hour is rebuilt
- * while the visitor waits). Saving a page, menu, the Customizer or new portal data marks every copy
- * old and rebuilds the main pages straight away. It is skipped for signed-in users, form results
- * (any query string), and when a caching plugin is active. Turn it off in Customize → DE Educare → Speed.
+ * WordPress builds the page. On PHP-FPM or LiteSpeed hosting, a copy older than 10 minutes is still served
+ * at once and rebuilt in the same request after the visitor has the page; elsewhere it is rebuilt while the
+ * visitor waits. It never makes extra HTTP requests to the site (hosts' bot protection can treat those as an
+ * attack). Saving a page, menu, the Customizer or new portal data marks every copy old. It is skipped for
+ * signed-in users, form results (any query string), and when a caching plugin is active.
+ * Turn it off in Customize → DE Educare → Speed.
  *
  * @package deeducare
  */
@@ -30,23 +30,6 @@ function de_cache_plugin_active() {
 		}
 	}
 	return false;
-}
-
-/** Marks the theme's own background rebuild requests, which must build the page rather than read the copy. */
-function de_page_cache_regen_key() {
-	return substr( wp_hash( 'de_page_cache_regen' ), 0, 16 );
-}
-
-/** Asks the site, without waiting, to rebuild these pages. */
-function de_page_cache_rebuild( $urls ) {
-	foreach ( $urls as $url ) {
-		wp_remote_get( $url, array(
-			'blocking'  => false,
-			'timeout'   => 0.01,
-			'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
-			'headers'   => array( 'X-DE-Regen' => de_page_cache_regen_key() ),
-		) );
-	}
 }
 
 /** The cache file for this request, or null when this request must not be cached. */
@@ -87,32 +70,33 @@ function de_page_cache_file() {
 
 /**
  * Serves the cached copy and stops. Runs while the theme loads, before WordPress builds the page.
- * An old copy is served too, and a background request rebuilds it (one at a time per page).
+ * An old copy is served too when the host can finish the response early; WordPress then rebuilds it.
  */
 function de_page_cache_serve() {
 	$file = de_page_cache_file();
-	if ( ! $file || ! is_readable( $file ) || ( $_SERVER['HTTP_X_DE_REGEN'] ?? '' ) === de_page_cache_regen_key() ) {
+	if ( ! $file || ! is_readable( $file ) ) {
 		return;
 	}
-	$age = time() - filemtime( $file );
-	if ( $age > DE_PAGE_CACHE_MAX_STALE ) {
+	$age    = time() - filemtime( $file );
+	$finish = function_exists( 'fastcgi_finish_request' ) ? 'fastcgi_finish_request' : ( function_exists( 'litespeed_finish_request' ) ? 'litespeed_finish_request' : null );
+	$lock   = $file . '.lock';
+	$stale  = $age > DE_PAGE_CACHE_TTL;
+	// Rebuild while the visitor waits when the host can't finish the response early, or the copy is over an hour old.
+	if ( $stale && ( ! $finish || $age > DE_PAGE_CACHE_MAX_STALE ) ) {
 		return;
 	}
 	header( 'Content-Type: text/html; charset=' . get_option( 'blog_charset', 'UTF-8' ) );
-	header( 'X-DE-Cache: ' . ( $age > DE_PAGE_CACHE_TTL ? 'STALE' : 'HIT' ) );
+	header( 'X-DE-Cache: ' . ( $stale ? 'STALE' : 'HIT' ) );
 	if ( 'HEAD' !== ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) {
 		readfile( $file );
 	}
-	$lock = $file . '.lock';
-	if ( $age > DE_PAGE_CACHE_TTL && ( ! file_exists( $lock ) || filemtime( $lock ) < time() - 60 ) ) {
-		@touch( $lock ); // phpcs:ignore
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			fastcgi_finish_request();
-		}
-		$path = (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH );
-		de_page_cache_rebuild( array( ( is_ssl() ? 'https' : 'http' ) . '://' . ( $_SERVER['HTTP_HOST'] ?? '' ) . $path ) );
+	if ( ! $stale || ( file_exists( $lock ) && filemtime( $lock ) > time() - 60 ) ) {
+		exit;
 	}
-	exit;
+	// Send the page now, then let WordPress carry on and rebuild the copy (template_redirect below stores it).
+	@touch( $lock ); // phpcs:ignore
+	$finish();
+	ignore_user_abort( true );
 }
 de_page_cache_serve();
 
@@ -125,7 +109,9 @@ add_action( 'template_redirect', function () {
 	if ( ! $file || is_404() || is_search() || is_preview() || is_feed() || is_robots() || is_trackback() || ( is_singular() && post_password_required() ) ) {
 		return;
 	}
-	header( 'X-DE-Cache: MISS' );
+	if ( ! headers_sent() ) {
+		header( 'X-DE-Cache: MISS' );
+	}
 	ob_start( function ( $html ) use ( $file ) {
 		if ( http_response_code() !== 200 || defined( 'DONOTCACHEPAGE' ) || strlen( $html ) < 1000 || false === stripos( $html, '</html>' ) ) {
 			return $html;
@@ -151,26 +137,11 @@ add_action( 'template_redirect', function () {
 	} );
 }, 0 );
 
-/**
- * Something changed: mark every copy old (visitors still get it at once while it is rebuilt), and rebuild
- * the home page and published pages in the background when this request ends.
- */
+/** Something changed: mark every copy old, so the next visit rebuilds it. */
 function de_page_cache_purge() {
-	static $queued = false;
 	foreach ( (array) glob( de_page_cache_dir() . '*.html' ) as $f ) {
 		@touch( $f, time() - DE_PAGE_CACHE_TTL - 1 ); // phpcs:ignore
 	}
-	if ( $queued ) {
-		return;
-	}
-	$queued = true;
-	add_action( 'shutdown', function () {
-		$urls = array( home_url( '/' ) );
-		foreach ( get_pages( array( 'number' => 30, 'post_status' => 'publish' ) ) as $page ) {
-			$urls[] = get_permalink( $page );
-		}
-		de_page_cache_rebuild( array_unique( $urls ) );
-	} );
 }
 
 foreach ( array( 'save_post', 'deleted_post', 'trashed_post', 'customize_save_after', 'switch_theme', 'wp_update_nav_menu', 'comment_post', 'transition_comment_status', 'activated_plugin', 'deactivated_plugin', 'upgrader_process_complete' ) as $hook ) {
@@ -182,35 +153,6 @@ add_action( 'updated_option', function ( $option, $old, $new ) {
 		de_page_cache_purge();
 	}
 }, 10, 3 );
-
-/**
- * Instant page loads: the browser starts loading a page when a visitor hovers over (or presses) a link to it.
- * WordPress 6.8+ has this built in (prefetch); there it is switched to prerender.
- */
-add_filter( 'wp_speculation_rules_configuration', function ( $config ) {
-	return is_array( $config ) ? array( 'mode' => 'prerender', 'eagerness' => 'moderate' ) : $config;
-} );
-add_action( 'wp_footer', function () {
-	if ( function_exists( 'wp_get_speculation_rules_configuration' ) || is_user_logged_in() ) {
-		return;
-	}
-	$rules = array(
-		'prerender' => array(
-			array(
-				'source'    => 'document',
-				'where'     => array(
-					'and' => array(
-						array( 'href_matches' => '/*' ),
-						array( 'not' => array( 'href_matches' => array( '/wp-*', '/*\\?*', '/*.xml', '/*.pdf' ) ) ),
-						array( 'not' => array( 'selector_matches' => '[rel~=nofollow], [target=_blank], .no-prerender' ) ),
-					),
-				),
-				'eagerness' => 'moderate',
-			),
-		),
-	);
-	echo '<script type="speculationrules">' . wp_json_encode( $rules ) . "</script>\n";
-} );
 
 // Leaner page head: no emoji script, oEmbed discovery, RSD, shortlink or version tag.
 add_action( 'init', function () {
