@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DE_THEME_VERSION', '2.2.2' );
+define( 'DE_THEME_VERSION', '2.3.0' );
 define( 'DE_THEME_DIR', get_template_directory() );
 define( 'DE_THEME_URI', get_template_directory_uri() );
 
@@ -25,6 +25,7 @@ require DE_THEME_DIR . '/inc/contact.php';
 require DE_THEME_DIR . '/inc/lead.php';
 require DE_THEME_DIR . '/inc/reviews.php';
 require DE_THEME_DIR . '/inc/predict.php';
+require DE_THEME_DIR . '/inc/pixel.php';
 require DE_THEME_DIR . '/inc/setup.php';
 
 add_action( 'after_setup_theme', function () {

@@ -28,7 +28,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
   const y = new Date().getFullYear();
   return (
     <main className="auth">
-      <form action={save} className="card stack" style={{ maxWidth: 520, width: '100%', padding: 32, '--gap': '18px' } as React.CSSProperties}>
+      <form action={save} data-pixel="CompleteRegistration" className="card stack" style={{ maxWidth: 520, width: '100%', padding: 32, '--gap': '18px' } as React.CSSProperties}>
         <input type="hidden" name="next" value={sp.next ?? '/'} />
         <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
           <span className="eyebrow">WELCOME TO DE EDUCARE</span>

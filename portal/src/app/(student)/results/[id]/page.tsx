@@ -8,6 +8,7 @@ import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { ResultTabs } from './result-tabs';
 import { analysisCost } from '@/lib/economy';
 import { GuruButton, AiAnalysis } from './result-client';
+import { PixelEvent } from '@/components/meta-pixel';
 
 export const metadata = { title: 'Result and analysis' };
 
@@ -50,6 +51,7 @@ export default async function Result({ params }: { params: Promise<{ id: string 
 
   return (
     <>
+      {a.user_id === u.id && <PixelEvent name="SubmitTest" onceId={id} params={{ content_name: b.test.name, test_type: b.test.type }} />}
       <div className="head">
         <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
           <div className="kicker">{a.test_name} · {new Date(a.submitted_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })}</div>

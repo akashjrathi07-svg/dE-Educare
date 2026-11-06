@@ -8,6 +8,26 @@
 	var HEADER_OFFSET = 130;
 	var reduceMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
 
+	/* ---------- Meta Pixel events (the pixel itself loads in the page head, see inc/pixel.php) ---------- */
+	function track( name, params, custom ) {
+		if ( window.fbq ) { window.fbq( custom ? 'trackCustom' : 'track', name, params || {} ); }
+	}
+	document.addEventListener( 'click', function ( e ) {
+		var a = e.target.closest && e.target.closest( 'a[href]' );
+		if ( ! a ) { return; }
+		var href = a.href;
+		if ( /^(tel:|mailto:)|wa\.me\/|whatsapp\.com\//.test( href ) ) {
+			track( 'Contact', { content_name: /^tel:/.test( href ) ? 'phone' : /^mailto:/.test( href ) ? 'email' : 'whatsapp' } );
+		} else if ( CFG.portal && href.indexOf( CFG.portal ) === 0 ) {
+			var path = href.slice( CFG.portal.length );
+			if ( /^\/checkout/.test( path ) ) { track( 'GoToCheckout', { content_name: ( /[?&]plan=([^&#]+)/.exec( path ) || [] )[ 1 ] || '' }, true ); }
+			else if ( /^\/(signup|login)/.test( path ) ) { track( 'StartSignup', {}, true ); }
+			else if ( /^\/(test|daily)/.test( path ) ) { track( 'StartFreeTest', {}, true ); }
+		}
+	} );
+	// Call-back form on the Contact page comes back with ?callback=sent.
+	if ( /[?&]callback=sent/.test( window.location.search ) ) { track( 'Lead', { content_name: 'call-back' } ); }
+
 	/* ---------- Toast ---------- */
 	var toastTimer;
 	function toast( text ) {
@@ -361,6 +381,7 @@
 					if ( ! res.ok ) { throw new Error( ( res.d && res.d.message ) || 'Please check the form and try again.' ); }
 					ok.hidden = false;
 					btn.hidden = true;
+					track( 'Lead', { content_name: body.interest || 'enquiry' } );
 					$$( '.de-enq__grid', lform ).forEach( function ( g ) { g.hidden = true; } );
 				} )
 				.catch( function ( x ) { err.textContent = x.message || 'Could not send. Please WhatsApp us instead.'; err.hidden = false; } )
