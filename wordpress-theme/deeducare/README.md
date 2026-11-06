@@ -66,6 +66,14 @@ The portal must accept these routes. If a student already owns the plan, it shou
 - Fonts served from the theme with the font rules inline, no emoji script or extra head links,
   lazy-loaded images, deferred scripts.
 
+## Meta Pixel
+
+The pixel ID is in Customize → DE Educare → Portal and contact (empty turns it off); editors' own visits are
+not tracked. Events: `PageView` on every page, `ViewContent` on the CAT, MBA-CET, OMETs and Free resources pages,
+`Lead` when the enquiry form or the call-back form is sent, `Contact` for phone, WhatsApp and email clicks, and
+custom events `GoToCheckout`, `StartSignup` and `StartFreeTest` for clicks into the portal. The portal tracks
+the rest (sign-up, checkout, purchase, tests) with the same pixel.
+
 ## SEO
 
 - Each page gets its own title, meta description, canonical URL and Open Graph tags.

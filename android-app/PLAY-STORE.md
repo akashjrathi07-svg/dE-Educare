@@ -82,6 +82,9 @@ One login on the app and deeducare.com. Your tests, scores and Guru history stay
   - Collected: Phone number, Name, Email (optional) — Personal info; App activity (test answers, scores);
     Photos (doubt photos, optional); Messages (Guru chats); Purchase history.
   - Shared: Guru messages, doubts and results are processed by Anthropic (AI) to answer; payments by Razorpay.
+    App activity (pages opened, sign-up, test started, checkout and purchase with amount) is shared with Meta
+    for ads measurement (Meta Pixel): tick **Advertising or marketing** for App interactions and Purchase history.
+    Sign-in codes are sent on WhatsApp (Meta).
   - Encrypted in transit: Yes. Users can request deletion: Yes.
 - **Account deletion URL:** https://portal.deeducare.com/delete-account
 

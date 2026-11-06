@@ -21,6 +21,7 @@ function de_setting_defaults() {
 		'cat_date'       => '2026-11-29',
 		'contact_to'     => '',
 		'lead_webhook'   => '',
+		'meta_pixel_id'  => '974008692441555',
 		'whatsapp_group' => '',
 		'telegram'       => '',
 		'youtube'        => '',

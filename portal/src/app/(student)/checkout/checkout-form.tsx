@@ -1,7 +1,8 @@
 'use client';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkQuote, startPayment, confirmPayment } from './actions';
+import { track } from '@/lib/pixel';
 
 const inr = (paise: number) => '₹' + Math.round(paise / 100).toLocaleString('en-IN');
 type RzpWindow = Window & { Razorpay?: new (o: Record<string, unknown>) => { open(): void; on(e: string, cb: (r: { error?: { description?: string } }) => void): void } };
@@ -25,6 +26,7 @@ export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: stri
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [busy, start] = useTransition();
   const total = plan.price - (applied?.discount ?? 0);
+  useEffect(() => { track('InitiateCheckout', { content_ids: [plan.slug], content_name: plan.name, content_type: 'product', value: plan.price / 100, currency: 'INR' }); }, [plan.slug, plan.name, plan.price]);
   // EMI is offered on coaching only, not on mocks and test series.
   const methods = [['upi', 'UPI', 'Google Pay, PhonePe, Paytm or any UPI app'], ['card', 'Credit / debit card', 'Visa, Mastercard, RuPay'], ['netbanking', 'Netbanking', 'All major Indian banks'],
     ...(plan.emi ? [['emi', 'EMI', `From ${inr(plan.price / 6)}/month, no-cost on select cards`]] : [])];
@@ -38,6 +40,7 @@ export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: stri
 
   const pay = () => start(async () => {
     setMsg(null);
+    track('AddPaymentInfo', { content_ids: [plan.slug], content_name: plan.name, value: total / 100, currency: 'INR', payment_method: method });
     const r = await startPayment(plan.slug, applied?.code ?? '');
     if ('error' in r && r.error) { setMsg({ kind: 'err', text: r.error }); return; }
     if ('free' in r && r.free) { router.push(`/checkout/success?order=${r.orderId}&test=${encodeURIComponent(test)}`); return; }
