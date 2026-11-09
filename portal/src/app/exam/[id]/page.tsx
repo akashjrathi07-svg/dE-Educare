@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/server/auth';
 import { attemptState } from '@/lib/server/attempts';
 import { ExamWindow } from './exam-window';
-import { PixelEvent } from '@/components/meta-pixel';
+import { PixelEvent } from '@/components/analytics';
 
 export const metadata = { title: 'Exam' };
 

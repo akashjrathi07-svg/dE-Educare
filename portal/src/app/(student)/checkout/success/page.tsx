@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
-import { PixelEvent } from '@/components/meta-pixel';
+import { PixelEvent } from '@/components/analytics';
 
 export const metadata = { title: 'Payment' };
 
