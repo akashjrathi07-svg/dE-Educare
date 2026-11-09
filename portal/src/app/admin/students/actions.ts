@@ -88,3 +88,21 @@ export async function enrolMany(lines: string, common: Omit<EnrolInput, 'phone' 
   revalidatePath('/admin/students');
   return { ok: ok > 0, message: `${ok} of ${rows.length} enrolled` + (failed.length ? ` · not done: ${failed.slice(0, 3).join('; ')}${failed.length > 3 ? ` (+${failed.length - 3} more)` : ''}` : '') };
 }
+
+/** A student's submitted tests, newest first, for the student drawer. */
+export async function studentAttempts(userId: string) {
+  await staffOrThrow('students');
+  const rows = await sql`
+    select a.id, t.name, a.score::float as score, a.max_score::float as max, a.submitted_at, a.retake_allowed
+    from attempts a join tests t on t.id = a.test_id
+    where a.user_id = ${userId} and a.status = 'submitted' order by a.submitted_at desc limit 30`;
+  return rows.map(r => ({ id: r.id as string, name: r.name as string, score: `${r.score} / ${r.max}`, date: new Date(r.submitted_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), retake: r.retake_allowed as boolean }));
+}
+
+/** Lets a student take a test once more after a genuine problem (internet cut, wrong test). The old result stays. */
+export async function allowRetake(attemptId: string) {
+  const me = await staffOrThrow('students');
+  if (me.role !== 'admin' && me.role !== 'support') return { ok: false as const, message: 'Only admins and support can allow a retake.' };
+  await sql`update attempts set retake_allowed = true where id = ${attemptId} and status = 'submitted'`;
+  return { ok: true as const, message: 'Retake allowed. The student can start this test once more.' };
+}

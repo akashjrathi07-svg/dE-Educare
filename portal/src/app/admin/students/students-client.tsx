@@ -1,8 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chips, Drawer, Field, useAction } from '../ui';
-import { enrol, enrolMany, updateStudent, type StudentUpdate } from './actions';
+import { allowRetake, enrol, enrolMany, studentAttempts, updateStudent, type StudentUpdate } from './actions';
 
 type Opt = { id: string; name: string };
 type Course = Opt & { price: number };
@@ -73,6 +73,7 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId, en
               <input className="input" type="number" min={0} max={1000} value={form.credits} onChange={e => set({ credits: Number(e.target.value) })} />
             </Field>
           )}
+          <Attempts userId={open.id} canAllow={canGrant} />
           {role === 'admin' && (
             <Field label="Role" hint="Staff roles open parts of this admin panel">
               <select className="input" value={form.role} onChange={e => set({ role: e.target.value })}>
@@ -83,6 +84,30 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId, en
         </Drawer>
       )}
     </>
+  );
+}
+
+type Attempt = Awaited<ReturnType<typeof studentAttempts>>[number];
+
+/** Tests the student has taken. Each test can be taken once; admins and support can allow one more. */
+function Attempts({ userId, canAllow }: { userId: string; canAllow: boolean }) {
+  const [list, setList] = useState<Attempt[] | null>(null);
+  const { busy, run } = useAction();
+  useEffect(() => { let on = true; studentAttempts(userId).then(r => on && setList(r)); return () => { on = false; }; }, [userId]);
+  if (!list) return <div className="note">Loading tests…</div>;
+  if (!list.length) return <div className="note">No tests taken yet.</div>;
+  return (
+    <div className="stack" style={{ '--gap': '6px' } as React.CSSProperties}>
+      <span className="eyebrow">Tests taken</span>
+      {list.map(a => (
+        <div key={a.id} className="row" style={{ justifyContent: 'space-between', fontSize: 13, flexWrap: 'nowrap' }}>
+          <span><b>{a.name}</b> <span className="muted">· {a.date} · {a.score}</span></span>
+          {a.retake ? <span className="tag">Retake allowed</span>
+            : canAllow && <button type="button" className="btn chip sm" disabled={busy}
+                onClick={() => confirm('Allow this student to take the test once more? Use only for a genuine problem.') && run(() => allowRetake(a.id), r => r.ok && setList(l => l && l.map(x => x.id === a.id ? { ...x, retake: true } : x)))}>Allow a retake</button>}
+        </div>
+      ))}
+    </div>
   );
 }
 

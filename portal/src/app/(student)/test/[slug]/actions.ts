@@ -11,7 +11,7 @@ export async function startTest(form: FormData) {
   const slug = String(form.get('slug'));
   const order = String(form.get('order') ?? '').split(',').filter(Boolean).map(Number);
   const r = await startAttempt(u.id, testId, order.length ? order : undefined);
-  if (!r.ok) redirect(`/test/${slug}?err=${r.error}`);
+  if (!r.ok) redirect(r.error === 'done' && 'attemptId' in r ? `/results/${r.attemptId}` : `/test/${slug}?err=${r.error}`);
   redirect(`/exam/${r.attemptId}`);
 }
 
