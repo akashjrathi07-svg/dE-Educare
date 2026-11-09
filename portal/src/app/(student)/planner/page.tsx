@@ -2,11 +2,14 @@ import { requireUser } from '@/lib/server/auth';
 import { ensureWeek, weekTasks, weekStart, todayIST } from '@/lib/server/planner';
 import { PlannerTask } from '@/components/planner-task';
 import { ReplanButton } from './replan-button';
+import { redirect } from 'next/navigation';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Study planner' };
 const DAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default async function Planner() {
+  if (!COACHING) redirect('/');
   const u = await requireUser('/planner');
   await ensureWeek(u.id, u.exam_group);
   const tasks = await weekTasks(u.id);

@@ -7,7 +7,7 @@ export const metadata = { title: 'Cancellation and refunds', robots: { index: tr
 export default function Refunds() {
   return (
     <LegalPage title="Cancellation and refunds">
-      <p>Everything DE Educare sells is online: mock tests, test series, practice sets and online coaching access. There is no physical product to return, so this policy explains when we refund a payment or fix your access instead.</p>
+      <p>Everything DE Educare sells is online: mock tests, test series, practice sets and analysis. There is no physical product to return, so this policy explains when we refund a payment or fix your access instead.</p>
 
       <H>Returns</H>
       <p>As there are no physical goods, there are no returns or exchanges. Online access cannot be returned once it has been delivered to your account.</p>

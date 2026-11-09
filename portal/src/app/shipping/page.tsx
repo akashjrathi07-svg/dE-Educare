@@ -8,7 +8,7 @@ export default function Shipping() {
   return (
     <LegalPage title="Shipping and delivery">
       <H>No physical products</H>
-      <p>DE Educare sells only online products: mock tests, test series, practice sets and online coaching access for CAT, MBA-CET, OMETs and other exams. We do not sell or ship any physical goods, so there are no shipping charges, no delivery address and no courier tracking.</p>
+      <p>DE Educare sells only online products: mock tests, test series and practice sets for CAT, MBA-CET, OMETs and other exams. We do not sell or ship any physical goods, so there are no shipping charges, no delivery address and no courier tracking.</p>
 
       <H>How you receive what you buy</H>
       <ul>

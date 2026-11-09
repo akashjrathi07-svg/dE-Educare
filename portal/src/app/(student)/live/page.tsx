@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/server/auth';
 import { visibleClasses } from '@/lib/server/live';
 import { ReminderButton } from './reminder-button';
+import { redirect } from 'next/navigation';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Live classes' };
 const when = (d: Date) => {
@@ -11,6 +13,7 @@ const when = (d: Date) => {
 };
 
 export default async function Live() {
+  if (!COACHING) redirect('/');
   const u = await requireUser('/live');
   const all = await visibleClasses(u.id, u.exam_group);
   const now = all.find(c => c.on_air);

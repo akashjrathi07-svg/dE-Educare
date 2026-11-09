@@ -23,8 +23,9 @@ export default function Privacy() {
 
       <H>How we use it</H>
       <ul>
-        <li>To run your tests, rankings, analysis, plans, live classes and Guru.</li>
-        <li>To send sign-in codes and, if you enquire, to call or WhatsApp you about coaching.</li>
+        <li>To run your tests, rankings, analysis, plans and Guru.</li>
+        <li>To send sign-in codes and, if you fill in a form, to call or WhatsApp you with details and offers on our test series.</li>
+        <li><b>Students of partner institutes:</b> if you take our tests through your institute, your details and results are used only to run your tests and share results with your institute. We never use them to market DE Educare to you.</li>
         <li>To improve questions and tests using anonymous, combined statistics.</li>
       </ul>
       <p>We do not sell your data. We use the Meta Pixel and Google Analytics to measure our ads and improve the portal.</p>

@@ -5,11 +5,14 @@ import { CHANNELS } from './channels';
 import { createPost } from './actions';
 import { VoteButton } from './vote-button';
 import { initials } from '@/lib/server/shell';
+import { redirect } from 'next/navigation';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Community' };
 const ago = (d: Date) => { const m = Math.round((Date.now() - new Date(d).getTime()) / 60000); return m < 60 ? `${Math.max(1, m)}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
 
 export default async function Community({ searchParams }: { searchParams: Promise<{ ch?: string }> }) {
+  if (!COACHING) redirect('/');
   const u = await requireUser('/community');
   const list = CHANNELS[u.exam_group] ?? CHANNELS.mba;
   const ch = list.includes((await searchParams).ch ?? '') ? (await searchParams).ch! : 'All';

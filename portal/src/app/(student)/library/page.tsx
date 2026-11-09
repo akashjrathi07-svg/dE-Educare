@@ -2,10 +2,13 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { SaveButton } from './save-button';
+import { redirect } from 'next/navigation';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Library' };
 
 export default async function Library({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  if (!COACHING) redirect('/');
   const u = await requireUser('/library');
   const tab = (await searchParams).tab ?? 'rec';
   const items = await sql`

@@ -74,7 +74,7 @@ export function levelOf(xp: number) {
 
 /** Monthly leaderboard prizes (per exam group, XP earned in the calendar month). */
 export const MONTHLY_PRIZES: { from: number; to: number; coins: number; coupon?: { percent: number; capPaise: number; category: 'test_series' | 'coaching' }; note?: string }[] = [
-  { from: 1, to: 1, coins: 500, coupon: { percent: 10, capPaise: 400000, category: 'coaching' }, note: '1:1 mentorship call' },
+  { from: 1, to: 1, coins: 500, coupon: { percent: 20, capPaise: 50000, category: 'test_series' }, note: '1:1 mentorship call' },
   { from: 2, to: 3, coins: 300, coupon: { percent: 10, capPaise: 40000, category: 'test_series' }, note: '1:1 mentorship call' },
   { from: 4, to: 10, coins: 150, note: '1:1 mentorship call' },
   { from: 11, to: 25, coins: 50, note: '1:1 mentorship call' },
