@@ -31,7 +31,7 @@ $nav = array(
 $mega = array(
 	'MBA ENTRANCE'     => array(
 		array( 'CAT', 'CAT', 'Mocks, sectionals, topic tests', de_page_url( 'cat' ), '' ),
-		array( 'CET', 'MBA-CET', 'MAH MBA CET mocks and crash course', de_page_url( 'mba-cet' ), '' ),
+		array( 'CET', 'MBA-CET', 'MAH MBA CET mock test series', de_page_url( 'mba-cet' ), '' ),
 		array( 'OM', 'OMETs', 'SNAP, NMAT, XAT, CMAT', de_page_url( 'omet' ), '' ),
 	),
 	'GOVERNMENT EXAMS' => array(
@@ -104,7 +104,7 @@ $mega = array(
 				<span class="de-eyebrow de-eyebrow--amber de-eyebrow--sm">MOST POPULAR</span>
 				<span class="de-mega__promo-t">CAT Test Series</span>
 				<span class="de-mega__promo-d">20 mocks, sectionals and topic tests with All-India percentile.</span>
-				<a class="de-btn de-btn--white de-btn--sm" href="<?php echo esc_url( de_page_url( 'cat' ) ); ?>">₹2,500 · View →</a>
+				<a class="de-btn de-btn--white de-btn--sm" href="<?php echo esc_url( de_page_url( 'cat' ) ); ?>"><?php $ts = de_plan( 'cat-ts' ); de_e( ( $ts ? $ts['price'] . ' · ' : '' ) . 'View →' ); ?></a>
 			</div>
 		</div>
 	</div>

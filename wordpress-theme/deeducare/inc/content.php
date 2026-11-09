@@ -31,8 +31,8 @@ function de_plans() {
 	return de_apply_portal_prices( array(
 		'cat'  => array(
 			array( 'id' => 'cat-free', 'name' => 'Daily Free Test', 'price' => 'Free', 'amount' => 0, 'desc' => 'A fresh test every day across VARC, DILR and Quant, free forever.', 'feat' => array( 'One new test every day', 'CAT-style interface', 'Instant scorecard' ), 'best' => 'For building a daily habit.', 'cta' => 'Start today’s test', 'free' => true ),
-			array( 'id' => 'cat-10', 'name' => '10 CAT Mocks', 'tag' => 'RECOMMENDED', 'price' => '₹1,200', 'amount' => 1200, 'desc' => 'Full-length mocks plus previous year papers as mocks, at real exam difficulty and length.', 'feat' => array( '10 full-length CAT mocks', 'All-India percentile', 'Worked solutions', 'Performance scorecard' ), 'best' => 'For students who know the syllabus and want volume.', 'cta' => 'Buy 10 Mocks' ),
-			array( 'id' => 'cat-ts', 'name' => 'CAT Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹2,500', 'amount' => 2500, 'mrp' => 3000, 'desc' => '20 full-length mocks, 10 sectionals per section, 3 topic tests per topic, PYQs as mocks.', 'feat' => array( '20 mocks, 30 sectionals', '3 topic tests per topic', 'Topic-wise analytics', '50 Guru coins a day', 'New tests added through the year' ), 'best' => 'For structured practice at every level.', 'cta' => 'Get the Test Series', 'dark' => true ),
+			array( 'id' => 'cat-10', 'name' => '10 CAT Mocks', 'tag' => 'RECOMMENDED', 'price' => '₹599', 'amount' => 599, 'desc' => 'Full-length mocks plus previous year papers as mocks, at real exam difficulty and length.', 'feat' => array( '10 full-length CAT mocks', 'All-India percentile', 'Worked solutions', 'Performance scorecard' ), 'best' => 'For students who know the syllabus and want volume.', 'cta' => 'Buy 10 Mocks' ),
+			array( 'id' => 'cat-ts', 'name' => 'CAT Test Series', 'tag' => 'MOST POPULAR', 'price' => '₹999', 'amount' => 999, 'mrp' => 2500, 'desc' => '20 full-length mocks, 10 sectionals per section, 3 topic tests per topic, PYQs as mocks.', 'feat' => array( '20 mocks, 30 sectionals', '3 topic tests per topic', 'Topic-wise analytics', '50 Guru coins a day', 'New tests added through the year' ), 'best' => 'For structured practice at every level.', 'cta' => 'Get the Test Series', 'dark' => true ),
 		),
 		'cet'  => array(
 			array( 'id' => 'cet-free', 'name' => 'Daily Free Test', 'price' => 'Free', 'amount' => 0, 'desc' => 'A fresh CET-pattern test every day across LR, AR, QA and VA.', 'feat' => array( 'New test daily', 'Instant scorecard' ), 'best' => 'For a daily practice habit from day one.', 'cta' => 'Start free', 'free' => true ),
@@ -54,12 +54,12 @@ function de_exams() {
 			'name'    => 'CAT',
 			'slug'    => 'cat',
 			'eyebrow' => 'COMMON ADMISSION TEST · IIMs',
-			'title'   => 'CAT Coaching 2027 and CAT Mock Test Series',
-			'intro'   => 'Live classes, mentors and books for CAT 2027, plus mocks that feel like the slot you’ll actually sit: 20 full-length mocks, 30 sectionals for Quant, DILR and VARC, and 3 topic tests for every chapter.',
+			'title'   => 'CAT Mock Test Series with Detailed Analysis',
+			'intro'   => 'Mocks that feel like the slot you’ll actually sit: 20 full-length mocks, 30 sectionals for Quant, DILR and VARC, and 3 topic tests for every chapter, each with question-wise solutions and analysis.',
 			'freeCta' => 'Take today’s free CAT test',
 			'img'     => 'img_cat',
 			'tone'    => '#1F3A8A',
-			'stats'   => array( array( '20', 'Full mocks' ), array( '30', 'Sectionals' ), array( '3 / topic', 'Topic tests' ), array( '₹2,500', 'Test Series' ) ),
+			'stats'   => array( array( '20', 'Full mocks' ), array( '30', 'Sectionals' ), array( '3 / topic', 'Topic tests' ), array( '1', 'Attempt per test, fair ranks' ) ),
 			'qa'      => array( 'q' => 'What is CAT?', 'a' => 'CAT (Common Admission Test) is the computer-based entrance exam for the IIMs and most top B-schools in India. It has three sections, VARC, DILR and Quant, with about 68 questions in 120 minutes, and is usually held on the last Sunday of November.', 'facts' => array( array( '29 Nov 2026', 'Next exam (indicative)' ), array( '120 min', 'Duration · 40 per section' ), array( '68 Q', 'MCQ + TITA' ), array( '+3 / −1', 'No negative for TITA' ) ) ),
 			'ov'      => array(
 				'h'        => 'How the CAT Test Series is built',
@@ -98,7 +98,6 @@ function de_exams() {
 				),
 			),
 			'faq'     => array(
-				array( 'Do you offer CAT coaching for 2027?', 'Yes. CAT Coaching 2027 costs ₹40,000 and includes live lectures for Quant, DILR and VARC, a recording of every class, the CAT Test Series, books, one-on-one mentorship, GD-PI-WAT preparation and admission guidance. Classes run online and in Mumbai.' ),
 				array( 'How many mocks should I take before CAT?', 'Most 99 percentilers take 25 to 40 full mocks. Start with one a week from August and move to two a week in the last month. The CAT Test Series has 20 mocks, and the 10 CAT Mocks pack adds 10 more.' ),
 				array( 'How close are DE Educare mocks to the real CAT?', 'They follow the current pattern: three sections with a 40-minute section lock, MCQ and TITA questions, and the same on-screen palette and calculator.' ),
 				array( 'What does the AI analysis show after a test?', 'Section scores, accuracy, time per question, topics that cost marks, and a written plan from Guru with the next tests to take.' ),
@@ -129,8 +128,8 @@ function de_exams() {
 			'name'    => 'MBA-CET',
 			'slug'    => 'mba-cet',
 			'eyebrow' => 'MAH MBA CET · MAHARASHTRA',
-			'title'   => 'MBA-CET 2027 Crash Course, Coaching and MAH-CET Mock Tests',
-			'intro'   => 'MBA-CET is a speed test: 200 questions in 150 minutes, no negative marking. Join the CET 2027 Crash Course (₹12,999) or CET Coaching 2028, and practise with 30 full mocks and 40 sectionals built to raise your attempts without losing accuracy.',
+			'title'   => 'MAH MBA-CET Mock Test Series 2027',
+			'intro'   => 'MBA-CET is a speed test: 200 questions in 150 minutes, no negative marking. Practise with 30 full mocks (10 easy, 10 medium, 10 hard), 40 sectionals and 3 topic tests for every topic, built to raise your attempts without losing accuracy.',
 			'freeCta' => 'Take a free CET test',
 			'img'     => 'img_cet',
 			'tone'    => '#2C3FA8',
@@ -173,8 +172,7 @@ function de_exams() {
 				),
 			),
 			'faq'     => array(
-				array( 'Do you have a crash course for MBA-CET 2027?', 'Yes. The CET Crash Course 2027 costs ₹12,999 and includes live crash-course classes for LR, AR, QA and VA, recordings, the CET Test Series (30 mocks, 40 sectionals), speed drills and doubt sessions. Send an enquiry for batch dates.' ),
-				array( 'Do you offer MBA-CET coaching for 2028?', 'Yes. CET Coaching 2028 costs ₹30,000 and includes live lectures for LR, AR, QA and VA, recordings, the CET Test Series (30 mocks, 40 sectionals), books, one-on-one mentorship and CAP round guidance.' ),
+				array( 'What is in the CET Mock Test Series?', '30 full-length mocks in the real MAH-CET pattern (10 easy, 10 medium and 10 hard), 10 sectionals for each of the four sections, and 3 topic tests for every topic, each with question-wise solutions and analysis.' ),
 				array( 'What MAH-CET percentile do I need for JBIMS?', 'In recent CAP rounds JBIMS has closed at about 99.9 percentile for Maharashtra open-category candidates, Sydenham at about 99.5 and PUMBA at about 98. Cutoffs vary by category and year; try the college predictor on Free resources.' ),
 				array( 'Is there negative marking in MBA-CET?', 'No. Every question carries one mark and wrong answers cost nothing, so attempt every question.' ),
 				array( 'Which sections matter most in CET?', 'Logical Reasoning has 75 of 200 questions and Abstract Reasoning 25, so reasoning speed has the biggest effect on your score.' ),
@@ -362,12 +360,13 @@ function de_home_faqs() {
 		array( 'Is the same login used on the app and the website?', 'Yes. Your DE Educare ID is your mobile number. Log in on the website, the student portal or the app to see the same purchases, scores and Guru history.' ),
 		array( 'Which exams does DE Educare cover?', 'CAT, MBA-CET and OMETs (SNAP, NMAT, XAT, CMAT) today. Bank PO, RBI and UPSC test series are launching soon.' ),
 		array( 'What is the difference between 10 CAT Mocks and the CAT Test Series?', '10 Mocks is full-length practice. The Test Series adds sectionals, topic tests, analytics and 50 Guru coins a day.' ),
-		array( 'Do you offer coaching classes?', 'Yes. CAT Coaching 2027 (₹40,000), CET Coaching 2028 (₹30,000), the CAT + CET Combo (₹60,000) and the CET Crash Course 2027 (₹12,999) include live lectures, recorded sessions, mocks, books, one-on-one mentorship and admission guidance. Send an enquiry for batch dates.' ),
+		array( 'Can I retake a test?', 'No. Each test can be taken once, so every score, percentile and rank is fair. After submitting, review every question with its solution and analysis as often as you like.' ),
+		array( 'Do you offer mocks for coaching institutes?', 'Yes. Institutes can buy our test series for their students in bulk, with results shared with the institute. Send us your details through any form on this site.' ),
 		array( 'What is Guru?', 'Guru is the AI mentor built into the portal. It analyses every attempt, solves doubts from a photo, builds practice sets and teaches by chat or voice.' ),
-		array( 'How do Guru coins work?', 'Guru uses coins: 1 for a chat message, 3 for a voice tutor reply, 2 for a photo doubt, 1–3 for a test analysis and 1 per 10 questions for a practice set. You get 10 coins a day free, 50 on a test series and unlimited on coaching. Daily coins refill at midnight; bonus coins earned from XP never expire.' ),
+		array( 'How do Guru coins work?', 'Guru uses coins: 1 for a chat message, 3 for a voice tutor reply, 2 for a photo doubt, 1–3 for a test analysis and 1 per 10 questions for a practice set. You get 10 coins a day free and 50 on a test series. Daily coins refill at midnight; bonus coins earned from XP never expire.' ),
 		array( 'Is the daily free test really free?', 'Yes, always. A new test is added every day with an instant scorecard and AI analysis.' ),
 		array( 'Do I need to pay to use the portal?', 'No. A free account gets the daily test, previous papers, free questions and 10 Guru coins a day.' ),
-		array( 'How do I pay?', 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app. EMI is available on coaching programmes.' ),
+		array( 'How do I pay?', 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app.' ),
 		array( 'When do Bank PO, RBI and UPSC launch?', 'Government exam test series are launching soon. Tap Notify me to hear first.' ),
 	);
 }
@@ -422,11 +421,19 @@ function de_percentile_table() {
 	return array( array( 133, 99.99 ), array( 111, 99.9 ), array( 93, 99.5 ), array( 85, 99 ), array( 76, 98 ), array( 62, 95 ), array( 52, 90 ), array( 44, 85 ), array( 38, 80 ), array( 26, 60 ), array( 0, 20 ) );
 }
 
+/** Coaching is off while DE Educare sells mocks only. add_filter( 'de_coaching_on', '__return_true' ) brings it back. */
+function de_coaching_on() {
+	return (bool) apply_filters( 'de_coaching_on', false );
+}
+
 /**
- * Coaching programmes. "Enquire" opens the lead form; leads go to the CRM
+ * Coaching programmes (empty while coaching is off). "Enquire" opens the lead form; leads go to the CRM
  * (n8n webhook in Customize → DE Educare → Portal and contact) and by email.
  */
 function de_coaching() {
+	if ( ! de_coaching_on() ) {
+		return array();
+	}
 	return array(
 		array(
 			'id'    => 'cat-coaching-2027',

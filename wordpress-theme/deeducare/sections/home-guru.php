@@ -26,7 +26,7 @@ $sugg  = array( 'How should I start CAT prep?', 'Is 85 enough for 99 %ile?', 'CA
 					<li><span class="de-guru__n"><?php de_e( $f[0] ); ?></span><span><b><?php de_e( $f[1] ); ?></b> <span class="de-guru__fd"><?php de_e( $f[2] ); ?></span></span></li>
 				<?php endforeach; ?>
 			</ul>
-			<span class="de-guru__note">10 free Guru coins a day · 50 on test series · unlimited on coaching.</span>
+			<span class="de-guru__note">10 free Guru coins a day · 50 on a test series.</span>
 		</div>
 		<div class="de-chat">
 			<div class="de-chat__head"><span class="de-orb" aria-hidden="true"></span><span class="de-chat__name">Guru</span><span class="de-chat__left">CHAT OR VOICE</span></div>

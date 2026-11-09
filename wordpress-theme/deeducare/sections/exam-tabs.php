@@ -1,6 +1,6 @@
 <?php
 /**
- * Exam tabs with the banner, coaching fee and live test series price
+ * Exam tabs with the banner, the coaching fee (only while coaching is on) and live test series price
  * (prices come from the portal). Used on the home page.
  *
  * @package deeducare
@@ -14,8 +14,8 @@ foreach ( de_coaching() as $c ) {
 	$coaching[ $c['id'] ] = $c;
 }
 $hx = array(
-	array( 'id' => 'cat', 'name' => 'CAT', 'sub' => 'Coaching 2027 · Test Series', 'status' => 'LIVE', 'img' => 'img_cat', 'coach' => 'cat-coaching-2027', 'plan' => 'cat-ts', 'tests' => '20 mocks · 30 sectionals · 3 topic tests each', 'cta' => 'Explore CAT', 'url' => de_page_url( 'cat' ) ),
-	array( 'id' => 'cet', 'name' => 'MBA-CET', 'sub' => 'Crash Course 2027 · Test Series', 'status' => 'LIVE', 'img' => 'img_cet', 'coach' => 'cet-crash', 'plan' => 'cet-ts', 'tests' => '30 mocks · 40 sectionals · 3 topic tests each', 'cta' => 'Explore MBA-CET', 'url' => de_page_url( 'mba-cet' ) ),
+	array( 'id' => 'cat', 'name' => 'CAT', 'sub' => 'Mocks · Test Series', 'status' => 'LIVE', 'img' => 'img_cat', 'coach' => 'cat-coaching-2027', 'plan' => 'cat-ts', 'tests' => '20 mocks · 30 sectionals · 3 topic tests each', 'cta' => 'Explore CAT', 'url' => de_page_url( 'cat' ) ),
+	array( 'id' => 'cet', 'name' => 'MBA-CET', 'sub' => 'Mocks · Test Series', 'status' => 'LIVE', 'img' => 'img_cet', 'coach' => 'cet-crash', 'plan' => 'cet-ts', 'tests' => '30 mocks · 40 sectionals · 3 topic tests each', 'cta' => 'Explore MBA-CET', 'url' => de_page_url( 'mba-cet' ) ),
 	array( 'id' => 'omet', 'name' => 'OMETs', 'sub' => 'SNAP · NMAT · XAT · CMAT', 'status' => 'LIVE', 'img' => 'img_omet', 'coach' => 'cat-coaching-2027', 'plan' => 'om-single', 'tests' => '15 SNAP mocks · NMAT, XAT, CMAT coming soon', 'cta' => 'Explore OMETs', 'url' => de_page_url( 'omet' ) ),
 	array( 'id' => 'govt', 'name' => 'Govt exams', 'sub' => 'Bank PO · RBI · UPSC', 'status' => 'SOON', 'img' => 'img_govt', 'coach' => '', 'plan' => '', 'tests' => '', 'cta' => 'Get notified', 'url' => add_query_arg( 'exam', 'Bank PO', $contact ) ),
 );
@@ -49,12 +49,12 @@ $price = function ( $p, $size = '' ) {
 		<div class="de-hero__banners">
 			<?php foreach ( $hx as $i => $h ) : ?>
 				<?php
-				$c = $h['coach'] ? $coaching[ $h['coach'] ] : null;
+				$c = $coaching[ $h['coach'] ] ?? null;
 				$p = $h['plan'] ? de_plan( $h['plan'] ) : null;
 				?>
 				<div class="de-hero__banner" id="hero-<?php echo esc_attr( $h['id'] ); ?>" role="tabpanel" data-pick-panel="<?php echo (int) $i; ?>"<?php echo 0 === $i ? '' : ' hidden'; ?>>
 					<div class="de-hero__img">
-						<?php de_image( $h['img'], $h['name'] . ' mock tests and coaching by DE Educare', 'de-img de-img--cover', 0 === $i ); ?>
+						<?php de_image( $h['img'], $h['name'] . ' mock tests by DE Educare', 'de-img de-img--cover', 0 === $i ); ?>
 					</div>
 					<div class="de-hero__offer">
 						<?php if ( $c ) : ?>

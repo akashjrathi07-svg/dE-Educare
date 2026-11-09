@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 $free  = de_page_url( 'free-resources' );
 $tools = array(
 	array( 'icon-target.webp', 'Daily free test', 'CAT, MBA-CET, SNAP', '#free-daily' ),
-	array( 'icon-mentor.webp', 'Coaching 2027–28', 'Live classes + mentors', '#coaching' ),
+	array( 'icon-checklist.webp', 'Test series', 'Mocks, sectionals, topic tests', '#test-series' ),
 	array( 'icon-percentile.webp', 'Percentile & college predictor', 'Score → percentile → colleges', '#predict' ),
 	array( 'icon-solutions.webp', 'Previous papers', 'Attempt as mocks', $free . '#free-tests' ),
 	array( 'icon-guru.webp', 'Ask Guru', 'Free AI mentor', '#guru' ),

@@ -1,6 +1,6 @@
 <?php
 /**
- * Exam sidebar: coaching fee with an enquiry button, the test series offer price and today's free test.
+ * Exam sidebar: the test series offer price, a details-and-offers button, the score planner and today's free test.
  *
  * @package deeducare
  */
@@ -29,6 +29,7 @@ foreach ( de_coaching() as $c ) {
 $daily = de_daily_url( 'omet' === $group ? $key : $group );
 ?>
 <aside class="de-exam-aside">
+	<?php if ( $coach ) : ?>
 	<div class="de-price-card de-price-card--coach">
 		<span class="de-eyebrow de-eyebrow--sm de-blue">COACHING</span>
 		<span class="de-price-card__name"><?php de_e( $coach['name'] ); ?></span>
@@ -36,6 +37,7 @@ $daily = de_daily_url( 'omet' === $group ? $key : $group );
 		<?php de_lead_button( $coach['id'], 'Enquire now', 'de-btn de-btn--primary de-btn--block de-btn--lg' ); ?>
 		<span class="de-price-card__note">Batch dates and a free counselling call.</span>
 	</div>
+	<?php endif; ?>
 	<div class="de-price-card">
 		<span class="de-eyebrow de-eyebrow--amber de-eyebrow--sm">TEST SERIES · MOST POPULAR</span>
 		<span class="de-price-card__name"><?php de_e( $top['name'] ); ?></span>
@@ -46,6 +48,7 @@ $daily = de_daily_url( 'omet' === $group ? $key : $group );
 			<?php endforeach; ?>
 		</ul>
 		<a class="de-btn de-btn--amber de-btn--block de-btn--lg" <?php echo de_plan_action( $top, $group ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in helper. ?>><?php de_e( de_plan_cta( $top, $top['cta'] ) ); ?></a>
+		<?php de_lead_button( 'cet' === $group ? 'cet-mocks' : ( 'omet' === $group ? 'snap-mocks' : 'cat-mocks' ), 'Get details and offers', 'de-btn de-btn--line-light de-btn--block' ); ?>
 	</div>
 	<?php
 	// Score planner: attempts and accuracy → expected score and time per question, in this exam's marking.

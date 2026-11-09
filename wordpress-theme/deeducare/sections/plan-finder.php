@@ -1,6 +1,6 @@
 <?php
 /**
- * "Which plan is right for me?" Three quick choices recommend a test series or coaching programme.
+ * "Which plan is right for me?" Three quick choices recommend a test series (or a coaching programme while coaching is on).
  *
  * @package deeducare
  */
@@ -20,7 +20,7 @@ foreach ( de_coaching() as $c ) {
 $qs = array(
 	'exam'  => array( 'Which exam?', array( 'cat' => 'CAT', 'cet' => 'MBA-CET', 'both' => 'CAT + CET', 'snap' => 'SNAP' ) ),
 	'stage' => array( 'Where are you?', array( 'start' => 'Just starting', 'mid' => 'Know the basics', 'final' => 'Exam in 3 months or less' ) ),
-	'want'  => array( 'What do you need?', array( 'mocks' => 'Only mocks', 'series' => 'Mocks + sectionals + topic tests', 'coach' => 'Live classes and mentors' ) ),
+	'want'  => array( 'What do you need?', array_merge( array( 'mocks' => 'Only mocks', 'series' => 'Mocks + sectionals + topic tests' ), de_coaching_on() ? array( 'coach' => 'Live classes and mentors' ) : array() ) ),
 );
 ?>
 <div class="de-finder" data-finder data-recs="<?php echo esc_attr( wp_json_encode( $recs ) ); ?>">

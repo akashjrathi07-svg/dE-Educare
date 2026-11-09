@@ -20,12 +20,12 @@ function de_seo_plugin_active() {
 /** Title and description per page (from the search audit: titles 50–60 characters, descriptions 140–158). */
 function de_seo_meta() {
 	return array(
-		'home'    => array( 'CAT 2027 & CET 2028 Coaching, Mock Tests | DE Educare', 'CAT 2027 and CET 2028 coaching with live classes and mentors, plus CAT, MBA-CET and OMET mock tests with AI analysis. Free daily test and college predictor.' ),
-		'cat'     => array( 'CAT Mock Test Series 2026: 20 Mocks, ₹2,500 | DE Educare', '20 full CAT mocks, 30 sectionals and topic tests with All-India percentile and AI analysis. Or 10 CAT mocks for ₹1,200. Start with a free daily test.' ),
+		'home'    => array( 'CAT, MBA-CET & SNAP Mock Tests with Analysis | DE Educare', 'CAT, MAH MBA-CET and SNAP mock tests in the real exam pattern, with question-wise solutions and detailed analysis. Free daily test and college predictor.' ),
+		'cat'     => array( 'CAT Mock Test Series: 20 Mocks, 30 Sectionals | DE Educare', '20 full CAT mocks, 30 sectionals and topic tests with All-India percentile, question-wise solutions and analysis. Or 10 CAT mocks. Start with a free daily test.' ),
 		'cet'     => array( 'MBA CET Mock Test 2027 – MAH-CET Online Practice | DE Educare', 'Take MAH-CET mocks in the real exam interface with instant scoring. Pattern, percentile needed for JBIMS and Sydenham, and a free daily test.' ),
 		'omet'    => array( 'OMET Mock Tests: SNAP, NMAT, XAT & CMAT | DE Educare', 'Online mock tests for SNAP, NMAT, XAT and CMAT, timed and scored like the real paper. See each exam’s pattern and start with a free test.' ),
 		'free'    => array( 'Free CAT Mock Test, Questions & Predictor | DE Educare', 'Free CAT, MBA-CET and SNAP daily tests, CAT questions with worked solutions, previous papers as mocks, and percentile and college predictors. No card.' ),
-		'contact' => array( 'Contact DE Educare – Free Counselling Call, Mumbai', 'Talk to the DE Educare team in Mumbai about CAT, MBA-CET and OMET coaching and test series. Request a call back or WhatsApp us, 9 AM–6 PM, Mon–Fri.' ),
+		'contact' => array( 'Contact DE Educare – Mock Test Series, Mumbai', 'Talk to the DE Educare team about CAT, MBA-CET and SNAP test series, offers and bulk mocks for institutes. Request a call back or WhatsApp us, 9 AM–6 PM.' ),
 	);
 }
 
@@ -77,7 +77,7 @@ function de_jsonld( $key, $url ) {
 			'legalName' => 'DE EDUCARE LLP',
 			'url'       => home_url( '/' ),
 			'logo'      => has_custom_logo() ? wp_get_attachment_image_url( get_theme_mod( 'custom_logo' ), 'full' ) : de_asset_img( 'de-educare-share.jpg' ),
-			'description' => 'Mumbai-based MBA entrance prep: CAT and MBA-CET coaching, and online mock tests, sectional tests and topic tests for CAT, MBA-CET and OMETs with AI analysis.',
+			'description' => 'Mumbai-based online mock tests, sectional tests and topic tests for CAT, MBA-CET and OMETs, with question-wise solutions and AI analysis, for students and coaching institutes.',
 			'email'     => de_setting( 'email' ),
 			'telephone' => preg_replace( '/[^\d+]/', '', de_setting( 'phone' ) ),
 			'address'   => array( '@type' => 'PostalAddress', 'addressLocality' => 'Mumbai', 'addressRegion' => 'Maharashtra', 'addressCountry' => 'IN' ),
@@ -185,17 +185,19 @@ function de_llms_txt() {
 	$l   = array();
 	$l[] = '# DE Educare';
 	$l[] = '';
-	$l[] = '> DE Educare is a Mumbai-based MBA entrance preparation platform: CAT 2027 and MBA-CET 2028 coaching, and online mock tests, sectional tests and topic tests for CAT, MAH MBA-CET and OMETs (SNAP, NMAT, XAT, CMAT), with AI analysis by Guru after every attempt.';
+	$l[] = '> DE Educare is a Mumbai-based online mock test platform: mock tests, sectional tests and topic tests for CAT, MAH MBA-CET and OMETs (SNAP, NMAT, XAT, CMAT), with question-wise solutions and AI analysis by Guru after every attempt. Coaching institutes can buy the test series for their students.';
 	$l[] = '';
 	$l[] = 'Operated by DE EDUCARE LLP, Mumbai, India.';
 	$l[] = 'Contact: ' . de_setting( 'phone' ) . ' (phone and WhatsApp), ' . de_setting( 'hours' ) . '. Email: ' . de_setting( 'email' ) . '.';
 	$l[] = 'One login (mobile number) works on the website, the student portal (' . untrailingslashit( de_portal() ) . ') and the app.';
 	$l[] = '';
-	$l[] = '## Coaching';
-	foreach ( de_coaching() as $c ) {
-		$l[] = '- ' . $c['name'] . ': ' . de_rupees( $c['fee'] ) . '. ' . $c['for'] . '. Includes: ' . implode( '; ', $c['feat'] ) . '.';
+	if ( de_coaching() ) {
+		$l[] = '## Coaching';
+		foreach ( de_coaching() as $c ) {
+			$l[] = '- ' . $c['name'] . ': ' . de_rupees( $c['fee'] ) . '. ' . $c['for'] . '. Includes: ' . implode( '; ', $c['feat'] ) . '.';
+		}
+		$l[] = '';
 	}
-	$l[] = '';
 	$l[] = '## Test series (prices include GST)';
 	foreach ( de_plans() as $plans ) {
 		foreach ( $plans as $p ) {
@@ -209,11 +211,11 @@ function de_llms_txt() {
 	$l[] = '- Free daily test for CAT, MBA-CET and SNAP, with instant scorecard and AI analysis.';
 	$l[] = '';
 	$l[] = '## Pages';
-	$l[] = '- [CAT](' . de_page_url( 'cat' ) . '): CAT coaching, mocks, pattern, syllabus, dates, cutoffs and FAQs';
-	$l[] = '- [MBA-CET](' . de_page_url( 'mba-cet' ) . '): MAH MBA-CET coaching, mocks, pattern, cutoffs';
+	$l[] = '- [CAT](' . de_page_url( 'cat' ) . '): CAT mock test series, pattern, syllabus, dates, cutoffs and FAQs';
+	$l[] = '- [MBA-CET](' . de_page_url( 'mba-cet' ) . '): MAH MBA-CET mock test series, pattern, cutoffs';
 	$l[] = '- [OMETs](' . de_page_url( 'omet' ) . '): SNAP, NMAT, XAT and CMAT mocks and patterns';
 	$l[] = '- [Free resources](' . de_page_url( 'free-resources' ) . '): free tests, questions with solutions, percentile and college predictors';
-	$l[] = '- [Contact](' . de_page_url( 'contact' ) . '): counselling call back';
+	$l[] = '- [Contact](' . de_page_url( 'contact' ) . '): call back, WhatsApp, offers and institute enquiries';
 	return implode( "\n", $l ) . "\n";
 }
 
