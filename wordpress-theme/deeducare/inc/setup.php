@@ -37,7 +37,7 @@ add_action( 'init', function () {
  */
 function de_refreshed_sections() {
 	return array(
-		'home'    => array( 'de-hero--intro', 'de-tools', 'coaching', 'guru', 'faq' ),
+		'home'    => array( 'de-hero--intro', 'de-tools', 'free-daily', 'coaching', 'guru', 'faq' ),
 		'cat'     => array( 'de-exam-hero', 'de-secnav', 'coaching', 'faq' ),
 		'mba-cet' => array( 'de-exam-hero', 'de-secnav', 'coaching', 'faq' ),
 		'omet'    => array( 'de-exam-hero', 'de-secnav', 'coaching', 'snap', 'nmat', 'xat', 'cmat' ),
@@ -156,6 +156,11 @@ function de_update_page_text() {
 			continue;
 		}
 		$new = de_repair_block_escapes( strtr( $page->post_content, $fixes ) );
+		// Theme 2.4.1: the Free resources side link to a test that never existed now opens the SNAP mocks.
+		if ( 'free-resources' === $slug ) {
+			$new = preg_replace( '#<a href="[^"]*/test/cet-pyq-0">MBA-CET sample paper</a>#', '<a href="' . esc_url( de_page_url( 'omet' ) . '#snap' ) . '">SNAP mocks</a>', $new );
+			$new = str_replace( array( '>200 Q · 150 min<', '>2017–25<', '>CAT previous papers<', '>Attempt in the exam interface<' ), array( '>Real SNAP pattern, marking and timing<', '>FREE<', '>Free mocks and daily tests<', '>Exam-style window · AI analysis<' ), $new );
+		}
 		if ( $new !== $page->post_content ) {
 			wp_update_post( array( 'ID' => $page->ID, 'post_content' => wp_slash( $new ) ) );
 		}

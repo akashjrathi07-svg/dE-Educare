@@ -109,9 +109,10 @@ function de_exams() {
 				array( 'Is the daily free test really free?', 'Yes, always. A new test is added every day and includes the same AI analysis as paid tests.' ),
 				array( 'Can I prepare for CAT while working?', 'Yes. Two focused hours on weekdays and longer sessions on weekends are enough for most working students. Short topic tests fit around work.' ),
 			),
-			// Test catalogue shown in the "Tests" section. IDs must match the portal's test IDs.
+			// Test catalogue shown in the "Tests" section. Free tests come from the portal (code = portal exam code).
 			'catalog' => array(
 				'pfx'        => 'cat',
+				'code'       => 'CAT',
 				'label'      => 'CAT',
 				'tabs'       => array( '10 CAT Mocks', 'CAT Test Series' ),
 				'mocks'      => array( 'n' => 10, 'prefix' => 'CAT Mock', 'q' => 68, 'mins' => 120 ),
@@ -121,7 +122,6 @@ function de_exams() {
 				'secN'       => 10,
 				'secMins'    => 40,
 				'seriesPlan' => array( 'cat-ts' ),
-				'pyq'        => array( array( 'CAT 2024 Slot 1 · previous paper', 68, 120 ), array( 'CAT 2023 Slot 2 · previous paper', 66, 120 ) ),
 			),
 		),
 		'cet'  => array(
@@ -185,6 +185,7 @@ function de_exams() {
 			),
 			'catalog' => array(
 				'pfx'        => 'cet',
+				'code'       => 'MBA-CET',
 				'label'      => 'MBA-CET',
 				'tabs'       => array( 'CET Mocks', 'CET Test Series' ),
 				'mocks'      => array( 'n' => 10, 'prefix' => 'MBA-CET Mock', 'q' => 200, 'mins' => 150 ),
@@ -194,7 +195,6 @@ function de_exams() {
 				'secN'       => 10,
 				'secMins'    => 30,
 				'seriesPlan' => array( 'cet-ts' ),
-				'pyq'        => array( array( 'MAH-CET 2025 · memory-based paper', 200, 150 ) ),
 			),
 		),
 		'omet' => array(
@@ -338,6 +338,7 @@ function de_omet_view( $key ) {
 		),
 		'catalog' => array(
 			'pfx'        => 'om-' . $key,
+			'code'       => strtoupper( $key ),
 			'label'      => $name,
 			'tabs'       => array( $name . ' Mocks', $name . ' Sectionals & topics' ),
 			// SNAP is mocks only; the other OMETs' mocks are coming soon.
@@ -350,7 +351,6 @@ function de_omet_view( $key ) {
 			'secN'       => 4,
 			'secMins'    => 20,
 			'seriesPlan' => array( 'snap' === $key ? 'om-single' : 'om-pack' ),
-			'pyq'        => array( array( $name . ' sample paper', $o['q'], $o['mins'] ) ),
 		),
 	);
 }

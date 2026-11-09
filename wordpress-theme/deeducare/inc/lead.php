@@ -33,6 +33,23 @@ function de_lead_aliases() {
 }
 
 /**
+ * Saves the lead in the portal (Admin → Leads), which also emails it. Returns true when the portal emailed it,
+ * so the website doesn't send a second copy. Optional key: Customize → DE Educare → Portal and contact.
+ */
+function de_lead_to_portal( $lead ) {
+	$headers = array( 'Content-Type' => 'application/json' );
+	if ( de_setting( 'lead_key' ) ) {
+		$headers['x-lead-key'] = de_setting( 'lead_key' );
+	}
+	$res = wp_remote_post( de_portal( 'api/public/lead' ), array( 'timeout' => 6, 'headers' => $headers, 'body' => wp_json_encode( $lead ) ) );
+	if ( is_wp_error( $res ) ) {
+		return false;
+	}
+	$body = json_decode( wp_remote_retrieve_body( $res ), true );
+	return ! empty( $body['ok'] ) && ! empty( $body['emailed'] );
+}
+
+/**
  * Validates and sends a lead. Returns true, or an error message.
  *
  * @param array $in Raw fields.
@@ -96,7 +113,9 @@ function de_submit_lead( $in ) {
 			$body .= $label . ': ' . $lead[ $k ] . "\n";
 		}
 	}
-	wp_mail( de_setting( 'contact_to' ), 'Enquiry: ' . $lead['name'] . ' · ' . $lead['interestLabel'] . ' · ' . $lead['form'], $body );
+	if ( ! de_lead_to_portal( $lead ) ) {
+		wp_mail( de_setting( 'contact_to' ), 'Enquiry: ' . $lead['name'] . ' · ' . $lead['interestLabel'] . ' · ' . $lead['form'], $body );
+	}
 
 	/**
 	 * Fires after an enquiry is accepted.

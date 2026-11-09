@@ -27,11 +27,7 @@ function de_sec_id( $sec, $with_id ) {
 	return 'data-sec="' . esc_attr( $sec ) . '"' . ( $with_id ? ' id="' . esc_attr( $sec ) . '"' : '' );
 }
 
-/**
- * One test card. Free tests open the portal's exam window; paid tests go to
- * checkout for the plan that includes them (the portal sends owners
- * straight on to the test).
- */
+/** One test card. Free tests open the portal's exam window ($id is the portal slug); paid tests go to checkout for their plan. */
 function de_test_card( $name, $id, $q, $mins, $free, $plan_id ) {
 	$plan = $plan_id ? de_plan( $plan_id ) : null;
 	?>
@@ -44,7 +40,7 @@ function de_test_card( $name, $id, $q, $mins, $free, $plan_id ) {
 		<?php elseif ( $plan && ! empty( $plan['soon'] ) ) : ?>
 			<a class="de-test__btn" href="#" data-toast="<?php echo esc_attr( 'Pricing for ' . $plan['name'] . ' coming soon' ); ?>">Unlock</a>
 		<?php else : ?>
-			<a class="de-test__btn" href="<?php echo esc_url( de_checkout_url( $plan_id, $id ) ); ?>">Unlock</a>
+			<a class="de-test__btn" href="<?php echo esc_url( de_checkout_url( $plan_id ) ); ?>">Unlock</a>
 		<?php endif; ?>
 	</div>
 	<?php
@@ -86,13 +82,15 @@ function de_render_tests( $view, $exam, $scope ) {
 	</div>
 	<?php endif; ?>
 
+	<?php $free_mock = de_free_tests( $c['code'], 'full_mock' )[0] ?? null; ?>
 	<div <?php echo de_panel_attrs( $g_portal, 'mocks', true ); // phpcs:ignore ?> class="de-stack-16">
 		<div class="de-tests">
 			<?php for ( $i = 1; $i <= $c['mocks']['n']; $i++ ) : ?>
-				<?php de_test_card( $c['mocks']['prefix'] . ' ' . $i, $c['pfx'] . '-m-' . $i, $c['mocks']['q'], $c['mocks']['mins'], 1 === $i, $last( $c['mockPlan'] ) ); ?>
+				<?php $free = 1 === $i && $free_mock; ?>
+				<?php de_test_card( $c['mocks']['prefix'] . ' ' . $i, $free ? $free_mock['slug'] : '', $c['mocks']['q'], $c['mocks']['mins'], $free, $last( $c['mockPlan'] ) ); ?>
 			<?php endfor; ?>
 		</div>
-		<p class="de-note de-note--sm"><?php de_e( $c['mocks']['prefix'] . ' 1 is free. ' . ( $only ? 'Unlock all ' . $c['mocks']['n'] . ' with the plan below.' : 'Unlock the rest with a plan below.' ) ); ?></p>
+		<p class="de-note de-note--sm"><?php de_e( ( $free_mock ? $c['mocks']['prefix'] . ' 1 is free. ' : '' ) . ( $only ? 'Unlock all ' . $c['mocks']['n'] . ' with the plan below.' : 'Unlock them with a plan below.' ) ); ?></p>
 	</div>
 
 	<?php if ( $only ) { return; } ?>
@@ -109,7 +107,7 @@ function de_render_tests( $view, $exam, $scope ) {
 			<div <?php echo de_panel_attrs( $g_series, 'mocks', true ); // phpcs:ignore ?>>
 				<div class="de-tests">
 					<?php for ( $i = 1; $i <= $c['sm']['n']; $i++ ) : ?>
-						<?php de_test_card( $c['sm']['prefix'] . ' ' . $i, $c['pfx'] . '-sm-' . $i, $c['mocks']['q'], $c['mocks']['mins'], false, $last( $c['seriesPlan'] ) ); ?>
+						<?php de_test_card( $c['sm']['prefix'] . ' ' . $i, '', $c['mocks']['q'], $c['mocks']['mins'], false, $last( $c['seriesPlan'] ) ); ?>
 					<?php endfor; ?>
 				</div>
 			</div>
@@ -128,7 +126,7 @@ function de_render_tests( $view, $exam, $scope ) {
 				<div <?php echo de_panel_attrs( $g_ssec, (string) $k, 0 === $k ); // phpcs:ignore ?>>
 					<div class="de-tests">
 						<?php for ( $i = 1; $i <= $c['secN']; $i++ ) : ?>
-							<?php de_test_card( $s[1] . ' Sectional ' . $i, $c['pfx'] . '-ss-' . $k . '-' . $i, $s[2], $c['secMins'], 1 === $i, $last( $c['seriesPlan'] ) ); ?>
+							<?php de_test_card( $s[1] . ' Sectional ' . $i, '', $s[2], $c['secMins'], false, $last( $c['seriesPlan'] ) ); ?>
 						<?php endfor; ?>
 					</div>
 				</div>
@@ -156,14 +154,11 @@ function de_render_tests( $view, $exam, $scope ) {
 										<div class="de-topics__pills">
 											<?php for ( $n = 1; $n <= 3; $n++ ) : ?>
 												<?php
-												$tid  = $c['pfx'] . '-tp-' . de_slugify( $tp ) . '-' . $n;
 												$plan = de_plan( $last( $c['seriesPlan'] ) );
-												if ( 1 === $n ) {
-													printf( '<a class="de-pill de-pill--free" href="%s">Test 1 · free</a>', esc_url( de_test_url( $tid ) ) );
-												} elseif ( $plan && ! empty( $plan['soon'] ) ) {
+												if ( $plan && ! empty( $plan['soon'] ) ) {
 													printf( '<a class="de-pill" href="#" data-toast="%s">Test %d · locked</a>', esc_attr( 'Pricing for ' . $plan['name'] . ' coming soon' ), (int) $n );
 												} else {
-													printf( '<a class="de-pill" href="%s">Test %d · locked</a>', esc_url( de_checkout_url( $plan['id'], $tid ) ), (int) $n );
+													printf( '<a class="de-pill" href="%s">Test %d · locked</a>', esc_url( de_checkout_url( $plan['id'] ) ), (int) $n );
 												}
 												?>
 											<?php endfor; ?>
@@ -176,7 +171,7 @@ function de_render_tests( $view, $exam, $scope ) {
 				</div>
 			<?php endforeach; ?>
 		</div>
-		<p class="de-note de-note--sm">Test 1 of every sectional and topic is free. Attempts sync to the app with the same login.</p>
+		<p class="de-note de-note--sm">Included in the test series. Free tests are listed above. Attempts sync to the app with the same login.</p>
 	</div>
 
 	<?php
@@ -403,14 +398,50 @@ function de_render_coaching( $exam ) {
 	<?php
 }
 
-/** Free tests for this exam: today's daily test, the free mock and previous papers. */
+/** Today's daily test card for an exam (CAT, MBA-CET, SNAP…). */
+function de_daily_card( $code, $label ) {
+	?>
+	<div class="de-test de-test--daily">
+		<div class="de-test__top"><span class="de-test__tag de-test__tag--free">FREE · DAILY</span><span class="de-test__meta">5 Q · 10 min</span></div>
+		<span class="de-test__name"><?php de_e( 'Today’s ' . $label . ' test · ' . wp_date( 'j M' ) ); ?></span>
+		<span class="de-test__status">New every morning · keeps your streak</span>
+		<a class="de-test__btn de-test__btn--start" href="<?php echo esc_url( de_daily_url( strtolower( $code ) ) ); ?>">Start today’s test</a>
+	</div>
+	<?php
+}
+
+/**
+ * Free test cards for an exam: the daily test and every test marked Free in the portal.
+ * Nothing is guessed: with neither, a "tell me when" card is shown.
+ */
+function de_free_test_cards( $code, $label, $interest ) {
+	$daily = de_has_daily( $code );
+	$free  = array_slice( de_free_tests( $code ), 0, 11 );
+	?>
+	<div class="de-tests">
+		<?php if ( $daily ) { de_daily_card( $code, $label ); } ?>
+		<?php foreach ( $free as $t ) : ?>
+			<?php de_test_card( $t['name'], $t['slug'], $t['questions'], $t['minutes'], true, null ); ?>
+		<?php endforeach; ?>
+		<?php if ( ! $daily && ! $free ) : ?>
+			<div class="de-test">
+				<div class="de-test__top"><span class="de-test__tag de-test__tag--free">FREE</span><span class="de-test__meta">Coming soon</span></div>
+				<span class="de-test__name"><?php de_e( 'Free ' . $label . ' tests are on the way' ); ?></span>
+				<span class="de-test__status">We will message you the day they go live</span>
+				<?php de_lead_button( $interest, 'Tell me when', 'de-test__btn' ); ?>
+			</div>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/** Free tests section on an exam page. */
 function de_render_free_tests( $view, $exam, $with_ids, $head = true ) {
-	$c     = $view['catalog'];
+	$c = $view['catalog'];
 	if ( ! empty( $c['soon'] ) ) {
 		return;
 	}
-	$daily = 'omet' === $exam ? strtolower( $view['name'] ) : $exam;
-	$label = wp_date( 'j M' );
+	$interest = array( 'CAT' => 'cat-mocks', 'MBA-CET' => 'cet-mocks', 'SNAP' => 'snap-mocks' )[ $c['code'] ] ?? 'omet-mocks';
 	?>
 	<div class="de-stack-14 de-anchor" <?php echo de_sec_id( 'free', $with_ids ); // phpcs:ignore ?> data-reveal>
 		<?php if ( $head ) : ?>
@@ -423,21 +454,37 @@ function de_render_free_tests( $view, $exam, $with_ids, $head = true ) {
 			<a class="de-sync" href="<?php echo esc_url( de_page_url( 'free-resources' ) ); ?>">More free resources →</a>
 		</div>
 		<?php endif; ?>
-		<div class="de-tests">
-			<div class="de-test de-test--daily">
-				<div class="de-test__top"><span class="de-test__tag de-test__tag--free">FREE · DAILY</span><span class="de-test__meta">15 min</span></div>
-				<span class="de-test__name"><?php de_e( 'Today’s ' . $c['label'] . ' test · ' . $label ); ?></span>
-				<span class="de-test__status">New every morning · keeps your streak</span>
-				<a class="de-test__btn de-test__btn--start" href="<?php echo esc_url( de_daily_url( $daily ) ); ?>">Start today’s test</a>
-			</div>
-			<?php de_test_card( $c['mocks']['prefix'] . ' 1 · full-length', $c['pfx'] . '-m-1', $c['mocks']['q'], $c['mocks']['mins'], true, null ); ?>
-			<?php foreach ( $c['pyq'] as $k => $p ) : ?>
-				<?php de_test_card( $p[0], $c['pfx'] . '-pyq-' . $k, $p[1], $p[2], true, null ); ?>
-			<?php endforeach; ?>
-			<?php if ( ! empty( $c['secs'][0] ) && empty( $c['mocksOnly'] ) ) : ?>
-				<?php de_test_card( $c['secs'][0][1] . ' Sectional 1', $c['pfx'] . '-ss-0-1', $c['secs'][0][2], $c['secMins'], true, null ); ?>
-			<?php endif; ?>
-		</div>
+		<?php de_free_test_cards( $c['code'], $c['label'], $interest ); ?>
 	</div>
 	<?php
+}
+
+/** Free resources page: one tab per exam (CAT, MBA-CET, SNAP), exams with nothing free yet left out. */
+function de_free_tests_tabs() {
+	$all   = array( 'cat' => array( 'CAT', 'cat-mocks' ), 'cet' => array( 'MBA-CET', 'cet-mocks' ), 'snap' => array( 'SNAP', 'snap-mocks' ) );
+	$exams = array_filter( $all, function ( $e ) { return de_has_daily( $e[0] ) || de_free_tests( $e[0] ); } ) ?: array_slice( $all, 0, 1 );
+	?>
+	<div class="de-stack-14 de-anchor" id="free-tests" data-reveal>
+		<div class="de-seg" role="tablist" aria-label="Exam">
+			<?php $first = true; foreach ( $exams as $k => $e ) : ?>
+				<button <?php echo de_tab_attrs( 'ft', $k, $first ); // phpcs:ignore ?>><?php de_e( $e[0] ); ?></button>
+			<?php $first = false; endforeach; ?>
+		</div>
+		<?php $first = true; foreach ( $exams as $k => $e ) : ?>
+			<div <?php echo de_panel_attrs( 'ft', $k, $first ); // phpcs:ignore ?> class="de-stack-12">
+				<?php de_free_test_cards( $e[0], $e[0], $e[1] ); ?>
+			</div>
+		<?php $first = false; endforeach; ?>
+	</div>
+	<?php
+}
+
+/** Side links on the Free resources page: [ big text, title, line, url ]. */
+function de_free_links() {
+	return array(
+		array( 'PDF', 'Formula sheets and notes', 'Read in the portal · free sign-in', '#notes' ),
+		array( 'FREE', 'Free mocks and daily tests', 'Exam-style window · AI analysis', '#free-tests' ),
+		array( 'SNAP', 'SNAP mocks', 'Real SNAP pattern, marking and timing', de_page_url( 'omet' ) . '#snap' ),
+		array( 'AI', 'Ask Guru', '10 free coins a day', de_signup_url() ),
+	);
 }

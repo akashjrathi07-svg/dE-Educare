@@ -24,7 +24,7 @@ function de_seo_meta() {
 		'cat'     => array( 'CAT Mock Test Series: 20 Mocks, 30 Sectionals | DE Educare', '20 full CAT mocks, 30 sectionals and topic tests with All-India percentile, question-wise solutions and analysis. Or 10 CAT mocks. Start with a free daily test.' ),
 		'cet'     => array( 'MBA CET Mock Test 2027 – MAH-CET Online Practice | DE Educare', 'Take MAH-CET mocks in the real exam interface with instant scoring. Pattern, percentile needed for JBIMS and Sydenham, and a free daily test.' ),
 		'omet'    => array( 'OMET Mock Tests: SNAP, NMAT, XAT & CMAT | DE Educare', 'Online mock tests for SNAP, NMAT, XAT and CMAT, timed and scored like the real paper. See each exam’s pattern and start with a free test.' ),
-		'free'    => array( 'Free CAT Mock Test, Questions & Predictor | DE Educare', 'Free CAT, MBA-CET and SNAP daily tests, CAT questions with worked solutions, previous papers as mocks, and percentile and college predictors. No card.' ),
+		'free'    => array( 'Free CAT Mock Test, Questions & Predictor | DE Educare', 'Free CAT and SNAP daily tests and mocks, CAT questions with worked solutions, and percentile and college predictors. No card.' ),
 		'contact' => array( 'Contact DE Educare – Mock Test Series, Mumbai', 'Talk to the DE Educare team about CAT, MBA-CET and SNAP test series, offers and bulk mocks for institutes. Request a call back or WhatsApp us, 9 AM–6 PM.' ),
 	);
 }
