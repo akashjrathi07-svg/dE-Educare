@@ -58,7 +58,6 @@ export default async function Result({ params }: { params: Promise<{ id: string 
           <h1 className="h1">Result and analysis</h1>
         </div>
         <div className="row">
-          <Link href={`/test/${a.test_slug}`} className="btn ghost">Retake</Link>
           <GuruButton text={`Analyse my ${a.test_name} result: ${Number(a.percentile).toFixed(1)} %ile, ${weakest?.name ?? 'one section'} was weakest at ${weakest?.acc ?? 0}% accuracy. What should I fix first?`} label="Ask Guru to analyse" />
         </div>
       </div>

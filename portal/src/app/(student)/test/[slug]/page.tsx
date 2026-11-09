@@ -20,12 +20,14 @@ export default async function TestLaunch({ params, searchParams }: { params: Pro
   const [b0, [open], last, access, allCredits] = await Promise.all([
     loadTest(t.id),
     sql`select id from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'in_progress'`,
-    sql`select id, score::float, max_score::float, percentile::float, submitted_at from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'submitted' order by submitted_at desc limit 3`,
+    sql`select id, score::float, max_score::float, percentile::float, submitted_at, retake_allowed from attempts where user_id = ${u.id} and test_id = ${t.id} and status = 'submitted' order by submitted_at desc limit 3`,
     canTakeTest(u.id, t.id),
     availableCredits(u.id),
   ]);
   if (open) redirect(`/exam/${open.id}`);
   const b = b0!;
+  // Each test can be taken once; staff can allow one more (Admin → Students).
+  const taken = last.find(a => !a.retake_allowed);
   const credits = access.allowed ? null : allCredits;
   const creditOk = credits && ((b.test.type === 'full_mock' && credits.mock > 0) || (b.test.type === 'sectional' && credits.sectional + credits.mock > 0));
   const sectional = isSectional(b.rules, b.sections.map(s => s.duration_min));
@@ -66,12 +68,19 @@ export default async function TestLaunch({ params, searchParams }: { params: Pro
         </div>
 
         <div className="card pad stack" style={{ '--gap': '14px' } as React.CSSProperties}>
-          {access.allowed ? (
+          {taken ? (
+            <div className="stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+              <span className="tag">COMPLETED</span>
+              <b style={{ fontSize: 18 }}>You have taken this test</b>
+              <span className="muted" style={{ fontSize: 14 }}>Each test can be taken once, so your score and rank stay fair. Review every question with solutions and your analysis.</span>
+              <Link href={`/results/${taken.id}`} className="btn lg block">View result and solutions</Link>
+            </div>
+          ) : access.allowed ? (
             <form action={startTest} className="stack" style={{ '--gap': '14px' } as React.CSSProperties}>
               <input type="hidden" name="testId" value={t.id} />
               <input type="hidden" name="slug" value={slug} />
               {b.rules.chooseOrder && b.sections.length > 1 && <OrderPicker sections={b.sections.map(s => s.name)} />}
-              <button className="btn lg block">{last.length ? 'Retake test' : 'Start test'}</button>
+              <button className="btn lg block">{last.length ? 'Retake test (allowed by DE Educare)' : 'Start test'}</button>
               <span className="note">The timer starts when you press start. +XP when you submit.</span>
             </form>
           ) : (

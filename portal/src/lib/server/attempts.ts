@@ -42,12 +42,20 @@ export async function testBySlug(slug: string) {
   return t?.id as string | undefined;
 }
 
-/** Starts a test, or returns the attempt already in progress. */
+/** The student's submitted attempt that blocks a retake (staff can allow one more with retake_allowed). */
+export async function finishedAttempt(userId: string, testId: string) {
+  const [a] = await sql`select id from attempts where user_id = ${userId} and test_id = ${testId} and status = 'submitted' and not retake_allowed order by submitted_at desc limit 1`;
+  return a?.id as string | undefined;
+}
+
+/** Starts a test, or returns the attempt already in progress. Each test can be taken once. */
 export async function startAttempt(userId: string, testId: string, order?: number[]) {
   const access = await canTakeTest(userId, testId);
   if (!access.allowed) return { ok: false as const, error: 'locked', plan: access.plan };
   const [open] = await sql`select id from attempts where user_id = ${userId} and test_id = ${testId} and status = 'in_progress'`;
   if (open) return { ok: true as const, attemptId: open.id as string };
+  const done = await finishedAttempt(userId, testId);
+  if (done) return { ok: false as const, error: 'done', attemptId: done };
   const b = await loadTest(testId);
   if (!b || !b.questions.length) return { ok: false as const, error: 'empty' };
   const n = b.sections.length;
