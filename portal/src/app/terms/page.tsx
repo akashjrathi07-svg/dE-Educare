@@ -10,7 +10,7 @@ export default function Terms() {
       <p>These terms apply to deeducare.com, the student portal (portal.deeducare.com) and the DE Educare app, run by DE EDUCARE LLP, Mumbai. By creating an account or buying a plan you agree to them.</p>
 
       <H>What we sell</H>
-      <p>We sell online exam preparation: mock tests, test series, practice sets, AI analysis and online coaching access. We do not sell physical products; everything is delivered to your account online, as described in our <Link href="/shipping">shipping and delivery policy</Link>.</p>
+      <p>We sell online exam preparation: mock tests, test series, practice sets and AI analysis. We do not sell physical products; everything is delivered to your account online, as described in our <Link href="/shipping">shipping and delivery policy</Link>.</p>
 
       <H>Your account</H>
       <ul>

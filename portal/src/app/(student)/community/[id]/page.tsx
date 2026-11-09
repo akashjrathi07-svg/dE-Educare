@@ -1,13 +1,15 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { answerPost, markHelpful } from '../actions';
 import { VoteButton } from '../vote-button';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Community' };
 
 export default async function Post({ params }: { params: Promise<{ id: string }> }) {
+  if (!COACHING) redirect('/');
   const { id } = await params;
   const u = await requireUser(`/community/${id}`);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();

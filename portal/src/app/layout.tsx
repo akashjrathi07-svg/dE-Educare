@@ -19,7 +19,7 @@ const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['500', '600'], var
 
 export const metadata: Metadata = {
   title: { default: 'DE Educare', template: '%s · DE Educare' },
-  description: 'Mock tests, AI analysis and live classes for CAT, MBA-CET and OMETs.',
+  description: 'Mock tests with detailed analysis for CAT, MBA-CET and OMETs.',
   robots: { index: false },
   applicationName: 'DE Educare',
   appleWebApp: { capable: true, title: 'DE Educare', statusBarStyle: 'default' },

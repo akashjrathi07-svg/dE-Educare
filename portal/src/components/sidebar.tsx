@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useTransition } from 'react';
 import { setExamGroup, toggleTheme } from '@/app/(student)/actions';
 import type { shellData } from '@/lib/server/shell';
+import { COACHING, COACHING_PATHS } from '@/lib/features';
 
 type Data = Awaited<ReturnType<typeof shellData>>;
 
@@ -11,7 +12,7 @@ const NAV: [href: string, mark: string, label: string, short: string][] = [
   ['/', 'HM', 'Dashboard', 'Home'], ['/tests', 'TS', 'Tests', 'Tests'], ['/results', 'RS', 'Results', 'Results'], ['/live', 'LV', 'Live classes', 'Live'],
   ['/planner', 'PL', 'Study planner', 'Planner'], ['/library', 'LB', 'Library', 'Library'], ['/doubts', 'DS', 'Doubt solver', 'Doubts'],
   ['/community', 'CM', 'Community', 'Community'], ['/profile', 'PR', 'Profile & rewards', 'Profile'],
-];
+].filter(([href]) => COACHING || !COACHING_PATHS.includes(href)) as typeof NAV;
 const GROUPS = [['mba', 'MBA'], ['upsc', 'UPSC'], ['bank', 'Bank PO'], ['ug', 'Undergrad']];
 
 export function Sidebar({ data }: { data: Data }) {

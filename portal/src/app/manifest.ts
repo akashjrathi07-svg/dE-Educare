@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'DE Educare',
     short_name: 'DE Educare',
-    description: 'Mock tests, AI analysis with Guru and live classes for CAT, MBA-CET and SNAP.',
+    description: 'Mock tests with detailed analysis and Guru, your AI mentor, for CAT, MBA-CET and SNAP.',
     start_url: '/?source=app',
     scope: '/',
     display: 'standalone',

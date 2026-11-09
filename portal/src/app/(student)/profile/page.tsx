@@ -9,6 +9,7 @@ import { initials, rupees } from '@/lib/server/shell';
 import { logoutAction } from '@/app/login/actions';
 import { updateProfile } from './actions';
 import { ConvertXp, RedeemButton } from './redeem-button';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Profile & rewards' };
 
@@ -85,7 +86,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
                 <b style={{ fontSize: 13 }}>Daily coins by plan</b>
                 <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Free account</span><b>{DAILY_COINS.free}</b></div>
                 <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Mock or test series plan</span><b>{DAILY_COINS.test_series}</b></div>
-                <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Coaching</span><b>Unlimited</b></div>
+                {COACHING && <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Coaching</span><b>Unlimited</b></div>}
                 <b style={{ fontSize: 13, marginTop: 8 }}>Earn XP</b>
                 <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Daily or topic test</span><b>{XP_BASE.topic}</b></div>
                 <div className="row" style={{ justifyContent: 'space-between', fontSize: 13 }}><span>Sectional</span><b>{XP_BASE.sectional}</b></div>

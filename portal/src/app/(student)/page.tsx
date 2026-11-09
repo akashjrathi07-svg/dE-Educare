@@ -5,13 +5,14 @@ import { activeCourseIds } from '@/lib/server/access';
 import { streakOf, myRank } from '@/lib/server/xp';
 import { ensureWeek, todayIST } from '@/lib/server/planner';
 import { PlannerTask } from '@/components/planner-task';
+import { COACHING } from '@/lib/features';
 
 export const metadata = { title: 'Dashboard' };
 
 export default async function Dashboard() {
   const u = await requireUser('/');
   // All dashboard queries in one parallel round (each sequential query is a network hop).
-  const [[exam], [last], [avg], streak, rank, courses, inProgress, [weak], [live], today] = await Promise.all([
+  const [[exam], [last], [avg], streak, rank, courses, inProgress, [weak], [live], today, recent] = await Promise.all([
     sql`select code, name, exam_date, status from exams where code = ${u.target_exam ?? 'CAT'}`,
     sql`
       select a.id, a.score::float, a.max_score::float, a.percentile::float, t.name from attempts a join tests t on t.id = a.test_id
@@ -30,10 +31,13 @@ export default async function Dashboard() {
       join questions q on q.id = aa.question_id join topics tp on tp.id = q.topic_id
       join tests t on t.type = 'topic' and t.name like tp.name || ' · Test%' and t.status = 'live'
       where a.user_id = ${u.id} and aa.is_correct = false order by a.submitted_at desc, t.sort limit 1`,
-    sql`
+    COACHING ? sql`
       select id, title, faculty_name, starts_at, duration_min, starts_at <= now() as on_air from live_classes
-      where exam_group = ${u.exam_group} and not cancelled and starts_at + (duration_min || ' minutes')::interval > now() order by starts_at limit 1`,
-    ensureWeek(u.id, u.exam_group).then(() => sql`select id, title, meta, tag, done from planner_tasks where user_id = ${u.id} and day = ${todayIST()}::date order by sort`),
+      where exam_group = ${u.exam_group} and not cancelled and starts_at + (duration_min || ' minutes')::interval > now() order by starts_at limit 1` : [],
+    COACHING ? ensureWeek(u.id, u.exam_group).then(() => sql`select id, title, meta, tag, done from planner_tasks where user_id = ${u.id} and day = ${todayIST()}::date order by sort`) : [],
+    COACHING ? [] : sql`
+      select a.id, t.name, a.score::float as score, a.max_score::float as max, a.percentile::float as pct from attempts a join tests t on t.id = a.test_id
+      where a.user_id = ${u.id} and a.status = 'submitted' order by a.submitted_at desc limit 4`,
   ]);
   const days = exam?.exam_date ? Math.max(0, Math.ceil((new Date(exam.exam_date).getTime() - Date.now()) / 86400000)) : null;
   const paid = courses.length > 0;
@@ -84,7 +88,14 @@ export default async function Dashboard() {
           </div>
           {!soon && <Link href={`/daily/${exam?.code ?? 'CAT'}`} className="btn white" style={{ alignSelf: 'flex-start', padding: '12px 20px' }}>Start test</Link>}
         </div>
-        <div className="card r22" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {!COACHING ? (
+          <div className="card r22 pad stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+            <span className="eyebrow">Practice</span>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Build a practice set</div>
+            <div className="muted" style={{ fontSize: 14 }}>Pick a section and topic, 10 to 30 questions, at your level. Guru suggests your weak topics first.</div>
+            <div className="row"><Link href="/practice" className="btn md">Start practising</Link><Link href="/tests" className="btn ghost md">All tests</Link></div>
+          </div>
+        ) : <div className="card r22" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div className="stripes" style={{ position: 'relative', height: 150 }}>
             {live && <span className="tag live" style={{ position: 'absolute', top: 12, left: 12 }}>{live.on_air ? 'LIVE NOW' : 'NEXT CLASS'}</span>}
             <span className="mono faint" style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11 }}>class stream</span>
@@ -100,7 +111,7 @@ export default async function Dashboard() {
               </>
             ) : <div className="muted" style={{ fontSize: 14 }}>No live classes scheduled. Recordings are in your library.</div>}
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="grid" style={{ '--min': '320px', '--gap': '16px' } as React.CSSProperties}>
@@ -131,7 +142,23 @@ export default async function Dashboard() {
             {!inProgress.length && !weak && <div className="list-row muted" style={{ fontSize: 14 }}>Nothing in progress. Start with today’s free test or a full mock.</div>}
           </div>
         </section>
-        <section className="stack">
+        {!COACHING ? (
+          <section className="stack">
+            <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <h2 className="h2">Recent results</h2>
+              <Link href="/results" className="link">All results →</Link>
+            </div>
+            <div className="list">
+              {recent.map(r => (
+                <Link key={r.id} href={`/results/${r.id}`} className="list-row" style={{ justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 14, fontWeight: 800 }}>{r.name}</span>
+                  <span className="mono muted" style={{ fontSize: 12 }}>{r.score} / {r.max}{r.pct != null ? ` · ${r.pct.toFixed(1)} %ile` : ''} →</span>
+                </Link>
+              ))}
+              {!recent.length && <div className="list-row muted" style={{ fontSize: 14 }}>Your results and solutions will appear here after your first test.</div>}
+            </div>
+          </section>
+        ) : <section className="stack">
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
             <h2 className="h2">Today’s plan</h2>
             <Link href="/planner" className="link">Open planner →</Link>
@@ -139,7 +166,7 @@ export default async function Dashboard() {
           <div className="list">
             {today.map(t => <PlannerTask key={t.id} task={{ id: t.id, title: t.title, meta: t.meta, tag: t.tag, done: t.done }} variant="row" />)}
           </div>
-        </section>
+        </section>}
       </div>
 
       {!paid && (
