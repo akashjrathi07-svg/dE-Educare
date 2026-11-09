@@ -53,6 +53,17 @@ foreach ( array( 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'youtube'
 		</div>
 		<div class="de-footer__base">
 			<span>Copyright © <?php echo esc_html( wp_date( 'Y' ) ); ?> DE EDUCARE LLP</span>
+			<span class="de-footer__legal">
+				<?php
+				// Policies live on the portal, one copy for the website, portal and app.
+				$legal = array( 'privacy' => 'Privacy policy', 'terms' => 'Terms and conditions', 'shipping' => 'Shipping and delivery', 'refunds' => 'Cancellation and refunds' );
+				$links = array();
+				foreach ( $legal as $path => $label ) {
+					$links[] = '<a href="' . esc_url( de_portal( $path ) ) . '">' . esc_html( $label ) . '</a>';
+				}
+				echo implode( ' · ', $links ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above.
+				?>
+			</span>
 			<?php if ( $social ) : ?>
 				<span class="de-footer__social"><?php echo implode( ' · ', $social ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped above. ?></span>
 			<?php endif; ?>
