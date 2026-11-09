@@ -116,6 +116,23 @@ Until `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` are both set, every code g
 - **Classes:** schedule a class for a batch, or as an open class for an exam group. Add the recording link afterwards; it also appears in the Library.
 - **Exam interfaces:** rules such as the calculator, palette and language apply to an exam's tests straight away. Section timers apply to tests built after the change.
 
+## Website leads
+
+Every form on deeducare.com (details and offers, call back) is saved in **Admin → Leads** with the form, button and
+page it came from, and emailed to contact@deeducare.com. Staff mark leads as contacted, add a note, and download a CSV.
+
+Emails go through Amazon SES. In Vercel → Environment Variables add:
+
+| Variable | Value |
+|---|---|
+| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | An IAM user's access key with the `ses:SendEmail` permission |
+| `SES_REGION` | The SES region where deeducare.com is verified (default `ap-south-1`) |
+| `EMAIL_FROM` | Optional, default `DE Educare <noreply@deeducare.com>` |
+| `LEAD_EMAIL_TO` | Optional, default `contact@deeducare.com` |
+| `LEAD_KEY` | Optional: any long random text; put the same value in the website's Customizer → Portal lead key |
+
+Until the SES keys are set, the website emails each lead itself, as before; leads are saved in the portal either way.
+
 ## Guru coins and XP
 
 All numbers live in `src/lib/economy.ts`.
