@@ -24,7 +24,7 @@ add_action( 'customize_register', function ( WP_Customize_Manager $wp ) {
 				'city'       => array( __( 'Location', 'deeducare' ), 'text', '' ),
 				'contact_to' => array( __( 'Send call-back requests to', 'deeducare' ), 'email', __( 'Leave empty to use the site admin email.', 'deeducare' ) ),
 				'lead_webhook' => array( __( 'CRM webhook for enquiries (n8n)', 'deeducare' ), 'url', __( 'Every coaching enquiry and call-back request is POSTed here as JSON, and also emailed.', 'deeducare' ) ),
-				'ga_id'         => array( __( 'Google Analytics measurement ID', 'deeducare' ), 'text', __( 'G-XXXXXXX. Leave empty to turn it off.', 'deeducare' ) ),
+				'ga_id'         => array( __( 'Google Analytics measurement ID', 'deeducare' ), 'text', __( 'Leave empty when a plugin such as Site Kit already adds Google Analytics; theme events still reach it.', 'deeducare' ) ),
 				'meta_pixel_id' => array( __( 'Meta Pixel ID', 'deeducare' ), 'text', __( 'Facebook / Instagram ads tracking. Leave empty to turn it off.', 'deeducare' ) ),
 				'cat_date'   => array( __( 'CAT exam date (YYYY-MM-DD)', 'deeducare' ), 'text', __( 'Drives the countdown in the top strip.', 'deeducare' ) ),
 			),

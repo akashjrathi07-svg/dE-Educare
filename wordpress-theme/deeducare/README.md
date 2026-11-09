@@ -72,9 +72,10 @@ The pixel ID is in Customize → DE Educare → Portal and contact (empty turns 
 not tracked. Events: `PageView` on every page, `ViewContent` on the CAT, MBA-CET, OMETs and Free resources pages,
 `Lead` when the enquiry form or the call-back form is sent, `Contact` for phone, WhatsApp and email clicks, and
 custom events `GoToCheckout`, `StartSignup` and `StartFreeTest` for clicks into the portal. The portal tracks
-the rest (sign-up, checkout, purchase, tests) with the same pixel. Google Analytics 4 (measurement ID in the same
-Customizer section) gets the same actions as `generate_lead`, `contact`, `go_to_checkout`, `start_signup` and
+the rest (sign-up, checkout, purchase, tests) with the same pixel. Google Analytics 4 gets the same actions as `generate_lead`, `contact`, `go_to_checkout`, `start_signup` and
 `start_free_test`; page views are counted by GA itself.
+GA itself is loaded by Site Kit (Website stream G-NK262TTDNW; the portal is the Portal stream of the same property),
+so the theme's GA ID setting is empty. Fill it only if no plugin adds GA.
 
 ## SEO
 
