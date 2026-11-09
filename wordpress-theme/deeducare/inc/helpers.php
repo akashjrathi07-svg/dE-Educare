@@ -23,6 +23,7 @@ function de_setting_defaults() {
 		'lead_webhook'   => '',
 		'meta_pixel_id'  => '974008692441555',
 		'ga_id'          => '',
+		'lead_key'       => '',
 		'whatsapp_group' => '',
 		'telegram'       => '',
 		'youtube'        => '',
@@ -42,7 +43,7 @@ function de_setting_defaults() {
 function de_setting( $key ) {
 	$defaults = de_setting_defaults();
 	$value    = get_theme_mod( 'de_' . $key, $defaults[ $key ] ?? '' );
-	return '' === $value && 'contact_to' === $key ? get_option( 'admin_email' ) : $value;
+	return '' === $value && 'contact_to' === $key ? 'contact@deeducare.com' : $value;
 }
 
 /**
@@ -66,8 +67,11 @@ function de_test_url( $test_id ) {
 	return de_portal( 'test/' . rawurlencode( $test_id ) );
 }
 
+/** Today's free test for an exam (cat, cet, snap…); the free tests list while the exam has none yet. */
 function de_daily_url( $exam = 'cat' ) {
-	return de_portal( 'daily/' . rawurlencode( $exam ) );
+	$exam = 'omet' === $exam ? 'snap' : strtolower( $exam );
+	$code = array( 'cat' => 'CAT', 'cet' => 'MBA-CET', 'mba-cet' => 'MBA-CET' )[ $exam ] ?? strtoupper( $exam );
+	return de_has_daily( $code ) ? de_portal( 'daily/' . rawurlencode( $exam ) ) : de_page_url( 'free-resources' ) . '#free-tests';
 }
 
 /** Checkout link for a plan. `test` lets the portal send owners straight to the test. */

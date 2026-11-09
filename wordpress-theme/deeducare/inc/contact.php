@@ -40,8 +40,12 @@ function de_handle_callback() {
 	}
 	set_transient( $ip_key, $count + 1, HOUR_IN_SECONDS );
 
-	$body = sprintf( "New call-back request from deeducare.com\n\nName: %s\nMobile: %s\nExam: %s\nTime: %s\n", $name, $phone, $exam, wp_date( 'j M Y, g:i a' ) );
-	wp_mail( de_setting( 'contact_to' ), 'Call-back request: ' . $name . ' (' . $exam . ')', $body );
+	$form = 'Contact page: request a call back';
+	$page = esc_url_raw( $back );
+	if ( ! de_lead_to_portal( array( 'name' => $name, 'phone' => $phone, 'interest' => 'callback', 'interestLabel' => 'Call back: ' . $exam, 'form' => $form, 'page' => $page ) ) ) {
+		$body = sprintf( "New call-back request from deeducare.com\n\nForm: %s\nName: %s\nMobile: %s\nExam: %s\nTime: %s\n", $form, $name, $phone, $exam, wp_date( 'j M Y, g:i a' ) );
+		wp_mail( de_setting( 'contact_to' ), 'Call-back request: ' . $name . ' (' . $exam . ') · ' . $form, $body );
+	}
 
 	/**
 	 * Fires after a call-back request is accepted, e.g. to push it to a CRM or the portal.

@@ -537,13 +537,7 @@ function de_page_omet() {
 
 function de_page_free() {
 	$o   = '';
-	$res = array(
-		array( 'PDF', 'Formula sheets and notes', 'Read in the portal · free sign-in', '#notes' ),
-		array( '2017–25', 'CAT previous papers', 'Attempt in the exam interface', '#free-tests' ),
-		array( 'CET', 'MBA-CET sample paper', '200 Q · 150 min', de_test_url( 'cet-pyq-0' ) ),
-		array( 'XAT', 'Decision making sets', 'With explanations', de_page_url( 'omet' ) . '#xat' ),
-		array( 'AI', 'Ask Guru', '10 free coins a day', '#ask-guru' ),
-	);
+	$res = de_free_links();
 	$side = deb_group(
 		deb_eyebrow( 'DAILY FREE TEST', 'amber' )
 		. deb_p( 'A fresh test every day across VARC, DILR and Quant.', 'de-daily-promo__t' )
@@ -555,7 +549,7 @@ function de_page_free() {
 		$side .= deb_group( deb_p( deb_t( $r[0] ), 'de-res__big' ) . deb_group( deb_p( deb_a( $r[1], $r[3] ), 'de-res__t' ) . deb_p( deb_t( $r[2] ), 'de-res__d' ), 'de-res__txt' ), 'de-res' );
 	}
 	$o .= deb_group(
-		deb_group( deb_heading( 'Free CAT mock tests, questions and tools.', 1, 'de-free__h' ) . deb_p( 'Free daily tests for CAT, MBA-CET and SNAP, practice questions with worked solutions, previous papers as mocks, notes, and percentile and college predictors. Sign in free to save attempts to your dashboard.', 'de-lead' ), 'de-grid de-grid--460 de-grid--end' )
+		deb_group( deb_heading( 'Free CAT mock tests, questions and tools.', 1, 'de-free__h' ) . deb_p( 'Free daily tests and mocks, practice questions with worked solutions, notes, and percentile and college predictors. Sign in free to save attempts to your dashboard.', 'de-lead' ), 'de-grid de-grid--460 de-grid--end' )
 		. deb_group( deb_group( deb_heading( 'Free questions', 2, 'de-h3' ) . deb_live( 'free-questions' ), 'de-stack-10' ) . deb_group( $side, 'de-stack-10' ), 'de-free__grid' )
 		. deb_group( deb_eyebrow( 'FREE TESTS' ) . deb_heading( 'Free CAT, MBA-CET and SNAP mock tests', 2, 'de-h2' ) . deb_p( 'Free DE Educare ID · no card needed · AI analysis on every attempt', 'de-note de-note--sm' ) . deb_live( 'free-tests-all' ), 'de-stack-14', 'div', 'free-tests' )
 		. deb_group( deb_eyebrow( 'FREE NOTES & PDFS' ) . deb_heading( 'Formula sheets, notes and question banks', 2, 'de-h2' ) . deb_p( 'Opens in the student portal after free sign-in · view only', 'de-note de-note--sm' ) . deb_live( 'free-notes' ), 'de-stack-14', 'div', 'notes' )
