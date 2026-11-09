@@ -34,14 +34,30 @@ function loadGtm(id: string, userId: string) {
   document.head.appendChild(s);
 }
 
+/** Google Analytics 4 (gtag.js). Shares the dataLayer with Tag Manager. */
+function loadGa(id: string, userId: string) {
+  const w = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+  if (w.gtag) return;
+  w.dataLayer = w.dataLayer || [];
+  // gtag must push the arguments object itself, not an array.
+  w.gtag = function () { w.dataLayer!.push(arguments); };
+  w.gtag('js', new Date());
+  w.gtag('config', id, userId ? { user_id: userId } : {});
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+  document.head.appendChild(s);
+}
+
 /**
- * Meta Pixel and Google Tag Manager: a page view on every screen (including in-app navigation), and forms marked
+ * Meta Pixel, Google Analytics and Google Tag Manager: a page view on every screen (including in-app navigation), and forms marked
  * data-pixel="EventName" send that event when submitted (used by server-rendered forms such as onboarding).
  */
-export function Analytics({ pixelId, gtmId, userId }: { pixelId: string; gtmId: string; userId: string }) {
+export function Analytics({ pixelId, gaId, gtmId, userId }: { pixelId: string; gaId: string; gtmId: string; userId: string }) {
   const path = usePathname();
   useEffect(() => {
     if (pixelId) loadPixel(pixelId);
+    if (gaId) loadGa(gaId, userId);
     if (gtmId) loadGtm(gtmId, userId);
     const onSubmit = (e: SubmitEvent) => {
       const name = (e.target as HTMLElement | null)?.getAttribute?.('data-pixel');
@@ -49,7 +65,7 @@ export function Analytics({ pixelId, gtmId, userId }: { pixelId: string; gtmId: 
     };
     document.addEventListener('submit', onSubmit);
     return () => document.removeEventListener('submit', onSubmit);
-  }, [pixelId, gtmId, userId]);
+  }, [pixelId, gaId, gtmId, userId]);
   useEffect(() => { track('PageView'); }, [path]);
   return null;
 }

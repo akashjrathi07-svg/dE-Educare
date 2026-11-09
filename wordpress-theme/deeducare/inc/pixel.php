@@ -1,8 +1,8 @@
 <?php
 /**
- * Meta Pixel (Facebook / Instagram ads): PageView on every page, ViewContent on exam pages.
- * Leads, contact clicks and clicks into the portal are tracked in assets/js/site.js.
- * The pixel ID is set in Customize → DE Educare → Portal and contact; empty turns it off.
+ * Meta Pixel (Facebook / Instagram ads) and Google Analytics 4: a page view on every page, ViewContent on exam pages.
+ * Leads, contact clicks and clicks into the portal are tracked in assets/js/site.js (sent to both).
+ * The IDs are set in Customize → DE Educare → Portal and contact; empty turns each off.
  * Not loaded for signed-in editors, so the team's own visits don't count.
  *
  * @package deeducare
@@ -30,6 +30,25 @@ fbq('track','PageView');
 <?php if ( isset( $names[ $key ] ) ) : ?>
 fbq('track','ViewContent',{content_name:'<?php echo esc_js( $names[ $key ] ); ?>',content_category:'exam page'});
 <?php endif; ?>
+</script>
+	<?php
+}, 2 );
+
+function de_ga_id() {
+	$id = strtoupper( trim( (string) de_setting( 'ga_id' ) ) );
+	return ( preg_match( '/^G-[A-Z0-9]+$/', $id ) && ! current_user_can( 'edit_posts' ) ) ? $id : '';
+}
+
+add_action( 'wp_head', function () {
+	$id = de_ga_id();
+	if ( ! $id ) {
+		return;
+	}
+	printf( '<script async src="https://www.googletagmanager.com/gtag/js?id=%s"></script>' . "\n", esc_attr( $id ) );
+	?>
+<script>
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','<?php echo esc_js( $id ); ?>');
 </script>
 	<?php
 }, 2 );
