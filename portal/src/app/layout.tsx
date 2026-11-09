@@ -7,8 +7,9 @@ import { Analytics } from '@/components/analytics';
 
 // Meta Pixel for ads tracking; META_PIXEL_ID in Vercel overrides it, "off" turns it off.
 const PIXEL_ID = (process.env.META_PIXEL_ID ?? '974008692441555').replace(/\D/g, '');
-// Google Analytics 4 measurement ID; GA_ID overrides it, "off" turns it off.
-const GA_ID = /^G-[A-Z0-9]+$/.test(process.env.GA_ID ?? 'G-PZ3VQ5J4W4') ? (process.env.GA_ID ?? 'G-PZ3VQ5J4W4') : '';
+// Google Analytics 4: the portal stream and the website stream, so both see portal activity.
+// GA_ID (comma-separated) overrides them, "off" turns GA off.
+const GA_ID = (process.env.GA_ID ?? 'G-PZ3VQ5J4W4,G-NK262TTDNW').split(',').map(s => s.trim()).filter(s => /^G-[A-Z0-9]+$/.test(s)).join(',');
 // Google Tag Manager container (for any other tags); GTM_ID overrides it, "off" turns it off.
 const GTM_ID = /^GTM-[A-Z0-9]+$/.test(process.env.GTM_ID ?? 'GTM-524P94NN') ? (process.env.GTM_ID ?? 'GTM-524P94NN') : '';
 

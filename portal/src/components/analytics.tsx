@@ -34,18 +34,20 @@ function loadGtm(id: string, userId: string) {
   document.head.appendChild(s);
 }
 
-/** Google Analytics 4 (gtag.js). Shares the dataLayer with Tag Manager. */
-function loadGa(id: string, userId: string) {
+/** Google Analytics 4 (gtag.js), one or more measurement IDs (comma-separated). Shares the dataLayer with Tag Manager. */
+function loadGa(ids: string, userId: string) {
+  const list = ids.split(',');
   const w = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
   if (w.gtag) return;
   w.dataLayer = w.dataLayer || [];
   // gtag must push the arguments object itself, not an array.
   w.gtag = function () { w.dataLayer!.push(arguments); };
   w.gtag('js', new Date());
-  w.gtag('config', id, userId ? { user_id: userId } : {});
+  // Events without send_to go to every configured ID.
+  for (const id of list) w.gtag('config', id, userId ? { user_id: userId } : {});
   const s = document.createElement('script');
   s.async = true;
-  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(list[0])}`;
   document.head.appendChild(s);
 }
 
