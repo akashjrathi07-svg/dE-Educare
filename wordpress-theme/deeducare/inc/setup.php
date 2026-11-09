@@ -37,10 +37,10 @@ add_action( 'init', function () {
  */
 function de_refreshed_sections() {
 	return array(
-		'home'    => array( 'coaching', 'faq' ),
-		'cat'     => array( 'coaching' ),
-		'mba-cet' => array( 'de-exam-hero', 'coaching', 'faq' ),
-		'omet'    => array( 'de-exam-hero', 'coaching', 'snap', 'nmat', 'xat', 'cmat' ),
+		'home'    => array( 'de-hero--intro', 'de-tools', 'coaching', 'guru', 'faq' ),
+		'cat'     => array( 'de-exam-hero', 'de-secnav', 'coaching', 'faq' ),
+		'mba-cet' => array( 'de-exam-hero', 'de-secnav', 'coaching', 'faq' ),
+		'omet'    => array( 'de-exam-hero', 'de-secnav', 'coaching', 'snap', 'nmat', 'xat', 'cmat' ),
 	);
 }
 
@@ -54,7 +54,7 @@ function de_refresh_pages() {
 		}
 		$fresh = call_user_func( $pages[ $slug ][1] );
 		$hash  = get_post_meta( $page->ID, '_de_built_hash', true );
-		$new   = $hash && md5( $page->post_content ) === $hash ? $fresh : de_replace_sections( $page->post_content, $fresh, $keys );
+		$new   = $hash && md5( $page->post_content ) === $hash ? $fresh : de_replace_sections( $page->post_content, $fresh, $keys, true );
 		if ( $new !== $page->post_content ) {
 			wp_update_post( array( 'ID' => $page->ID, 'post_content' => wp_slash( $new ) ) );
 			update_post_meta( $page->ID, '_de_built_hash', md5( get_post_field( 'post_content', $page->ID, 'raw' ) ) );
@@ -62,8 +62,11 @@ function de_refresh_pages() {
 	}
 }
 
-/** Swaps the blocks marked by $keys (anchor or class name) in $content for the same blocks in $fresh. */
-function de_replace_sections( $content, $fresh, $keys ) {
+/**
+ * Swaps the blocks marked by $keys (anchor or class name) in $content for the same blocks in $fresh.
+ * With $drop, a marked top-level block the fresh page no longer has (e.g. coaching while it is off) is removed.
+ */
+function de_replace_sections( $content, $fresh, $keys, $drop = false ) {
 	$key_of = function ( $b ) use ( $keys ) {
 		$attrs = $b['attrs'] ?? array();
 		if ( ! empty( $attrs['anchor'] ) && in_array( $attrs['anchor'], $keys, true ) ) {
@@ -89,7 +92,7 @@ function de_replace_sections( $content, $fresh, $keys ) {
 	};
 	$scan( parse_blocks( $fresh ) );
 	$done = array();
-	$walk = function ( $blocks ) use ( &$walk, &$found, &$done, $key_of ) {
+	$walk = function ( $blocks, $top = true ) use ( &$walk, &$found, &$done, $key_of, $drop ) {
 		foreach ( $blocks as $i => $b ) {
 			$k = $key_of( $b );
 			if ( $k && isset( $found[ $k ] ) && ! isset( $done[ $k ] ) ) {
@@ -97,8 +100,14 @@ function de_replace_sections( $content, $fresh, $keys ) {
 				$done[ $k ]   = true;
 				continue;
 			}
+			// Only top-level blocks can be removed: a parent block keeps a placeholder for each child.
+			if ( $k && $drop && $top && ! isset( $found[ $k ] ) ) {
+				unset( $blocks[ $i ] );
+				$done[ $k ] = true;
+				continue;
+			}
 			if ( ! empty( $b['innerBlocks'] ) ) {
-				$inner = $walk( $b['innerBlocks'] );
+				$inner = $walk( $b['innerBlocks'], false );
 				if ( $inner !== $b['innerBlocks'] ) {
 					// innerContent holds the inner blocks as null placeholders, so only innerBlocks change.
 					$blocks[ $i ]['innerBlocks'] = $inner;
@@ -107,7 +116,7 @@ function de_replace_sections( $content, $fresh, $keys ) {
 		}
 		return $blocks;
 	};
-	$blocks = $walk( parse_blocks( $content ) );
+	$blocks = array_values( $walk( parse_blocks( $content ) ) );
 	return $done ? serialize_blocks( $blocks ) : $content;
 }
 
@@ -134,6 +143,12 @@ function de_update_page_text() {
 		'UPI, cards, netbanking and EMI through a secure payment gateway. Your plan unlocks instantly on web and app.' => 'UPI, cards and netbanking through a secure payment gateway. Your plan unlocks instantly on web and app. EMI is available on coaching programmes.',
 		'No. The OMET Combo (₹3,000) covers SNAP, NMAT, XAT and CMAT with 15 mocks each. An individual OMET pack is ₹1,000.' => 'The SNAP Test Series is ₹1,500 (15 SNAP mocks, sectionals and topic tests). The OMET Combo, covering SNAP, NMAT, XAT and CMAT with 15 mocks each, is coming soon.',
 		'Programme fees per student. Send an enquiry for batch start dates, timings and payment options.' => 'Programme fees per student. EMI available on all coaching programmes. Send an enquiry for batch start dates, timings and payment options.',
+		// Mocks only (theme 2.4.0): buttons and lines outside the refreshed sections.
+		'Your plan unlocks instantly on web and app. EMI is available on coaching programmes.' => 'Your plan unlocks instantly on web and app.',
+		'>Enquire for coaching<' => '>Get details and offers<',
+		'>Enquire about coaching<' => '>Get details and offers<',
+		'>Talk to a counsellor →<' => '>Talk to us →<',
+		'A Mumbai-based team for CAT and MBA-CET coaching and online mock tests for competitive exams, available anywhere in India.' => 'A Mumbai-based team building online mock tests and analysis for CAT, MBA-CET, SNAP and other competitive exams, for students and coaching institutes anywhere in India.',
 	);
 	foreach ( array_keys( de_buildable_pages() ) as $slug ) {
 		$page = de_site_page( $slug );

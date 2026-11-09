@@ -72,7 +72,7 @@ function de_predictors( $id = 'predictor', $compact = false ) {
 				<div class="de-cp__band"><span class="de-cp__bh is-good">Good chance</span><ul data-cp-good></ul></div>
 				<div class="de-cp__band"><span class="de-cp__bh is-mid">Borderline</span><ul data-cp-mid></ul></div>
 				<div class="de-cp__band"><span class="de-cp__bh is-reach">Reach</span><ul data-cp-reach></ul></div>
-				<?php de_lead_button( 'counselling', 'Get a free admission counselling call', 'de-btn de-btn--amber de-btn--block' ); ?>
+				<?php de_lead_button( 'counselling', 'Get details and offers', 'de-btn de-btn--amber de-btn--block' ); ?>
 			</div>
 		</form>
 	</div>

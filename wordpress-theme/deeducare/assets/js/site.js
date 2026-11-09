@@ -341,13 +341,18 @@
 		calc();
 	} );
 
-	/* ---------- Coaching enquiry form ---------- */
+	/* ---------- Details and offers form ---------- */
 	var lead = $( '[data-lead-dialog]' );
 	if ( lead ) {
-		var openLead = function ( interest ) {
+		// label: the button that opened the form, saved with the lead so the team knows where it came from.
+		var openLead = function ( interest, label ) {
 			var pick = $( '[data-lead-interest]', lead );
+			var alias = {};
+			try { alias = JSON.parse( pick.getAttribute( 'data-alias' ) || '{}' ); } catch ( x ) {}
+			interest = alias[ interest ] || interest;
 			if ( interest && $$( 'option', pick ).some( function ( o ) { return o.value === interest; } ) ) { pick.value = interest; }
 			$( '[data-lead-page]', lead ).value = window.location.href.split( '#' )[ 0 ];
+			$( '[data-lead-name]', lead ).value = 'Pop-up form' + ( label ? ': ' + label : '' );
 			if ( lead.showModal ) { if ( ! lead.open ) { lead.showModal(); } } else { lead.setAttribute( 'open', '' ); }
 			var first = $( 'input[name="name"]', lead );
 			if ( first ) { first.focus(); }
@@ -358,7 +363,7 @@
 			if ( ! b ) { return; }
 			e.preventDefault();
 			// Buttons in editable pages link to #enquire-<programme id>.
-			openLead( b.hasAttribute( 'data-lead' ) ? b.getAttribute( 'data-lead' ) : b.getAttribute( 'href' ).replace( /^#enquire-?/, '' ) );
+			openLead( b.hasAttribute( 'data-lead' ) ? b.getAttribute( 'data-lead' ) : b.getAttribute( 'href' ).replace( /^#enquire-?/, '' ), ( b.textContent || '' ).replace( /\s+/g, ' ' ).trim().slice( 0, 60 ) );
 		} );
 		$( '[data-lead-close]', lead ).addEventListener( 'click', closeLead );
 		lead.addEventListener( 'click', function ( e ) { if ( e.target === lead ) { closeLead(); } } );
@@ -445,7 +450,7 @@
 			} else if ( exam === 'snap' ) {
 				id = 'om-single'; why = 'SNAP rewards speed: 15 full-length mocks in the real SNAP timing.';
 			} else if ( exam === 'cet' ) {
-				id = 'cet-ts'; alt = stage === 'final' ? 'cet-crash' : ''; why = 'CET is about attempts: 30 mocks and 40 sectionals build speed.';
+				id = 'cet-ts'; alt = stage === 'final' && recs[ 'cet-crash' ] ? 'cet-crash' : ''; why = 'CET is about attempts: 30 mocks and 40 sectionals build speed.';
 			} else {
 				id = want === 'mocks' && stage !== 'start' ? 'cat-10' : 'cat-ts';
 				alt = exam === 'both' ? 'cet-ts' : ( id === 'cat-10' ? 'cat-ts' : '' );

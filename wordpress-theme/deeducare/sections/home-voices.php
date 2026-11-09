@@ -12,7 +12,7 @@ $reviews = de_reviews();
 if ( ! $reviews ) :
 	$asks = array(
 		array( 'icon-checklist.webp', 'Test series', 'Did the mocks feel like the real paper? Did the analysis help?' ),
-		array( 'icon-mentor.webp', 'Classes', 'How were the live classes, recordings and mentors?' ),
+		array( 'icon-target.webp', 'Analysis', 'Did the question-wise solutions and analysis show you what to fix?' ),
 		array( 'icon-guru.webp', 'Guru AI', 'Did Guru’s plans and doubt solving move your scores?' ),
 	);
 	?>

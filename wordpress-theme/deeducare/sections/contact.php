@@ -30,7 +30,7 @@ $rows   = array(
 	</div>
 
 	<form class="de-card de-contact__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-		<h2 class="de-contact__ft">Book a free counselling call</h2>
+		<h2 class="de-contact__ft">Request a call back</h2>
 		<?php if ( 'sent' === $status ) : ?>
 			<p class="de-alert de-alert--ok" role="status">Thanks. The team will call you within one working day.</p>
 		<?php elseif ( 'error' === $status ) : ?>

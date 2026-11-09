@@ -1,7 +1,7 @@
 <?php
 /**
- * Coaching enquiries. Every "Enquire" button opens one form (de_lead_dialog),
- * which posts to /wp-json/deeducare/v1/lead. The lead is forwarded to the CRM
+ * "Details and offers" forms. Every enquiry button opens one form (de_lead_dialog),
+ * which posts to /wp-json/deeducare/v1/lead. Each lead records which form and page it came from. The lead is forwarded to the CRM
  * webhook (n8n, set in Customize → DE Educare → Portal and contact) and
  * emailed to the team, so nothing is lost if the webhook is down.
  *
@@ -16,9 +16,20 @@ function de_lead_interests() {
 	foreach ( de_coaching() as $c ) {
 		$list[ $c['id'] ] = $c['name'] . ' · ' . de_rupees( $c['fee'] );
 	}
-	$list['test-series'] = 'Test series only';
-	$list['counselling'] = 'Not sure yet, help me choose';
+	$list += array(
+		'cat-mocks'   => 'CAT mocks and test series',
+		'cet-mocks'   => 'MBA-CET mocks and test series',
+		'snap-mocks'  => 'SNAP mocks',
+		'omet-mocks'  => 'NMAT, XAT or CMAT mocks',
+		'institute'   => 'Mocks for my coaching institute (bulk)',
+		'counselling' => 'Not sure yet, help me choose',
+	);
 	return $list;
+}
+
+/** Old button ids (coaching programmes, saved in page content) → the matching choice above. */
+function de_lead_aliases() {
+	return de_coaching_on() ? array() : array( 'cat-coaching-2027' => 'cat-mocks', 'mba-plus' => 'cat-mocks', 'cet-crash' => 'cet-mocks', 'cet-coaching-2028' => 'cet-mocks', 'test-series' => 'counselling', 'cat' => 'cat-mocks', 'cet' => 'cet-mocks', 'omet' => 'snap-mocks', 'snap' => 'snap-mocks' );
 }
 
 /**
@@ -41,6 +52,7 @@ function de_submit_lead( $in ) {
 		'mode'      => sanitize_text_field( $in['mode'] ?? '' ),
 		'message'   => sanitize_textarea_field( $in['message'] ?? '' ),
 		'page'      => esc_url_raw( $in['page'] ?? '' ),
+		'form'      => sanitize_text_field( $in['form'] ?? 'Website form' ),
 		'source'    => 'website',
 		'createdAt' => gmdate( 'c' ),
 	);
@@ -49,6 +61,7 @@ function de_submit_lead( $in ) {
 	if ( '' === $lead['name'] || strlen( $digits ) < 10 || strlen( $digits ) > 13 ) {
 		return 'Please enter your name and a 10-digit mobile number.';
 	}
+	$lead['interest'] = de_lead_aliases()[ $lead['interest'] ] ?? $lead['interest'];
 	if ( ! isset( $interests[ $lead['interest'] ] ) ) {
 		$lead['interest'] = 'counselling';
 	}
@@ -77,13 +90,13 @@ function de_submit_lead( $in ) {
 		) );
 	}
 
-	$body = "New coaching enquiry from deeducare.com\n\n";
-	foreach ( array( 'Name' => 'name', 'Mobile' => 'phone', 'Email' => 'email', 'City' => 'city', 'Interested in' => 'interestLabel', 'Currently' => 'status', 'Mode' => 'mode', 'Message' => 'message', 'Page' => 'page' ) as $label => $k ) {
+	$body = "New enquiry from deeducare.com\n\nForm: " . $lead['form'] . "\n";
+	foreach ( array( 'Name' => 'name', 'Mobile' => 'phone', 'Email' => 'email', 'City' => 'city', 'Interested in' => 'interestLabel', 'Currently' => 'status', 'Message' => 'message', 'Page' => 'page' ) as $label => $k ) {
 		if ( '' !== $lead[ $k ] ) {
 			$body .= $label . ': ' . $lead[ $k ] . "\n";
 		}
 	}
-	wp_mail( de_setting( 'contact_to' ), 'Enquiry: ' . $lead['name'] . ' (' . $lead['interestLabel'] . ')', $body );
+	wp_mail( de_setting( 'contact_to' ), 'Enquiry: ' . $lead['name'] . ' · ' . $lead['interestLabel'] . ' · ' . $lead['form'], $body );
 
 	/**
 	 * Fires after an enquiry is accepted.
@@ -147,20 +160,21 @@ function de_lead_form( $interest = '', $inline = false ) {
 	<form class="de-enq__form<?php echo $inline ? ' de-enq__form--inline' : ''; ?>" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" aria-labelledby="<?php echo esc_attr( $hid ); ?>" data-lead-form>
 		<div class="de-enq__head">
 			<div class="de-stack-6">
-				<span class="de-eyebrow de-eyebrow--blue">COACHING ENQUIRY</span>
-				<h2 class="de-enq__h" id="<?php echo esc_attr( $hid ); ?>">Get batch dates and a free counselling call</h2>
+				<span class="de-eyebrow de-eyebrow--blue">DETAILS AND OFFERS</span>
+				<h2 class="de-enq__h" id="<?php echo esc_attr( $hid ); ?>">Get full details and current offers</h2>
 			</div>
 			<?php if ( ! $inline ) : ?>
 				<button type="button" class="de-enq__x" data-lead-close aria-label="Close">×</button>
 			<?php endif; ?>
 		</div>
 		<?php if ( ! $inline && 'sent' === $sent ) : ?>
-			<p class="de-alert de-alert--ok" role="status">Thanks! Our team will call you within one working day.</p>
+			<p class="de-alert de-alert--ok" role="status">Thanks! We'll send you the details and current offers within one working day.</p>
 		<?php elseif ( ! $inline && 'error' === $sent ) : ?>
 			<p class="de-alert de-alert--err" role="alert">Please enter your name and a 10-digit mobile number.</p>
 		<?php endif; ?>
 		<input type="hidden" name="action" value="de_lead">
 		<input type="hidden" name="page" value="" data-lead-page>
+		<input type="hidden" name="form" value="<?php echo esc_attr( $inline ? 'Exam page form' : 'Pop-up form' ); ?>" data-lead-name>
 		<label class="de-hp" aria-hidden="true">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
 		<div class="de-enq__grid">
 			<label class="de-field">Full name<input name="name" required autocomplete="name" maxlength="80"></label>
@@ -168,9 +182,9 @@ function de_lead_form( $interest = '', $inline = false ) {
 			<label class="de-field">Email <span class="de-opt">(optional)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>
 			<label class="de-field">City<input name="city" autocomplete="address-level2" maxlength="60"></label>
 			<label class="de-field de-field--span">Interested in
-				<select name="interest" data-lead-interest>
+				<select name="interest" data-lead-interest data-alias="<?php echo esc_attr( wp_json_encode( de_lead_aliases() ) ); ?>">
 					<?php foreach ( de_lead_interests() as $id => $label ) : ?>
-						<option value="<?php echo esc_attr( $id ); ?>"<?php selected( $id, $interest ); ?>><?php de_e( $label ); ?></option>
+						<option value="<?php echo esc_attr( $id ); ?>"<?php selected( $id, de_lead_aliases()[ $interest ] ?? $interest ); ?>><?php de_e( $label ); ?></option>
 					<?php endforeach; ?>
 				</select>
 			</label>
@@ -182,19 +196,12 @@ function de_lead_form( $interest = '', $inline = false ) {
 					<option>Working professional</option>
 				</select>
 			</label>
-			<label class="de-field">Preferred mode
-				<select name="mode">
-					<option>Online (live)</option>
-					<option>Classroom, Mumbai</option>
-					<option>Either</option>
-				</select>
-			</label>
 			<label class="de-field de-field--span">Anything we should know? <span class="de-opt">(optional)</span><textarea name="message" rows="2" maxlength="600"></textarea></label>
 		</div>
 		<p class="de-alert de-alert--err" role="alert" hidden data-lead-err></p>
-		<p class="de-alert de-alert--ok" role="status" hidden data-lead-ok>Thanks! Our team will call you within one working day. You can also <a href="<?php echo esc_url( de_whatsapp_url() ); ?>">WhatsApp us</a>.</p>
-		<button class="de-btn de-btn--primary de-btn--lg de-btn--block" type="submit" data-lead-submit>Send enquiry</button>
-		<span class="de-note de-note--xs">By sending, you agree to a call or WhatsApp from DE Educare about coaching. No spam.</span>
+		<p class="de-alert de-alert--ok" role="status" hidden data-lead-ok>Thanks! We'll send you the details and current offers within one working day. You can also <a href="<?php echo esc_url( de_whatsapp_url() ); ?>">WhatsApp us</a>.</p>
+		<button class="de-btn de-btn--primary de-btn--lg de-btn--block" type="submit" data-lead-submit>Send me details</button>
+		<span class="de-note de-note--xs">By sending, you agree to a call or WhatsApp from DE Educare about our test series and offers. No spam.</span>
 	</form>
 	<?php
 }

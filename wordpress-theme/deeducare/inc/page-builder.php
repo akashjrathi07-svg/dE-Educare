@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
 function de_buildable_pages() {
 	return array(
 		'home'           => array( 'Home', 'de_page_home' ),
-		'cat'            => array( 'CAT Coaching 2027 and CAT Mock Test Series', 'de_page_cat' ),
-		'mba-cet'        => array( 'MBA-CET Coaching 2028 and MAH-CET Mock Tests', 'de_page_cet' ),
+		'cat'            => array( 'CAT Mock Test Series', 'de_page_cat' ),
+		'mba-cet'        => array( 'MBA-CET Mock Test Series', 'de_page_cet' ),
 		'omet'           => array( 'OMET Mock Tests: SNAP, NMAT, XAT, CMAT', 'de_page_omet' ),
 		'free-resources' => array( 'Free CAT, MBA-CET and SNAP tests and resources', 'de_page_free' ),
 		'contact'        => array( 'Contact', 'de_page_contact' ),
@@ -39,10 +39,10 @@ function de_page_home() {
 	// Hero.
 	$o .= deb_group(
 		deb_group(
-			deb_heading( 'CAT 2027 &amp; CET 2028 coaching, <span class="de-blue">with mocks that feel real.</span>', 1, 'de-hero__h' )
+			deb_heading( 'CAT, MBA-CET and SNAP mocks <span class="de-blue">that feel like the real exam.</span>', 1, 'de-hero__h' )
 			. deb_group(
-				deb_p( 'Live classes, recorded sessions, books and one-on-one mentorship, plus full mocks, sectionals and topic tests timed and scored like the real paper. Guru, your AI mentor, reads every attempt and tells you what to fix next.', 'de-lead' )
-				. deb_buttons( array( array( 'Enquire for coaching', '#enquire-cat-coaching-2027', 'primary' ), array( 'Take today’s free test', de_daily_url( 'cat' ), 'outline' ) ), 'de-row' )
+				deb_p( 'Full mocks, sectionals and topic tests timed and scored like the real paper, with question-wise solutions and analysis that shows exactly what to fix. Guru, your AI mentor, turns every attempt into your next plan.', 'de-lead' )
+				. deb_buttons( array( array( 'See test series', '#test-series', 'primary' ), array( 'Take today’s free test', de_daily_url( 'cat' ), 'outline' ) ), 'de-row' )
 				. deb_list( array( 'Free daily test, no card', 'AI analysis on every attempt', 'One login on web and app', 'Mumbai-based team' ), 'de-trust' ),
 				'de-hero__side'
 			),
@@ -64,7 +64,7 @@ function de_page_home() {
 	// Quick links.
 	$tools = array(
 		array( 'icon-target.webp', 'Daily free test', 'CAT, MBA-CET, SNAP', '#free-daily' ),
-		array( 'icon-mentor.webp', 'Coaching 2027–28', 'Live classes + mentors', '#coaching' ),
+		array( 'icon-checklist.webp', 'Test series', 'Mocks, sectionals, topic tests', '#test-series' ),
 		array( 'icon-percentile.webp', 'Percentile & college predictor', 'Score → percentile → colleges', '#predict' ),
 		array( 'icon-solutions.webp', 'Previous papers', 'Attempt as mocks', $free . '#free-tests' ),
 		array( 'icon-guru.webp', 'Ask Guru', 'Your AI mentor', '#ask-guru' ),
@@ -133,8 +133,8 @@ function de_page_home() {
 		'section'
 	);
 
-	// Coaching.
-	$o .= de_block_coaching_compare();
+	// Coaching (only while coaching is on).
+	$o .= de_coaching() ? de_block_coaching_compare() : '';
 
 	// Guru.
 	$o .= deb_group(
@@ -143,7 +143,7 @@ function de_page_home() {
 				deb_eyebrow( 'GURU · AI MENTOR', 'amber' )
 				. deb_heading( 'A tutor on call that has read every mock you’ve taken.', 2, 'de-h2 de-h2--lg' )
 				. deb_list( array( '<strong>Reads your mocks.</strong> Topic accuracy, time sinks and skipped-set choices.', '<strong>Solves from a photo.</strong> Snap any question from any book.', '<strong>Builds practice sets.</strong> From your weakest topics, with questions you haven’t seen.', '<strong>Teaches by voice.</strong> Explains a concept step by step, like a tutor beside you.' ), 'de-guru__feats' )
-				. deb_p( '10 free Guru coins a day · 50 on test series · unlimited on coaching.', 'de-guru__note' )
+				. deb_p( '10 free Guru coins a day · 50 on a test series.', 'de-guru__note' )
 				. deb_buttons( array( array( 'Ask Guru now', '#ask-guru', 'amber' ), array( 'Create free DE Educare ID', de_signup_url(), 'white' ) ), 'de-row' ),
 				'de-guru__copy'
 			)
@@ -255,7 +255,7 @@ function de_page_cet() {
 function de_page_exam( $exam ) {
 	$E     = de_exams()[ $exam ];
 	$daily = de_daily_url( $exam );
-	$coach = 'cat' === $exam ? 'cat-coaching-2027' : 'cet-crash';
+	$offer = 'cat' === $exam ? 'cat-mocks' : 'cet-mocks';
 	$o     = '';
 
 	$stats = '';
@@ -269,17 +269,17 @@ function de_page_exam( $exam ) {
 				deb_p( deb_t( $E['eyebrow'] ), 'de-pill-label' )
 				. deb_heading( deb_t( $E['title'] ), 1, 'de-exam-hero__h' )
 				. deb_p( deb_t( $E['intro'] ), 'de-lead' )
-				. deb_buttons( array( array( 'Enquire for coaching', '#enquire-' . $coach, 'primary' ), array( $E['freeCta'], $daily, 'outline' ) ), 'de-row' ),
+				. deb_buttons( array( array( 'See test series and prices', '#plans', 'primary' ), array( $E['freeCta'], $daily, 'outline' ) ), 'de-row' ),
 				'de-exam-hero__copy'
 			)
-			. deb_image( de_setting( $E['img'] ), $E['name'] . ' coaching and mock tests by DE Educare', 'de-exam-hero__img' ),
+			. deb_image( de_setting( $E['img'] ), $E['name'] . ' mock tests by DE Educare', 'de-exam-hero__img' ),
 			'de-grid de-grid--460 de-grid--stretch'
 		)
 		. deb_group( $stats, 'de-stats' ),
 		'de-wrap de-exam-hero',
 		'section'
 	);
-	$o .= de_block_secnav( array( array( 'coaching', 'Coaching' ), array( 'free', 'Free tests' ), array( 'tests', 'Test series' ), array( 'overview', 'Overview' ), array( 'pattern', 'Exam pattern' ), array( 'syllabus', 'Syllabus' ), array( 'plans', 'Plans' ), array( 'facts', 'Eligibility & dates' ), array( 'colleges', 'Colleges' ), array( 'strategy', 'Preparation' ), array( 'faq', 'FAQs' ) ) );
+	$o .= de_block_secnav( array( array( 'coaching', de_coaching() ? 'Coaching' : 'Details & offers' ), array( 'free', 'Free tests' ), array( 'tests', 'Test series' ), array( 'overview', 'Overview' ), array( 'pattern', 'Exam pattern' ), array( 'syllabus', 'Syllabus' ), array( 'plans', 'Plans' ), array( 'facts', 'Eligibility & dates' ), array( 'colleges', 'Colleges' ), array( 'strategy', 'Preparation' ), array( 'faq', 'FAQs' ) ) );
 
 	$main  = de_block_exam_coaching( $exam );
 	$main .= de_block_exam_qa( $E );
@@ -301,8 +301,20 @@ function de_block_secnav( $items ) {
 	return deb_group( deb_p( implode( ' ', $links ), 'de-secnav__in de-wrap' ), 'de-secnav', 'nav' );
 }
 
-/** Coaching cards for one exam, with the enquiry form beside them. */
+/** Coaching cards for one exam with the enquiry form beside them; while coaching is off, the details-and-offers form. */
 function de_block_exam_coaching( $exam ) {
+	if ( ! de_coaching() ) {
+		$name = array( 'cat' => 'CAT', 'cet' => 'MBA-CET', 'omet' => 'SNAP and OMET' )[ $exam ];
+		return deb_group(
+			deb_eyebrow( 'DETAILS AND OFFERS', 'blue' )
+			. deb_heading( deb_t( 'Get full details of the ' . $name . ' test series and current offers' ), 2, 'de-h2' )
+			. deb_p( 'Tell us what you are preparing for and we will send the test list, schedule and today’s best price on WhatsApp. Institutes can ask for bulk pricing.', 'de-p15' )
+			. deb_live( 'enquiry-form', $exam ),
+			'de-stack-16',
+			'div',
+			'coaching' // Same anchor as the coaching block it replaces, so theme updates swap it in place.
+		);
+	}
 	$ids  = array( 'cat' => array( 'cat-coaching-2027', 'mba-plus' ), 'cet' => array( 'cet-crash', 'cet-coaching-2028', 'mba-plus' ), 'omet' => array( 'cat-coaching-2027', 'mba-plus' ) )[ $exam ];
 	$by   = array();
 	foreach ( de_coaching() as $c ) {
@@ -456,7 +468,7 @@ function de_block_related( $exam ) {
 		}
 	}
 	$btn[] = array( 'Free resources →', de_page_url( 'free-resources' ), 'outline' );
-	$btn[] = array( 'Talk to a counsellor →', de_page_url( 'contact' ), 'outline' );
+	$btn[] = array( 'Talk to us →', de_page_url( 'contact' ), 'outline' );
 	return deb_group( deb_eyebrow( 'EXPLORE MORE' ) . deb_buttons( $btn, 'de-row' ), 'de-stack-12' );
 }
 
@@ -481,7 +493,7 @@ function de_page_omet() {
 				deb_p( deb_t( $E['eyebrow'] ), 'de-pill-label' )
 				. deb_heading( deb_t( $E['title'] ), 1, 'de-exam-hero__h' )
 				. deb_p( deb_t( $E['intro'] ), 'de-lead' )
-				. deb_buttons( array( array( 'Enquire about coaching', '#enquire-cat-coaching-2027', 'primary' ), array( 'Take a free SNAP test', de_daily_url( 'snap' ), 'outline' ) ), 'de-row' )
+				. deb_buttons( array( array( 'See SNAP mocks and prices', '#plans', 'primary' ), array( 'Take a free SNAP test', de_daily_url( 'snap' ), 'outline' ) ), 'de-row' )
 				. deb_buttons( $jump, 'de-row de-omet-jump' ),
 				'de-exam-hero__copy'
 			)
@@ -492,7 +504,7 @@ function de_page_omet() {
 		'de-wrap de-exam-hero',
 		'section'
 	);
-	$nav = array( array( 'coaching', 'Coaching' ) );
+	$nav = array( array( 'coaching', de_coaching() ? 'Coaching' : 'Details & offers' ) );
 	foreach ( de_omets() as $k => $om ) {
 		$nav[] = array( $k, $om['name'] );
 	}
@@ -567,9 +579,9 @@ function de_page_contact() {
 	return deb_group(
 		deb_group(
 			deb_heading( 'Talk to the DE Educare team', 1, 'de-contact__h' )
-			. deb_p( 'A Mumbai-based team for CAT and MBA-CET coaching and online mock tests for competitive exams, available anywhere in India.', 'de-lead' )
+			. deb_p( 'A Mumbai-based team building online mock tests and analysis for CAT, MBA-CET, SNAP and other competitive exams, for students and coaching institutes anywhere in India.', 'de-lead' )
 			. deb_table( array( 'Contact', 'Details' ), $rows, 'de-table de-table--contact' )
-			. deb_buttons( array( array( 'WhatsApp us', de_whatsapp_url(), 'primary' ), array( 'Enquire about coaching', '#enquire', 'outline' ) ), 'de-row' ),
+			. deb_buttons( array( array( 'WhatsApp us', de_whatsapp_url(), 'primary' ), array( 'Get details and offers', '#enquire', 'outline' ) ), 'de-row' ),
 			'de-stack-16'
 		)
 		. deb_live( 'contact-form' ),
