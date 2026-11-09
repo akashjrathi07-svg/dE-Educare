@@ -725,8 +725,8 @@ body.admin-bar .de-secnav { top: 99px; }
 .de-footer__col a { color: rgba(255, 255, 255, .75); }
 .de-footer__col a:hover { color: #fff; }
 .de-footer__base { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: rgba(255, 255, 255, .5); }
-.de-footer__social a { color: rgba(255, 255, 255, .5); }
-.de-footer__social a:hover { color: #fff; }
+.de-footer__social a, .de-footer__legal a { color: rgba(255, 255, 255, .5); }
+.de-footer__social a:hover, .de-footer__legal a:hover { color: #fff; }
 
 /* ---------- WhatsApp pill, mobile bar, toast ---------- */
 .de-wa { position: fixed; left: 20px; bottom: 20px; z-index: 40; display: flex; gap: 10px; align-items: center; padding: 7px 16px 7px 7px; border-radius: 999px; background: var(--de-wa); color: #fff; box-shadow: 0 12px 30px rgba(14, 18, 48, .22); transition: transform .2s; }

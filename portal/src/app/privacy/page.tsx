@@ -1,16 +1,12 @@
 import Link from 'next/link';
+import { H, LegalPage } from '@/components/legal';
 
 export const metadata = { title: 'Privacy policy', robots: { index: true } };
 
-const UPDATED = '20 October 2026';
-
 /** Privacy policy for the website, portal and Android app (linked from the Play Store listing). */
 export default function Privacy() {
-  const H = ({ children }: { children: React.ReactNode }) => <h2 style={{ fontSize: 18, fontWeight: 800, margin: '10px 0 0' }}>{children}</h2>;
   return (
-    <main className="stack" style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px', '--gap': '12px', fontSize: 15, lineHeight: 1.65 } as React.CSSProperties}>
-      <h1 className="h1">Privacy policy</h1>
-      <p className="muted">DE EDUCARE LLP, Mumbai · Updated {UPDATED}</p>
+    <LegalPage title="Privacy policy">
       <p>This policy covers deeducare.com, the student portal (portal.deeducare.com) and the DE Educare Android app. They share one account: your mobile number.</p>
 
       <H>What we collect</H>
@@ -19,6 +15,7 @@ export default function Privacy() {
         <li><b>Learning data:</b> your test answers, time per question, scores, XP, streaks, study plan and saved items, so we can score tests and show your analysis.</li>
         <li><b>Guru and doubts:</b> the messages you send Guru, and photos or text of doubts you upload.</li>
         <li><b>Payments:</b> what you bought and the invoice. Card, UPI and bank details are handled by Razorpay; we never see or store them.</li>
+        <li><b>No postal address:</b> everything we sell is online, so we never ask for a delivery address.</li>
         <li><b>Technical:</b> a sign-in cookie that keeps you logged in, and basic logs (device type, time) to keep the service secure.</li>
         <li><b>Ads measurement:</b> the Meta Pixel (Facebook and Instagram) notes which pages you open and actions such as signing up, starting a test, checkout and purchase, with the amount. It does not receive your phone number, name, answers or scores.</li>
         <li><b>Usage analytics:</b> Google Analytics (through Google Tag Manager) records the screens you open and the same actions, with a random account ID so visits on phone and computer count as one student.</li>
@@ -57,9 +54,6 @@ export default function Privacy() {
 
       <H>Security</H>
       <p>Data is sent over HTTPS, sign-in codes and session tokens are stored only as secure hashes, and staff access is limited by role.</p>
-
-      <H>Contact</H>
-      <p>DE EDUCARE LLP, Mumbai, India · deteam@gmail.com · +91 8830165057</p>
-    </main>
+    </LegalPage>
   );
 }

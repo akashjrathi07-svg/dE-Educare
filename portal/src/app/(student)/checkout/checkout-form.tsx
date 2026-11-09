@@ -76,6 +76,7 @@ export function CheckoutForm({ plan, test, initialCoupon }: { plan: { slug: stri
           </button>
         ))}
         <div className="note">Payments are secured by Razorpay. We never see or store card details.</div>
+        <div className="note">Online access only, nothing is shipped: your tests unlock in your account right after payment. If access does not start or something goes wrong, we fix it or refund you. <a href="/shipping">Delivery</a> · <a href="/refunds">Refunds</a> · <a href="/terms">Terms</a></div>
       </div>
       <div className="card stack" style={{ padding: 20, '--gap': '14px' } as React.CSSProperties}>
         <div style={{ fontSize: 15, fontWeight: 800 }}>Order summary</div>
