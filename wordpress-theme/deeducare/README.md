@@ -66,13 +66,15 @@ The portal must accept these routes. If a student already owns the plan, it shou
 - Fonts served from the theme with the font rules inline, no emoji script or extra head links,
   lazy-loaded images, deferred scripts.
 
-## Meta Pixel
+## Meta Pixel and Google Analytics
 
 The pixel ID is in Customize → DE Educare → Portal and contact (empty turns it off); editors' own visits are
 not tracked. Events: `PageView` on every page, `ViewContent` on the CAT, MBA-CET, OMETs and Free resources pages,
 `Lead` when the enquiry form or the call-back form is sent, `Contact` for phone, WhatsApp and email clicks, and
 custom events `GoToCheckout`, `StartSignup` and `StartFreeTest` for clicks into the portal. The portal tracks
-the rest (sign-up, checkout, purchase, tests) with the same pixel.
+the rest (sign-up, checkout, purchase, tests) with the same pixel. Google Analytics 4 (measurement ID in the same
+Customizer section) gets the same actions as `generate_lead`, `contact`, `go_to_checkout`, `start_signup` and
+`start_free_test`; page views are counted by GA itself.
 
 ## SEO
 

@@ -22,6 +22,7 @@ function de_setting_defaults() {
 		'contact_to'     => '',
 		'lead_webhook'   => '',
 		'meta_pixel_id'  => '974008692441555',
+		'ga_id'          => 'G-PZ3VQ5J4W4',
 		'whatsapp_group' => '',
 		'telegram'       => '',
 		'youtube'        => '',

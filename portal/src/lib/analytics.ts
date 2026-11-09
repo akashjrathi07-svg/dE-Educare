@@ -1,9 +1,9 @@
 /**
- * Tracking events from the browser, sent to the Meta Pixel and to Google Tag Manager's dataLayer
- * (GA4 event names). Does nothing for a tracker that is off (staff, or no ID set).
+ * Tracking events from the browser, sent to the Meta Pixel, to Google Analytics (gtag) and to Google Tag Manager's
+ * dataLayer, with GA4 event names. Does nothing for a tracker that is off (staff, or no ID set).
  */
 type Fbq = (cmd: 'track' | 'trackCustom', name: string, params?: Record<string, unknown>, opts?: { eventID?: string }) => void;
-type W = Window & { fbq?: Fbq; dataLayer?: Record<string, unknown>[] };
+type W = Window & { fbq?: Fbq; dataLayer?: Record<string, unknown>[]; gtag?: (...args: unknown[]) => void };
 
 export const STANDARD_EVENTS = new Set(['PageView', 'ViewContent', 'Lead', 'CompleteRegistration', 'InitiateCheckout', 'AddPaymentInfo', 'Purchase', 'Contact', 'Search', 'Subscribe', 'StartTrial']);
 
@@ -15,31 +15,35 @@ const GA4_NAMES: Record<string, string> = {
 };
 const ECOMMERCE = new Set(['begin_checkout', 'add_payment_info', 'purchase', 'view_item']);
 
-function toDataLayer(name: string, params: Record<string, unknown>, id?: string) {
-  const dl = (window as W).dataLayer;
-  if (!dl) return;
+function toGoogle(name: string, params: Record<string, unknown>, id?: string) {
+  const w = window as W;
+  if (!w.dataLayer) return;
   const event = GA4_NAMES[name] ?? name.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
   if (event === 'virtual_page_view') {
-    dl.push({ event, page_location: location.href, page_path: location.pathname, page_title: document.title });
+    // GA4 counts screen changes itself (enhanced measurement: browser history); this is for Tag Manager.
+    w.dataLayer.push({ event, page_location: location.href, page_path: location.pathname, page_title: document.title });
     return;
   }
-  if (!ECOMMERCE.has(event)) {
-    dl.push({ event, ...params });
-    return;
-  }
-  // GA4 ecommerce shape; clear the previous ecommerce object first, as Google recommends.
-  const ids = (params.content_ids as string[] | undefined) ?? [];
-  dl.push({ ecommerce: null });
-  dl.push({
-    event,
-    ...(params.payment_method ? { payment_type: params.payment_method } : {}),
-    ecommerce: {
+  let payload: Record<string, unknown> = params;
+  if (ECOMMERCE.has(event)) {
+    const ids = (params.content_ids as string[] | undefined) ?? [];
+    payload = {
+      ...(params.payment_method ? { payment_type: params.payment_method } : {}),
       currency: params.currency ?? 'INR',
       value: params.value,
       ...(event === 'purchase' && id ? { transaction_id: id } : {}),
       items: ids.map(item_id => ({ item_id, item_name: params.content_name, price: params.value, quantity: 1 })),
-    },
-  });
+    };
+  }
+  if (w.gtag) w.gtag('event', event, payload);
+  // Tag Manager: GA4 ecommerce shape, clearing the previous ecommerce object first as Google recommends.
+  if (ECOMMERCE.has(event)) {
+    const { payment_type, ...ecommerce } = payload;
+    w.dataLayer.push({ ecommerce: null });
+    w.dataLayer.push({ event, ...(payment_type ? { payment_type } : {}), ecommerce });
+  } else {
+    w.dataLayer.push({ event, ...payload });
+  }
 }
 
 export function track(name: string, params: Record<string, unknown> = {}, once?: { name: string; id: string }) {
@@ -47,7 +51,7 @@ export function track(name: string, params: Record<string, unknown> = {}, once?:
   const fbq = (window as W).fbq;
   // eventID lets Meta drop a repeat of the same event (e.g. a refreshed success page).
   if (fbq) fbq(STANDARD_EVENTS.has(name) ? 'track' : 'trackCustom', name, params, once ? { eventID: `${once.name}-${once.id}` } : undefined);
-  toDataLayer(name, params, once?.id);
+  toGoogle(name, params, once?.id);
 }
 
 /** Sends an event once per browser for a given id (a purchase, a submitted test), however often the page is opened. */

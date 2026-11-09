@@ -9,8 +9,11 @@
 	var reduceMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
 
 	/* ---------- Meta Pixel events (the pixel itself loads in the page head, see inc/pixel.php) ---------- */
+	// Meta event name → Google Analytics 4 event name.
+	var GA4 = { Lead: 'generate_lead', Contact: 'contact', GoToCheckout: 'go_to_checkout', StartSignup: 'start_signup', StartFreeTest: 'start_free_test' };
 	function track( name, params, custom ) {
 		if ( window.fbq ) { window.fbq( custom ? 'trackCustom' : 'track', name, params || {} ); }
+		if ( window.gtag && GA4[ name ] ) { window.gtag( 'event', GA4[ name ], params || {} ); }
 	}
 	document.addEventListener( 'click', function ( e ) {
 		var a = e.target.closest && e.target.closest( 'a[href]' );

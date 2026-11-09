@@ -7,7 +7,9 @@ import { Analytics } from '@/components/analytics';
 
 // Meta Pixel for ads tracking; META_PIXEL_ID in Vercel overrides it, "off" turns it off.
 const PIXEL_ID = (process.env.META_PIXEL_ID ?? '974008692441555').replace(/\D/g, '');
-// Google Tag Manager container (GA4 and other tags are set up inside it); GTM_ID overrides it, "off" turns it off.
+// Google Analytics 4 measurement ID; GA_ID overrides it, "off" turns it off.
+const GA_ID = /^G-[A-Z0-9]+$/.test(process.env.GA_ID ?? 'G-PZ3VQ5J4W4') ? (process.env.GA_ID ?? 'G-PZ3VQ5J4W4') : '';
+// Google Tag Manager container (for any other tags); GTM_ID overrides it, "off" turns it off.
 const GTM_ID = /^GTM-[A-Z0-9]+$/.test(process.env.GTM_ID ?? 'GTM-524P94NN') ? (process.env.GTM_ID ?? 'GTM-524P94NN') : '';
 
 // Fonts are bundled with the portal (no request to Google at page load), with system fonts shown until they arrive.
@@ -28,12 +30,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Staff visits (admin, faculty…) are not tracked.
   const tracked = !user || user.role === 'student';
   const pixel = tracked ? PIXEL_ID : '';
+  const ga = tracked ? GA_ID : '';
   const gtm = tracked ? GTM_ID : '';
   return (
     <html lang="en" data-theme={user?.theme ?? 'light'} className={`${manrope.variable} ${plexMono.variable}`}>
       <body>
         {gtm && <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${gtm}`} height="0" width="0" style={{ display: 'none', visibility: 'hidden' }} /></noscript>}
-        {(pixel || gtm) && <Analytics pixelId={pixel} gtmId={gtm} userId={user?.id ?? ''} />}
+        {(pixel || ga || gtm) && <Analytics pixelId={pixel} gaId={ga} gtmId={gtm} userId={user?.id ?? ''} />}
         {children}<SwRegister />
       </body>
     </html>
