@@ -2,7 +2,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkQuote, startPayment, confirmPayment } from './actions';
-import { track } from '@/lib/pixel';
+import { track } from '@/lib/analytics';
 
 const inr = (paise: number) => '₹' + Math.round(paise / 100).toLocaleString('en-IN');
 type RzpWindow = Window & { Razorpay?: new (o: Record<string, unknown>) => { open(): void; on(e: string, cb: (r: { error?: { description?: string } }) => void): void } };

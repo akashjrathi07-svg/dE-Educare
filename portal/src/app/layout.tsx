@@ -3,10 +3,12 @@ import { IBM_Plex_Mono, Manrope } from 'next/font/google';
 import './globals.css';
 import { currentUser } from '@/lib/server/auth';
 import { SwRegister } from '@/components/sw-register';
-import { MetaPixel } from '@/components/meta-pixel';
+import { Analytics } from '@/components/analytics';
 
 // Meta Pixel for ads tracking; META_PIXEL_ID in Vercel overrides it, "off" turns it off.
 const PIXEL_ID = (process.env.META_PIXEL_ID ?? '974008692441555').replace(/\D/g, '');
+// Google Tag Manager container (GA4 and other tags are set up inside it); GTM_ID overrides it, "off" turns it off.
+const GTM_ID = /^GTM-[A-Z0-9]+$/.test(process.env.GTM_ID ?? 'GTM-524P94NN') ? (process.env.GTM_ID ?? 'GTM-524P94NN') : '';
 
 // Fonts are bundled with the portal (no request to Google at page load), with system fonts shown until they arrive.
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
@@ -24,10 +26,16 @@ export const viewport: Viewport = { themeColor: '#1F3A8A' };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser().catch(() => null);
   // Staff visits (admin, faculty…) are not tracked.
-  const pixel = PIXEL_ID && (!user || user.role === 'student') ? PIXEL_ID : '';
+  const tracked = !user || user.role === 'student';
+  const pixel = tracked ? PIXEL_ID : '';
+  const gtm = tracked ? GTM_ID : '';
   return (
     <html lang="en" data-theme={user?.theme ?? 'light'} className={`${manrope.variable} ${plexMono.variable}`}>
-      <body>{pixel && <MetaPixel id={pixel} />}{children}<SwRegister /></body>
+      <body>
+        {gtm && <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${gtm}`} height="0" width="0" style={{ display: 'none', visibility: 'hidden' }} /></noscript>}
+        {(pixel || gtm) && <Analytics pixelId={pixel} gtmId={gtm} userId={user?.id ?? ''} />}
+        {children}<SwRegister />
+      </body>
     </html>
   );
 }

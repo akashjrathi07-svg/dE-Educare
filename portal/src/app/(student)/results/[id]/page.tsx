@@ -8,7 +8,7 @@ import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { ResultTabs } from './result-tabs';
 import { analysisCost } from '@/lib/economy';
 import { GuruButton, AiAnalysis } from './result-client';
-import { PixelEvent } from '@/components/meta-pixel';
+import { PixelEvent } from '@/components/analytics';
 
 export const metadata = { title: 'Result and analysis' };
 

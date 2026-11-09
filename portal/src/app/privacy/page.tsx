@@ -21,6 +21,7 @@ export default function Privacy() {
         <li><b>Payments:</b> what you bought and the invoice. Card, UPI and bank details are handled by Razorpay; we never see or store them.</li>
         <li><b>Technical:</b> a sign-in cookie that keeps you logged in, and basic logs (device type, time) to keep the service secure.</li>
         <li><b>Ads measurement:</b> the Meta Pixel (Facebook and Instagram) notes which pages you open and actions such as signing up, starting a test, checkout and purchase, with the amount. It does not receive your phone number, name, answers or scores.</li>
+        <li><b>Usage analytics:</b> Google Analytics (through Google Tag Manager) records the screens you open and the same actions, with a random account ID so visits on phone and computer count as one student.</li>
       </ul>
 
       <H>How we use it</H>
@@ -29,12 +30,13 @@ export default function Privacy() {
         <li>To send sign-in codes and, if you enquire, to call or WhatsApp you about coaching.</li>
         <li>To improve questions and tests using anonymous, combined statistics.</li>
       </ul>
-      <p>We do not sell your data. We use the Meta Pixel to measure and improve our own ads on Facebook and Instagram.</p>
+      <p>We do not sell your data. We use the Meta Pixel and Google Analytics to measure our ads and improve the portal.</p>
 
       <H>Who we share it with</H>
       <ul>
         <li><b>Anthropic</b> (Claude AI): your Guru messages, doubts and test results are sent to generate answers and analysis. They are not used to train AI models.</li>
         <li><b>Meta</b> (Facebook, Instagram, WhatsApp): sign-in codes on WhatsApp, and the ads measurement above.</li>
+        <li><b>Google</b> (Analytics and Tag Manager): the usage analytics above.</li>
         <li><b>Razorpay</b> for payments, <b>MSG91</b> for sign-in SMS, and our hosting providers (Vercel, Supabase) that store data securely.</li>
         <li>Government authorities only where the law requires it.</li>
       </ul>
