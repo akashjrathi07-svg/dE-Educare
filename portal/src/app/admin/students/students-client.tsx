@@ -15,7 +15,7 @@ const phone = (p: string) => p.replace(/^\+91(\d{5})(\d{5})$/, '$1 $2');
 
 export function StudentsClient({ rows, exams, batches, courses, role, openId, enrolOpen }: { rows: Row[]; exams: Opt[]; batches: Batch[]; courses: Course[]; role: string; openId: string | null; enrolOpen: boolean }) {
   const first = rows.find(r => r.id === openId);
-  const init = (r: Row): StudentUpdate => ({ userId: r.id, exam: r.exam, grant: '', batchId: r.batchId ?? 'none', credits: 0, role: r.role });
+  const init = (r: Row): StudentUpdate => ({ userId: r.id, exam: r.exam, grant: [], removeGranted: false, batchId: r.batchId ?? 'none', credits: 0, role: r.role });
   const [open, setOpen] = useState<Row | null>(first ?? null);
   const [form, setForm] = useState<StudentUpdate | null>(first ? init(first) : null);
   const { busy, run } = useAction();
@@ -59,11 +59,15 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId, en
             <select className="input" value={form.exam} onChange={e => set({ exam: e.target.value })}>{!form.exam && <option value="">Not set</option>}{exams.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
           </Field>
           {canGrant && (
-            <Field label="Grant a plan" hint="Granting a plan unlocks it instantly on web and app">
-              <select className="input" value={form.grant} onChange={e => set({ grant: e.target.value })}>
-                <option value="">No change</option>{courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}<option value="none">Remove granted plans (purchases stay)</option>
-              </select>
-            </Field>
+            <>
+              <Field label="Grant plans" group hint="Tap any number of plans. They unlock instantly on web and app when you save.">
+                <Chips options={courses.map(c => c.id)} labels={Object.fromEntries(courses.map(c => [c.id, c.name]))} value={form.grant} onChange={v => set({ grant: v as string[] })} />
+              </Field>
+              <label className="row" style={{ gap: 8, fontSize: 13, fontWeight: 700 }}>
+                <input type="checkbox" checked={form.removeGranted} onChange={e => set({ removeGranted: e.target.checked })} /> Remove plans granted earlier (purchases stay)
+              </label>
+              <a className="note" href={`/admin/payments?tab=all&q=${encodeURIComponent(open.phone.replace(/^\+91/, ''))}`}>See this student’s payments →</a>
+            </>
           )}
           <Field label="Batch">
             <select className="input" value={form.batchId} onChange={e => set({ batchId: e.target.value })}><option value="none">None</option>{batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select>
@@ -116,12 +120,13 @@ function EnrolDrawer({ courses, batches }: { courses: Course[]; batches: Batch[]
   const router = useRouter();
   const close = () => router.push('/admin/students');
   const [many, setMany] = useState(false);
-  const [f, setF] = useState({ phone: '', name: '', lines: '', courseId: '', batchId: '', pay: 'upi' as keyof typeof PAY, amount: '', reference: '', note: '' });
+  const [f, setF] = useState({ phone: '', name: '', lines: '', courseIds: [] as string[], batchId: '', pay: 'upi' as keyof typeof PAY, amount: '', reference: '', note: '' });
   const { busy, run } = useAction();
   const set = (p: Partial<typeof f>) => setF(x => ({ ...x, ...p }));
-  const course = courses.find(c => c.id === f.courseId);
-  const courseBatches = batches.filter(b => b.courseId === f.courseId);
-  const common = { courseId: f.courseId, batchId: f.batchId, pay: f.pay, amount: Number(f.amount) || 0, reference: f.reference, note: f.note };
+  const picked = courses.filter(c => f.courseIds.includes(c.id));
+  const courseBatches = batches.filter(b => b.courseId && f.courseIds.includes(b.courseId));
+  const pick = (ids: string[]) => set({ courseIds: ids, batchId: '', amount: String(courses.filter(c => ids.includes(c.id)).reduce((a, c) => a + c.price, 0) || '') });
+  const common = { courseIds: f.courseIds, batchId: f.batchId, pay: f.pay, amount: Number(f.amount) || 0, reference: f.reference, note: f.note };
   const submit = () => run(() => (many ? enrolMany(f.lines, common) : enrol({ ...common, phone: f.phone, name: f.name })), r => {
     if (!r.ok) return;
     if (many) close();
@@ -130,7 +135,7 @@ function EnrolDrawer({ courses, batches }: { courses: Course[]; batches: Batch[]
   return (
     <Drawer title="Enrol students" onClose={close}
       foot={<><button type="button" className="btn ghost" onClick={close}>Done</button>
-        <button type="button" className="btn" disabled={busy || !f.courseId || (many ? !f.lines.trim() : !f.phone.trim())} onClick={submit}>{busy ? 'Enrolling…' : many ? 'Enrol everyone' : 'Enrol student'}</button></>}>
+        <button type="button" className="btn" disabled={busy || !f.courseIds.length || (many ? !f.lines.trim() : !f.phone.trim())} onClick={submit}>{busy ? 'Enrolling…' : many ? 'Enrol everyone' : 'Enrol student'}</button></>}>
       <div className="note">For admissions at the centre or payments taken outside the website. Online purchases unlock on their own, and coaching buyers join the course&apos;s open batch automatically.</div>
       <Chips options={['one', 'many']} labels={{ one: 'One student', many: 'A list' }} value={many ? 'many' : 'one'} onChange={v => setMany(v === 'many')} />
       {many ? (
@@ -141,24 +146,22 @@ function EnrolDrawer({ courses, batches }: { courses: Course[]; batches: Batch[]
         <Field label="Mobile number" req hint="Their DE Educare ID. New numbers get an account; they sign in with this number."><input className="input" inputMode="tel" value={f.phone} placeholder="98765 43210" onChange={e => set({ phone: e.target.value })} /></Field>
         <Field label="Name"><input className="input" value={f.name} onChange={e => set({ name: e.target.value })} /></Field>
       </>}
-      <Field label="Course" req>
-        <select className="input" value={f.courseId} onChange={e => { const c = courses.find(x => x.id === e.target.value); set({ courseId: e.target.value, batchId: '', amount: c && c.price ? String(c.price) : '' }); }}>
-          <option value="">Pick a course</option>{courses.map(c => <option key={c.id} value={c.id}>{c.name}{c.price ? ` · ₹${c.price.toLocaleString('en-IN')}` : ''}</option>)}
-        </select>
+      <Field label="Courses" req group hint={picked.length > 1 ? `${picked.length} courses · the amount is split across them by price, one invoice each` : 'Tap one or more'}>
+        <Chips options={courses.map(c => c.id)} labels={Object.fromEntries(courses.map(c => [c.id, c.name + (c.price ? ` · ₹${c.price.toLocaleString('en-IN')}` : '')]))} value={f.courseIds} onChange={v => pick(v as string[])} />
       </Field>
-      <Field label="Batch" hint={course && !courseBatches.length ? 'This course has no batches yet (Admin → Batches)' : undefined}>
+      <Field label="Batch" hint={picked.length && !courseBatches.length ? 'This course has no batches yet (Admin → Batches)' : undefined}>
         <select className="input" value={f.batchId} onChange={e => set({ batchId: e.target.value })}>
           <option value="">{courseBatches.length ? 'Automatic: the newest batch with seats' : 'None'}</option>
           {courseBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           <option value="none">No batch</option>
-          {batches.filter(b => b.courseId !== f.courseId).map(b => <option key={b.id} value={b.id}>{b.name} (other course)</option>)}
+          {batches.filter(b => !b.courseId || !f.courseIds.includes(b.courseId)).map(b => <option key={b.id} value={b.id}>{b.name} (other course)</option>)}
         </select>
       </Field>
       <Field label="Paid by" group>
         <Chips options={Object.keys(PAY) as (keyof typeof PAY)[]} labels={PAY} value={f.pay} onChange={v => set({ pay: v as keyof typeof PAY })} />
       </Field>
       {f.pay !== 'free' && <>
-        <Field label="Amount paid (₹)" req hint={f.pay === 'emi' ? 'Amount received so far' : undefined}><input className="input" type="number" min={1} value={f.amount} onChange={e => set({ amount: e.target.value })} /></Field>
+        <Field label="Amount paid (₹)" req hint={f.pay === 'emi' ? 'Amount received so far, for all the courses together' : picked.length > 1 ? 'For all the courses together' : undefined}><input className="input" type="number" min={1} value={f.amount} onChange={e => set({ amount: e.target.value })} /></Field>
         <Field label="Receipt or transaction no."><input className="input" value={f.reference} placeholder="UTR / receipt no." onChange={e => set({ reference: e.target.value })} /></Field>
       </>}
       <Field label="Note"><input className="input" value={f.note} placeholder="e.g. EMI 1 of 3, scholarship 50%" onChange={e => set({ note: e.target.value })} /></Field>

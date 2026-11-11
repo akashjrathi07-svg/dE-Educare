@@ -6,6 +6,7 @@ import { attemptReport } from '@/lib/server/attempts';
 import { analyse, fmt, type AnalysedQuestion } from '@/lib/analysis';
 import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { ResultTabs } from './result-tabs';
+import { QuestionReview } from './question-review';
 import { analysisCost } from '@/lib/economy';
 import { GuruButton, AiAnalysis } from './result-client';
 import { PixelEvent } from '@/components/analytics';
@@ -35,7 +36,7 @@ export default async function Result({ params }: { params: Promise<{ id: string 
     };
   });
   const data = analyse(qs);
-  if (!solutionsOpen) for (const row of data.timeRows) { row.solution = null; row.right = 'Shown after the test window closes'; }
+  if (!solutionsOpen) for (const row of data.timeRows) { row.solution = null; row.video = null; row.correct = null; row.right = 'Shown after the test window closes'; }
   const [{ total }] = await sql`select count(*)::int as total from attempts where test_id = ${a.test_id} and status = 'submitted'`;
 
   const practice = b.test.type === 'practice';
@@ -66,6 +67,8 @@ export default async function Result({ params }: { params: Promise<{ id: string 
         {hero.map(h => <div key={h.k} className="stack" style={{ '--gap': '6px' } as React.CSSProperties}><div className="k">{h.k}</div><div className="v">{h.v}{h.u && <small> {h.u}</small>}</div></div>)}
       </div>
       {a.percentile_estimated && !practice && <p className="note" style={{ marginTop: -12 }}>Percentile is estimated from recent score trends until 200 students have taken this test. Rank is among {total} attempt{total === 1 ? '' : 's'} so far.</p>}
+
+      <QuestionReview rows={data.timeRows} solutionsOpen={solutionsOpen} peersReady={data.peersReady} />
 
       <div className="ai-box">
         <span className="orb" />

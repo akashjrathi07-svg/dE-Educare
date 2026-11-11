@@ -6,11 +6,11 @@ import { sql } from '@/lib/server/db';
 import { grantBonus } from '@/lib/server/coins';
 import { enrolStudent, type EnrolInput } from '@/lib/server/enrol';
 
-export type StudentUpdate = { userId: string; exam: string; grant: string; batchId: string; credits: number; role: string };
+export type StudentUpdate = { userId: string; exam: string; grant: string[]; removeGranted: boolean; batchId: string; credits: number; role: string };
 
 /**
  * Support and admins can grant plans and Guru credits; faculty can only move students between batches.
- * grant: '' = no change, 'none' = end granted plans (purchases stay), otherwise a course id.
+ * grant: course ids to unlock (any number). removeGranted ends granted plans first (purchases stay).
  */
 export async function updateStudent(s: StudentUpdate) {
   const me = await staffOrThrow('students');
@@ -23,18 +23,18 @@ export async function updateStudent(s: StudentUpdate) {
       const [e] = await tx`select code, exam_group from exams where code = ${s.exam}`;
       if (e) { await tx`update users set target_exam = ${e.code}, exam_group = ${e.exam_group} where id = ${u.id}`; done.push('exam changed'); }
     }
-    if (canGrant && s.grant === 'none') {
+    if (canGrant && s.removeGranted) {
       const r = await tx`update entitlements set ends_at = now() where user_id = ${u.id} and source = 'grant' and (ends_at is null or ends_at > now())`;
       if (r.count) done.push('granted plans removed');
-    } else if (canGrant && s.grant) {
-      const [c] = await tx`select c.id, c.name, c.validity, e.exam_date from courses c left join exams e on e.id = c.exam_id where c.id = ${s.grant}`;
-      const [has] = c ? await tx`select 1 from entitlements where user_id = ${u.id} and course_id = ${c.id} and (ends_at is null or ends_at > now())` : [];
-      if (has) done.push('already has ' + c!.name);
-      else if (c) {
-        const ends = c.validity === '6m' ? tx`now() + interval '6 months'` : c.validity === '12m' || !c.exam_date ? tx`now() + interval '12 months'` : tx`${c.exam_date}::date + interval '1 day'`;
-        await tx`insert into entitlements (user_id, course_id, ends_at, source) values (${u.id}, ${c.id}, ${ends}, 'grant')`;
-        done.push(c.name + ' granted');
-      }
+    }
+    const ids = canGrant ? [...new Set(s.grant ?? [])].slice(0, 20) : [];
+    const courses = ids.length ? await tx`select c.id, c.name, c.validity, e.exam_date from courses c left join exams e on e.id = c.exam_id where c.id = any(${ids})` : [];
+    for (const c of courses) {
+      const [has] = await tx`select 1 from entitlements where user_id = ${u.id} and course_id = ${c.id} and (ends_at is null or ends_at > now())`;
+      if (has) { done.push('already has ' + c.name); continue; }
+      const ends = c.validity === '6m' ? tx`now() + interval '6 months'` : c.validity === '12m' || !c.exam_date ? tx`now() + interval '12 months'` : tx`${c.exam_date}::date + interval '1 day'`;
+      await tx`insert into entitlements (user_id, course_id, ends_at, source) values (${u.id}, ${c.id}, ${ends}, 'grant')`;
+      done.push(c.name + ' granted');
     }
     if (s.batchId !== '') {
       const [cur] = await tx`select batch_id from batch_members where user_id = ${u.id} limit 1`;
@@ -71,7 +71,7 @@ export async function enrol(input: EnrolInput) {
 
 /**
  * Enrols a whole list at once (one student per line: "mobile, name" or "mobile, name, amount").
- * Every line gets the same course, batch and payment method.
+ * Every line gets the same courses, batch and payment method.
  */
 export async function enrolMany(lines: string, common: Omit<EnrolInput, 'phone' | 'name'>) {
   const me = await staffOrThrow('students');

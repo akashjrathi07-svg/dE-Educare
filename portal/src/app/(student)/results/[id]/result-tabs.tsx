@@ -5,6 +5,7 @@ import { fmt, type Analysis } from '@/lib/analysis';
 import { askGuru } from '@/components/guru';
 import { ReportQuestion } from './report-question';
 import { RichText } from '@/components/rich-text';
+import { Donut, showQuestion } from './question-review';
 
 const TABS = [['overview', 'Overview'], ['time', 'Time & solutions'], ['section', 'Section-wise'], ['topic', 'Topic-wise'], ['difficulty', 'Difficulty'], ['swot', 'SWOT']] as const;
 const DIFF: Record<string, string> = { easy: 'ok', medium: 'mid', hard: 'bad' };
@@ -54,18 +55,23 @@ export function ResultTabs({ data, solutionsOpen, percentile, practice = false }
                 {data.sections.map(x => (
                   <div key={x.sectionId} className="stack" style={{ '--gap': '5px' } as React.CSSProperties}>
                     <div className="row" style={{ justifyContent: 'space-between', fontSize: 13, fontWeight: 800 }}><span>{x.name}</span><span>{x.score} marks · {x.acc}% accurate</span></div>
-                    <div className="bar"><i style={{ width: Math.max(3, x.acc) + '%', background: x.acc >= 75 ? 'var(--ok-solid)' : x.acc >= 50 ? 'var(--amber)' : 'var(--bad-solid)' }} /></div>
-                    <span className="muted" style={{ fontSize: 12 }}>{x.c} right · {x.w} wrong · {x.skip} skipped</span>
+                    <div className="bar" style={{ height: 10, flex: 'none', position: 'relative', overflow: 'visible' }}>
+                      <i style={{ display: 'block', height: '100%', borderRadius: 4, width: Math.max(3, x.acc) + '%', background: x.acc >= 75 ? 'var(--ok-solid)' : x.acc >= 50 ? 'var(--amber)' : 'var(--bad-solid)' }} />
+                      {x.peerAcc != null && <span className="peer-tick" style={{ left: x.peerAcc + '%' }} title={`Peers ${x.peerAcc}%`} />}
+                    </div>
+                    <span className="muted" style={{ fontSize: 12 }}>{x.c} right · {x.w} wrong · {x.skip} skipped{x.peerAcc != null ? ` · peers ${x.peerAcc}% (black mark)` : ''}</span>
                   </div>
                 ))}
               </div>
               <div className="card pad stack" style={{ '--gap': '12px' } as React.CSSProperties}>
                 <span className="eyebrow">Where your marks went</span>
-                <div className="ov-split" aria-label={`${tot.c} correct, ${tot.w} wrong, ${tot.skip} skipped`}>
-                  <i style={{ flex: tot.c, background: 'var(--ok-solid)' }} /><i style={{ flex: tot.w, background: 'var(--bad-solid)' }} /><i style={{ flex: tot.skip, background: 'var(--line)' }} />
-                </div>
-                <div className="row" style={{ fontSize: 13, fontWeight: 700 }}>
-                  <span><b style={{ color: 'var(--ok)' }}>{tot.c}</b> correct</span><span><b style={{ color: 'var(--bad)' }}>{tot.w}</b> wrong</span><span><b>{tot.skip}</b> skipped</span>
+                <div className="row" style={{ gap: 18, flexWrap: 'nowrap' }}>
+                  <Donut parts={[[tot.c, 'var(--ok-solid)', 'Correct'], [tot.w, 'var(--bad-solid)', 'Wrong'], [tot.skip, 'var(--faint)', 'Skipped']]} label={`${tot.c + tot.w}/${tot.n}`} sub="attempted" />
+                  <div className="stack" style={{ '--gap': '8px', fontSize: 13, fontWeight: 700 } as React.CSSProperties}>
+                    {([['Correct', tot.c, 'var(--ok-solid)'], ['Wrong', tot.w, 'var(--bad-solid)'], ['Skipped', tot.skip, 'var(--faint)']] as const).map(([l, v, c]) => (
+                      <span key={l} className="row" style={{ gap: 8, flexWrap: 'nowrap' }}><i className="key" style={{ background: c }} />{l} <b className="mono">{v}</b><span className="muted">· {tot.n ? Math.round((100 * v) / tot.n) : 0}%</span></span>
+                    ))}
+                  </div>
                 </div>
                 <span className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
                   {lost < 0 ? `Wrong answers cost you ${Math.abs(lost)} mark${lost === -1 ? '' : 's'} in negative marking. ` : 'No marks lost to negative marking. '}
@@ -73,6 +79,8 @@ export function ResultTabs({ data, solutionsOpen, percentile, practice = false }
                 </span>
               </div>
             </div>
+            <DifficultyGrid data={data} />
+            <TimeChart rows={data.timeRows} />
             <div className="card pad stack" style={{ '--gap': '10px' } as React.CSSProperties}>
               <span className="eyebrow">Fix these first</span>
               {fixes.length === 0 && <span className="muted" style={{ fontSize: 14 }}>No weak topics in this test. Try a harder sectional next.</span>}
@@ -83,7 +91,7 @@ export function ResultTabs({ data, solutionsOpen, percentile, practice = false }
                 </div>
               ))}
             </div>
-            <p className="note">Want the full picture? Open <b>Time & solutions</b> for every question, or <b>Topic-wise</b> and <b>SWOT</b> for the in-depth analysis.</p>
+            <p className="note">Tap any question number or bar to open it in the review above. For more detail, open <b>Section-wise</b>, <b>Topic-wise</b> and <b>SWOT</b>.</p>
           </div>
         );
       })()}
@@ -239,5 +247,73 @@ export function ResultTabs({ data, solutionsOpen, percentile, practice = false }
         </div>
       )}
     </>
+  );
+}
+
+const RES_CLS = { ok: 'ok', bad: 'bad', skip: 'skip' } as const;
+
+/** Every question as a numbered circle, in columns by difficulty, coloured by result; tap to review it. */
+function DifficultyGrid({ data }: { data: Analysis }) {
+  const levels = (['easy', 'medium', 'hard'] as const).map(d => ({ d, rows: data.timeRows.filter(r => r.difficulty === d), s: data.difficulty.find(x => x.d === d) }));
+  return (
+    <div className="card pad stack" style={{ '--gap': '12px' } as React.CSSProperties}>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <span className="eyebrow">Questions by difficulty</span>
+        <span className="row" style={{ gap: 12, fontSize: 12, fontWeight: 700 }}>
+          {([['Correct', 'ok'], ['Wrong', 'bad'], ['Skipped', 'skip']] as const).map(([l, c]) => <span key={l} className="row" style={{ gap: 6 }}><i className={'qr-dot mini ' + c} />{l}</span>)}
+        </span>
+      </div>
+      <div className="grid" style={{ '--min': '200px', '--gap': '12px' } as React.CSSProperties}>
+        {levels.map(({ d, rows, s }) => (
+          <div key={d} className="diff-col">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className={'tag ' + DIFF[d]}>{cap(d)}</span>
+              <span className="muted" style={{ fontSize: 12, fontWeight: 700 }}>{rows.length} Q{s && s.c + s.w ? ` · ${s.acc}% accurate` : ''}</span>
+            </div>
+            {rows.length > 0 && (
+              <div className="diff-stack" aria-hidden="true">
+                {(['ok', 'bad', 'skip'] as const).map(k => { const v = rows.filter(r => r.result === k).length; return v ? <i key={k} className={RES_CLS[k]} style={{ flex: v }} /> : null; })}
+              </div>
+            )}
+            <div className="row" style={{ gap: 6 }}>
+              {rows.length ? rows.map(r => <button key={r.n} type="button" className={'qr-dot ' + RES_CLS[r.result]} title={`Q${r.n} · ${RES[r.result][0]} · ${r.topic}`} onClick={() => showQuestion(r.n)}>{r.n}</button>)
+                : <span className="muted" style={{ fontSize: 13 }}>None in this test</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Column chart: time on each question, coloured by result, with the average (or ideal) time as a dot. */
+function TimeChart({ rows }: { rows: Analysis['timeRows'] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  if (!rows.length) return null;
+  const max = Math.max(1, ...rows.map(r => Math.max(r.you, r.peer ?? r.ideal)));
+  const h = rows.find(r => r.n === hover);
+  return (
+    <div className="card pad stack" style={{ '--gap': '10px' } as React.CSSProperties}>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <span className="eyebrow">Time on each question</span>
+        <span className="muted" style={{ fontSize: 12, fontWeight: 700, minHeight: 16 }}>
+          {h ? `Q${h.n} · ${RES[h.result][0]} · you ${fmt(h.you)} · ${h.peer != null ? 'average' : 'ideal'} ${fmt(h.peer ?? h.ideal)}` : 'Tall red bars are where time and marks were lost'}
+        </span>
+      </div>
+      <div className="tchart" role="img" aria-label="Time spent on each question">
+        {rows.map(r => (
+          <button key={r.n} type="button" className="tcol" onMouseEnter={() => setHover(r.n)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(r.n)} onBlur={() => setHover(null)}
+            onClick={() => showQuestion(r.n)} aria-label={`Question ${r.n}: ${fmt(r.you)}, ${RES[r.result][0]}`}>
+            <i className={RES_CLS[r.result]} style={{ height: Math.max(3, (r.you / max) * 100) + '%' }} />
+            <b style={{ bottom: ((r.peer ?? r.ideal) / max) * 100 + '%' }} />
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>
+        <span>Q1</span>
+        <span className="row" style={{ gap: 12 }}><span className="row" style={{ gap: 6 }}><i className="key" style={{ background: 'var(--ink)', borderRadius: '50%', width: 7, height: 7 }} />{rows.some(r => r.peer != null) ? 'Average time' : 'Ideal time'}</span></span>
+        <span>Q{rows[rows.length - 1].n}</span>
+      </div>
+    </div>
   );
 }

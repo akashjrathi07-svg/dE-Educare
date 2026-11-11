@@ -8,7 +8,9 @@ export const PAY_METHODS = { cash: 'Cash', upi: 'UPI', bank: 'Bank transfer', ch
 export type PayMethod = keyof typeof PAY_METHODS;
 
 export type EnrolInput = {
-  phone: string; name: string; courseId: string;
+  phone: string; name: string;
+  /** One or more courses. A payment is split across them by price, each with its own invoice. */
+  courseIds: string[];
   /** '' = put them in the course's open batch automatically, 'none' = no batch, otherwise a batch id. */
   batchId: string;
   pay: PayMethod; amount: number; reference: string; note: string;
@@ -46,38 +48,49 @@ export async function enrolStudent(input: EnrolInput, staffId: string): Promise<
   if (!(input.pay in PAY_METHODS)) return { ok: false, message: 'Pick how they paid' };
   const amount = input.pay === 'free' ? 0 : Math.round(Number(input.amount) * 100);
   if (input.pay !== 'free' && !(amount > 0 && amount <= 100_000_000)) return { ok: false, message: 'Enter the amount paid in rupees' };
-  const [course] = await sql`select c.id, c.name, c.validity, e.exam_date, e.code as exam, e.exam_group from courses c left join exams e on e.id = c.exam_id where c.id = ${input.courseId}`;
-  if (!course) return { ok: false, message: 'Pick a course' };
+  const ids = [...new Set(input.courseIds ?? [])].slice(0, 20);
+  const courses = ids.length ? await sql`select c.id, c.name, c.price_paise, c.validity, e.exam_date, e.code as exam, e.exam_group from courses c left join exams e on e.id = c.exam_id where c.id = any(${ids}) order by c.sort` : [];
+  if (!courses.length) return { ok: false, message: 'Pick at least one course' };
+  // Split the amount by course price (equally if prices are not set); the last course takes the rounding.
+  const weights = courses.map(c => Number(c.price_paise) || 1);
+  const total = weights.reduce((a, b) => a + b, 0);
+  const shares = weights.map(w => Math.floor((amount * w) / total));
+  shares[shares.length - 1] += amount - shares.reduce((a, b) => a + b, 0);
 
   const [user] = await createUser(phone);
   const name = (input.name ?? '').trim().slice(0, 80);
   const done: string[] = [];
   await sql.begin(async tx => {
     if (name) await tx`update users set name = coalesce(nullif(name, ''), ${name}) where id = ${user.id}`;
-    if (course.exam) await tx`update users set target_exam = coalesce(target_exam, ${course.exam}), exam_group = case when target_exam is null then ${course.exam_group} else exam_group end where id = ${user.id}`;
+    const exam = courses.find(c => c.exam);
+    if (exam) await tx`update users set target_exam = coalesce(target_exam, ${exam.exam}), exam_group = case when target_exam is null then ${exam.exam_group} else exam_group end where id = ${user.id}`;
 
-    const [has] = await tx`select 1 from entitlements where user_id = ${user.id} and course_id = ${course.id} and (ends_at is null or ends_at > now())`;
-    if (has) done.push(`already had ${course.name}`);
-    else if (input.pay === 'free') {
-      await tx`insert into entitlements (user_id, course_id, ends_at, source) values (${user.id}, ${course.id}, ${endsAt(tx, course as never)}, 'grant')`;
-      done.push(`${course.name} unlocked (free)`);
-    } else {
+    for (const [i, course] of courses.entries()) {
+      const [has] = await tx`select 1 from entitlements where user_id = ${user.id} and course_id = ${course.id} and (ends_at is null or ends_at > now())`;
+      if (has) { done.push(`already had ${course.name}`); continue; }
+      if (input.pay === 'free' || shares[i] === 0) {
+        await tx`insert into entitlements (user_id, course_id, ends_at, source) values (${user.id}, ${course.id}, ${endsAt(tx, course as never)}, 'grant')`;
+        done.push(`${course.name} unlocked (free)`);
+        continue;
+      }
       // Recorded like an online order so invoices and revenue include it.
       const [{ n }] = await tx`select nextval('invoice_seq')::int as n`;
       const invoice = 'DE-' + new Date().getFullYear() + '-' + String(n).padStart(6, '0');
       const [o] = await tx`
         insert into orders (user_id, course_id, amount_paise, gateway, gateway_order_id, status, invoice_no, paid_at)
-        values (${user.id}, ${course.id}, ${amount}, 'offline', ${'OFFLINE-' + crypto.randomUUID()}, 'paid', ${invoice}, now()) returning id`;
+        values (${user.id}, ${course.id}, ${shares[i]}, 'offline', ${'OFFLINE-' + crypto.randomUUID()}, 'paid', ${invoice}, now()) returning id`;
       await tx`insert into payments (order_id, gateway_payment_id, method, amount_paise, raw)
-        values (${o.id}, ${'OFFLINE-' + crypto.randomUUID()}, ${input.pay}, ${amount},
+        values (${o.id}, ${'OFFLINE-' + crypto.randomUUID()}, ${input.pay}, ${shares[i]},
                 ${tx.json({ reference: (input.reference ?? '').slice(0, 120), note: (input.note ?? '').slice(0, 500), by: staffId } as never)})`;
       await tx`insert into entitlements (user_id, course_id, ends_at, source, order_id) values (${user.id}, ${course.id}, ${endsAt(tx, course as never)}, 'purchase', ${o.id})`;
       done.push(`${course.name} unlocked · invoice ${invoice}`);
     }
 
     if (input.batchId === '') {
-      const b = await autoBatch(tx, user.id, course.id);
-      if (b) done.push('batch ' + b);
+      for (const course of courses) {
+        const b = await autoBatch(tx, user.id, course.id);
+        if (b) { done.push('batch ' + b); break; }
+      }
     } else if (input.batchId !== 'none') {
       const [b] = await tx`select id, name from batches where id = ${input.batchId}`;
       if (b) {
