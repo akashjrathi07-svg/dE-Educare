@@ -4,9 +4,11 @@ import { sql } from '@/lib/server/db';
 import { initials, inr } from '@/lib/server/shell';
 import { classStatus, istTime } from '@/lib/server/admin';
 import { Head, Status } from './ui';
+import { checkPayments } from './payment-actions';
 
-export default async function Overview() {
+export default async function Overview({ searchParams }: { searchParams: Promise<{ unlocked?: string }> }) {
   const u = await requireStaff('overview');
+  const { unlocked } = await searchParams;
   const [[k], [full], classes, recent] = await Promise.all([sql`
     select
       (select count(*)::int from users where role = 'student') as students,
@@ -20,7 +22,8 @@ export default async function Overview() {
       (select count(*)::int from questions where coalesce(solution_text, '') = '') as nosol,
       (select count(*) filter (where channel = 'whatsapp')::int from otp_requests where created_at > now() - interval '7 days') as otp_wa,
       (select count(*) filter (where channel = 'sms')::int from otp_requests where created_at > now() - interval '7 days') as otp_sms,
-      (select count(*) filter (where channel = 'sms_fallback')::int from otp_requests where created_at > now() - interval '7 days') as otp_fb`,
+      (select count(*) filter (where channel = 'sms_fallback')::int from otp_requests where created_at > now() - interval '7 days') as otp_fb,
+      (select count(*)::int from orders where status in ('created', 'failed') and gateway = 'razorpay' and created_at > now() - interval '60 days') as unpaid`,
   sql`
     select b.name, round(100.0 * count(m.user_id) / greatest(b.capacity, 1))::int as fill
     from batches b left join batch_members m on m.batch_id = b.id group by b.id order by fill desc limit 1`,
@@ -59,6 +62,15 @@ export default async function Overview() {
           <div key={key} className={'stat' + (hero ? ' hero' : '')}><span className="k">{key}</span><span className="v" style={{ fontSize: 38 }}>{v}</span><span className="s">{s}</span></div>
         ))}
       </div>
+      {u.role === 'admin' && (
+        <>
+        {unlocked !== undefined && <p className="alert ok" role="status" style={{ margin: 0 }}>Checked with Razorpay: {unlocked === '0' ? 'no unconfirmed checkout was actually paid.' : `${unlocked} paid order${unlocked === '1' ? '' : 's'} found and unlocked.`}</p>}
+        <form action={checkPayments} className="note row" style={{ justifyContent: 'space-between' }}>
+          <span>{inr(k.unpaid)} checkouts in the last 60 days were not confirmed. If a student paid but has no access, check them with Razorpay: paid ones unlock at once.</span>
+          <button className="btn chip md">Check with Razorpay</button>
+        </form>
+        </>
+      )}
       {u.role === 'admin' && (
         <div className="note">Login codes, last 7 days: {inr(k.otp_wa)} on WhatsApp · {inr(k.otp_sms)} by SMS · {inr(k.otp_fb)} by SMS after WhatsApp could not deliver</div>
       )}
