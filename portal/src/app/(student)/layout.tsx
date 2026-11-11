@@ -3,9 +3,12 @@ import { requireUser } from '@/lib/server/auth';
 import { shellData } from '@/lib/server/shell';
 import { Sidebar } from '@/components/sidebar';
 import { Guru } from '@/components/guru';
+import { syncUnpaidOrders } from '@/lib/server/payments';
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const u = await requireUser();
+  // Paid but the browser never confirmed? Ask Razorpay, so access starts without waiting for support.
+  await syncUnpaidOrders(u.id).catch(() => 0);
   const s = await shellData(u);
   return (
     <div className="shell">

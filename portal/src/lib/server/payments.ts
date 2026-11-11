@@ -98,3 +98,54 @@ export async function orderByGatewayId(gatewayOrderId: string) {
   const [o] = await sql`select id, user_id, amount_paise, status from orders where gateway_order_id = ${gatewayOrderId}`;
   return o as { id: string; user_id: string; amount_paise: number; status: string } | undefined;
 }
+
+const rzp = (path: string, init?: RequestInit) => fetch('https://api.razorpay.com/v1/' + path, {
+  ...init,
+  headers: { 'content-type': 'application/json', authorization: 'Basic ' + Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64') },
+  signal: AbortSignal.timeout(5000),
+});
+
+/**
+ * Asks Razorpay whether an unpaid order was paid, and grants the plan if so. This is the safety net for
+ * payments whose browser callback never arrived (UPI app switch, closed tab, lost network) and no webhook.
+ * A payment that is only authorized is captured first. Returns true when the order is now paid.
+ */
+export async function syncOrder(o: { id: string; gateway_order_id: string; amount_paise: number }): Promise<boolean> {
+  if (!razorpayConfigured() || !o.gateway_order_id?.startsWith('order_')) return false;
+  await sql`update orders set checked_at = now() where id = ${o.id}`;
+  try {
+    const res = await rzp(`orders/${o.gateway_order_id}/payments`);
+    if (!res.ok) { console.error('[razorpay] sync', o.gateway_order_id, res.status); return false; }
+    const { items = [] } = await res.json() as { items?: { id: string; status: string; amount: number; method?: string }[] };
+    for (const p of items) {
+      if (p.amount !== o.amount_paise) continue;
+      let status = p.status;
+      if (status === 'authorized') {
+        const c = await rzp(`payments/${p.id}/capture`, { method: 'POST', body: JSON.stringify({ amount: p.amount, currency: 'INR' }) });
+        if (c.ok) status = 'captured';
+      }
+      if (status === 'captured') return fulfil(o.id, p.id, p.method ?? null, p.amount, { synced: true, payment: p });
+    }
+  } catch (e) {
+    console.error('[razorpay] sync', o.gateway_order_id, e);
+  }
+  return false;
+}
+
+/**
+ * Checks this student's recent unpaid orders (or, without a user, everyone's from the last 60 days).
+ * Throttled per order: every minute in the first hour, then every 30 minutes, for 7 days.
+ */
+export async function syncUnpaidOrders(userId?: string) {
+  if (!razorpayConfigured()) return 0;
+  const rows = userId
+    ? await sql`
+        select id, gateway_order_id, amount_paise from orders
+        where user_id = ${userId} and status in ('created', 'failed') and gateway = 'razorpay' and created_at > now() - interval '7 days'
+          and (checked_at is null or checked_at < now() - case when created_at > now() - interval '1 hour' then interval '1 minute' else interval '30 minutes' end)
+        order by created_at desc limit 3`
+    : await sql`select id, gateway_order_id, amount_paise from orders where status in ('created', 'failed') and gateway = 'razorpay' and created_at > now() - interval '60 days' order by created_at desc limit 300`;
+  let paid = 0;
+  for (const o of rows) if (await syncOrder(o as never)) paid++;
+  return paid;
+}
