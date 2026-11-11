@@ -4,11 +4,9 @@ import { sql } from '@/lib/server/db';
 import { initials, inr } from '@/lib/server/shell';
 import { classStatus, istTime } from '@/lib/server/admin';
 import { Head, Status } from './ui';
-import { checkPayments } from './payment-actions';
 
-export default async function Overview({ searchParams }: { searchParams: Promise<{ unlocked?: string }> }) {
+export default async function Overview() {
   const u = await requireStaff('overview');
-  const { unlocked } = await searchParams;
   const [[k], [full], classes, recent] = await Promise.all([sql`
     select
       (select count(*)::int from users where role = 'student') as students,
@@ -63,13 +61,10 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         ))}
       </div>
       {u.role === 'admin' && (
-        <>
-        {unlocked !== undefined && <p className="alert ok" role="status" style={{ margin: 0 }}>Checked with Razorpay: {unlocked === '0' ? 'no unconfirmed checkout was actually paid.' : `${unlocked} paid order${unlocked === '1' ? '' : 's'} found and unlocked.`}</p>}
-        <form action={checkPayments} className="note row" style={{ justifyContent: 'space-between' }}>
-          <span>{inr(k.unpaid)} checkouts in the last 60 days were not confirmed. If a student paid but has no access, check them with Razorpay: paid ones unlock at once.</span>
-          <button className="btn chip md">Check with Razorpay</button>
-        </form>
-        </>
+        <Link href="/admin/payments" className="note row" style={{ justifyContent: 'space-between' }}>
+          <span>{k.unpaid ? `${inr(k.unpaid)} checkouts in the last 60 days were not confirmed. See which ones need a look and check them with Razorpay.` : 'Every checkout is confirmed.'}</span>
+          <span style={{ fontWeight: 800, color: 'var(--pri)' }}>Payments →</span>
+        </Link>
       )}
       {u.role === 'admin' && (
         <div className="note">Login codes, last 7 days: {inr(k.otp_wa)} on WhatsApp · {inr(k.otp_sms)} by SMS · {inr(k.otp_fb)} by SMS after WhatsApp could not deliver</div>

@@ -70,6 +70,8 @@ export function analyse(qs: AnalysedQuestion[]) {
     peerAcc: q.peer?.acc ?? null,
     text: q.text, setText: q.setText ?? null, yours: answerText(q, q.answer), right: answerText(q, q.correct),
     solution: q.solution, video: q.video,
+    // For the question-by-question review: options with your choice and the correct one marked.
+    type: q.type, options: q.options, answer: q.answer, correct: q.correct as string | null,
   }));
 
   const agg = (list: AnalysedQuestion[]) => {

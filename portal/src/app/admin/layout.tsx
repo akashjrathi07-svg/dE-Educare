@@ -11,10 +11,13 @@ const ROLE: Record<string, string> = { admin: 'Super admin', content: 'Content t
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const u = await requireStaff('overview');
   const areas = (Object.keys(STAFF_AREAS) as StaffArea[]).filter(a => canAccess(u.role, a));
-  const [[{ n }], [{ pending }], [{ fresh }]] = await Promise.all([
+  const [[{ n }], [{ pending }], [{ fresh }], [{ stuck }]] = await Promise.all([
     sql`select count(*)::int as n from questions`,
     sql`select count(*)::int as pending from reviews where status = 'pending'`,
     sql`select count(*)::int as fresh from leads where not contacted`,
+    // Checkouts from the last 2 days that did not unlock (the student has no access to that plan).
+    sql`select count(*)::int as stuck from orders o where o.status in ('created', 'failed') and o.gateway = 'razorpay' and o.created_at > now() - interval '2 days'
+        and not exists (select 1 from entitlements e where e.user_id = o.user_id and e.course_id = o.course_id and (e.ends_at is null or e.ends_at > now()))`,
   ]);
   return (
     <div className="admin" data-theme="light">
@@ -26,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <span style={{ font: '600 10px var(--mono)', letterSpacing: '.08em', color: '#FFC44D' }}>ADMIN</span>
           </div>
         </div>
-        <AdminNav areas={areas} badges={{ bank: n.toLocaleString('en-IN'), ...(pending ? { reviews: String(pending) } : {}), ...(fresh ? { leads: String(fresh) } : {}) }} />
+        <AdminNav areas={areas} badges={{ bank: n.toLocaleString('en-IN'), ...(pending ? { reviews: String(pending) } : {}), ...(fresh ? { leads: String(fresh) } : {}), ...(stuck ? { payments: String(stuck) } : {}) }} />
         <div className="stack" style={{ marginTop: 'auto', '--gap': '10px' } as React.CSSProperties}>
           <Link href="/" className="wide-only" style={{ color: 'rgba(255,255,255,.7)', fontSize: 13, fontWeight: 700, padding: '0 6px' }}>← Student app</Link>
           <div className="row" style={{ gap: 10, padding: '12px 6px 0', borderTop: '1px solid rgba(255,255,255,.12)', flexWrap: 'nowrap' }}>
