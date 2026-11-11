@@ -11,6 +11,10 @@ permissions: {}
 
 jobs:
   ping:
+    # Scheduled runs only while the repo is public (free). On a private repo every-5-minute runs would cost
+    # ~8,600 Actions minutes a month, so they are skipped; use a free pinger (cron-job.org / UptimeRobot) on the
+    # same URLs instead. Manual "Run workflow" still works either way.
+    if: ${{ !github.event.repository.private || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
