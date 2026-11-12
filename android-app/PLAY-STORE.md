@@ -32,19 +32,20 @@ DE EDUCARE LLP, which also needs a D-U-N-S number).
 
 ### Store listing
 - **App name:** DE Educare: CAT, CET & SNAP Mocks
-- **Short description (80 chars):** CAT, MBA-CET & SNAP mock tests with AI analysis and Guru, your AI mentor.
+- **Short description (80 chars):** CAT, MBA-CET & SNAP mock tests with solutions, analysis and an AI mentor.
 - **Full description:**
 
 ```
-Prepare for CAT, MAH MBA-CET and SNAP with DE Educare, Mumbai's test-prep team, in your pocket.
+Prepare for CAT, MAH MBA-CET and SNAP with DE Educare mock tests, in your pocket.
 
 REAL EXAM-STYLE MOCKS
-• Full mocks, sectionals and topic tests in the real exam interface and timing
+• Full mocks, sectionals and topic tests in each exam's real interface, pattern and timing
 • CAT Test Series, 10 CAT Mocks, CET Test Series and SNAP 15 Mocks
 • A free daily test every morning, no card needed
 
-AI ANALYSIS AFTER EVERY TEST
-• Section scores, accuracy and time per question
+SOLUTIONS AND ANALYSIS AFTER EVERY TEST
+• Go through every question with its solution, Previous / Next
+• Score, accuracy, time per question and difficulty-wise charts
 • Estimated percentile and All-India rank
 • Weak topics and the next tests to take
 
@@ -52,10 +53,6 @@ GURU, YOUR AI MENTOR
 • Ask any doubt by chat or voice, or snap a photo of a question
 • Teach mode: learn any topic step by step with a worked example and a quick check
 • Practice sets built from your weak topics
-
-COACHING AND LIVE CLASSES
-• Live classes, recordings and mentors for CAT 2027 and MBA-CET
-• Study planner, library and student community
 
 One login on the app and deeducare.com. Your tests, scores and Guru history stay in sync.
 ```
@@ -70,12 +67,12 @@ One login on the app and deeducare.com. Your tests, scores and Guru history stay
 - **Privacy policy:** https://portal.deeducare.com/privacy
 - **App access:** login with an OTP is required, and Google's reviewers can't receive SMS. Set up a review login:
   in Vercel add `REVIEW_PHONE` (a spare 10-digit number, e.g. one of your office numbers) and `REVIEW_OTP`
-  (any 6 digits), redeploy, then in Admin → Students enrol that number in the CAT Test Series. In Play Console give:
+  (any 6 digits), redeploy, then in Admin → Students enrol that number in the CAT Test Series and SNAP 15 Mocks. In Play Console give:
   "Phone: <REVIEW_PHONE> · tap Send OTP · Code: <REVIEW_OTP>". That number never gets an SMS and only works with
   that code. Remove both variables after approval if you like.
 - **Ads:** No ads.
 - **Content rating:** Education reference; answer No to violence, sexual content, gambling and so on. Users can
-  interact (community, Guru chat): Yes.
+  interact (Guru chat): Yes.
 - **Target audience:** 18 and over (college students and graduates).
 - **News app:** No. **Government app:** No. **Financial features:** None (payments go through Razorpay in the portal).
 - **Data safety:**
