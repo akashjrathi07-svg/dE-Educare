@@ -32,6 +32,6 @@ export async function unlockAnyway(orderId: string, reference: string) {
   if (!o) return done('Order not found', false);
   if (o.status === 'paid') return done('Already paid and unlocked');
   const ref = reference.trim().slice(0, 120);
-  await fulfil(o.id, 'manual_' + (ref || o.id), 'manual', Number(o.amount_paise), { manual: true, reference: ref, by: me.id });
+  await fulfil(o.id, 'manual_' + o.id, 'manual', Number(o.amount_paise), { manual: true, reference: ref, by: me.id });
   return done('Plan unlocked and the order marked paid');
 }
