@@ -16,6 +16,7 @@ const fmtClock = (s: number) => {
 
 export function ExamWindow({ initial }: { initial: State }) {
   const router = useRouter();
+  const [palOpen, setPalOpen] = useState(false);
   const [st, setSt] = useState(initial);
   const qs = st.questions;
   const sectional = st.sectional;
@@ -200,6 +201,7 @@ export function ExamWindow({ initial }: { initial: State }) {
   const qNum = qs.findIndex(x => x.id === q.id) + 1;
   const typeLabel = q.type === 'TITA' ? 'type in answer' : q.type === 'MSQ' ? 'one or more correct' : 'single correct';
   const [mc, mw] = q.marks;
+  const answeredHere = (st.sections.length > 1 ? inSection : qs).filter(x => answers[x.id] != null).length;
 
   return (
     <div className="exam">
@@ -242,12 +244,12 @@ export function ExamWindow({ initial }: { initial: State }) {
         <section className="exam-q" aria-label={`Question ${qNum}`}>
           <div className="exam-qhead">
             <span style={{ fontSize: 15, fontWeight: 800 }}>Question {qNum}</span>
-            <span className="mono muted" style={{ fontSize: 12 }}>{st.sections[q.sectionIndex]?.name} · {typeLabel} · +{mc}{mw ? ` / −${mw}` : ''}</span>
+            <span className="mono muted" style={{ fontSize: 12 }}>{st.sections[q.sectionIndex]?.name} · {typeLabel} · +{mc}{mw ? ` / −${Math.abs(mw)}` : ''}</span>
           </div>
           <div className={'exam-content' + (split ? ' split' : '')}>
             {split && <RichText className="exam-passage pre" text={q.setText} />}
             <div className="exam-main">
-              {!split && q.setText && <RichText className="card pad pre" style={{ fontSize: 14, lineHeight: 1.6, background: 'var(--sunk)' }} text={q.setText} />}
+              {!split && q.setText && <RichText className="card pad pre exam-set" style={{ fontSize: 14, lineHeight: 1.6, background: 'var(--sunk)' }} text={q.setText} />}
               <div className={'exam-figure' + (q.image ? ' has-img' : '')}>
                 <RichText className="exam-text" text={text} />
                 {q.image && <img src={q.image} alt="Question figure" style={{ maxWidth: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />}
@@ -278,14 +280,17 @@ export function ExamWindow({ initial }: { initial: State }) {
             </div>
           </div>
           <div className="exam-foot">
-            {st.rules.review !== false && <button type="button" className="btn review md" onClick={markNext}>Mark for review &amp; next</button>}
-            <button type="button" className="btn ghost md" onClick={clear}>Clear response</button>
-            <button type="button" className="btn ghost md" onClick={goPrev} disabled={idx <= 0}>← Previous</button>
-            <button type="button" className="btn ok md" style={{ marginLeft: 'auto', padding: '11px 22px' }} onClick={saveNext}>Save &amp; next</button>
+            {st.rules.review !== false && <button type="button" className="btn review md" onClick={markNext}><span className="long">Mark for review &amp; next</span><span className="short">Review</span></button>}
+            <button type="button" className="btn ghost md" onClick={clear}><span className="long">Clear response</span><span className="short">Clear</span></button>
+            <button type="button" className="btn ghost md" onClick={goPrev} disabled={idx <= 0} aria-label="Previous question"><span className="long">← Previous</span><span className="short">←</span></button>
+            <button type="button" className="btn chip md pal-open" onClick={() => setPalOpen(true)} aria-label="All questions">☰ {answeredHere}/{(st.sections.length > 1 ? inSection : qs).length}</button>
+            <button type="button" className="btn ok md exam-save" onClick={saveNext}>Save &amp; next</button>
           </div>
         </section>
 
-        <aside className="exam-side" aria-label="Question palette">
+        {palOpen && <div className="pal-back" onClick={() => setPalOpen(false)} aria-hidden />}
+        <aside className={'exam-side' + (palOpen ? ' open' : '')} aria-label="Question palette" onClick={e => { if ((e.target as HTMLElement).closest('.palette button, .omr b button')) setPalOpen(false); }}>
+          <button type="button" className="btn chip sm pal-close" onClick={() => setPalOpen(false)}>Close ✕</button>
           <div className="row" style={{ gap: 12, flexWrap: 'nowrap' }}>
             <div className="stripes" style={{ width: 52, height: 60, borderRadius: 8 }} aria-hidden />
             <div className="stack" style={{ '--gap': '0' } as React.CSSProperties}>
