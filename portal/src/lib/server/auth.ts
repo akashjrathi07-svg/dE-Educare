@@ -6,6 +6,7 @@ import { cache } from 'react';
 import { sql } from './db';
 import { sendOtpSms } from './sms';
 import { sendWhatsAppOtp, whatsappReady } from './whatsapp';
+import { getSettings } from './settings';
 
 export const SESSION_COOKIE = 'de_session';
 const SESSION_DAYS = 60;
@@ -30,10 +31,15 @@ export function normalisePhone(input: string): string | null {
   return /^[6-9]\d{9}$/.test(ten) ? '+91' + ten : null;
 }
 
-/** The fixed code for the store-review number, if this is that number and both settings are present. */
-function reviewLogin(phone: string): string | null {
-  const rp = normalisePhone(process.env.REVIEW_PHONE ?? '');
-  const code = process.env.REVIEW_OTP ?? '';
+/** The fixed code for the store-review number (Admin → Android app, or REVIEW_PHONE / REVIEW_OTP in the environment). */
+async function reviewLogin(phone: string): Promise<string | null> {
+  let rp = normalisePhone(process.env.REVIEW_PHONE ?? '');
+  let code = process.env.REVIEW_OTP ?? '';
+  if (!rp || !code) {
+    const s = await getSettings(['review_phone', 'review_otp']);
+    rp = normalisePhone(s.review_phone);
+    code = s.review_otp;
+  }
   return rp && rp === phone && /^\d{6}$/.test(code) ? code : null;
 }
 
@@ -52,7 +58,7 @@ export async function requestOtp(phoneInput: string, prefer: OtpChannel = 'whats
     return { ok: false, error: `Please wait ${OTP_RESEND_SEC} seconds before asking for a new code.` };
   }
   // App-store review login: one number set in REVIEW_PHONE signs in with the fixed REVIEW_OTP, no SMS.
-  const review = reviewLogin(phone);
+  const review = await reviewLogin(phone);
   const code = review ?? String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   if (review) {
     await sql`insert into otp_requests (phone, code_hash, expires_at, channel) values (${phone}, ${hash(phone + ':' + code)}, now() + ${OTP_TTL_MIN + ' minutes'}::interval, 'review')`;
@@ -196,6 +202,7 @@ export const STAFF_AREAS = {
   reviews: ['admin', 'support'],
   leads: ['admin', 'support'],
   payments: ['admin', 'support'],
+  app: ['admin'],
 } as const satisfies Record<string, Role[]>;
 export type StaffArea = keyof typeof STAFF_AREAS;
 
