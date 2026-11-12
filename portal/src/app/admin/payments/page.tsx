@@ -101,10 +101,10 @@ export default async function Payments({ searchParams }: { searchParams: Promise
               </div>
               <div className="stack" style={{ '--gap': '2px', fontSize: 13 } as React.CSSProperties}>
                 {paid ? <span className="tag ok" style={{ alignSelf: 'flex-start' }}>Paid · unlocked</span>
-                  : <span className={'tag ' + (r.has_access ? '' : 'bad')} style={{ alignSelf: 'flex-start' }}>{r.has_access ? 'Not paid · has access from another order' : 'Not confirmed'}</span>}
-                <span className="muted">{paid ? `${via(r.gateway, r.raw)}${r.invoice_no ? ' · ' + r.invoice_no : ''}` : r.checked_at ? `Razorpay checked ${when(r.checked_at)}` : 'Not checked yet'}</span>
+                  : <span className={'tag ' + (r.has_access ? '' : 'bad')} style={{ alignSelf: 'flex-start' }}>{r.has_access ? 'Left checkout · no money taken' : 'Not confirmed'}</span>}
+                <span className="muted">{paid ? `${via(r.gateway, r.raw)}${r.invoice_no ? ' · ' + r.invoice_no : ''}` : r.has_access ? 'They already have this plan from their paid order' : r.checked_at ? `Razorpay checked ${when(r.checked_at)}` : 'Not checked yet'}</span>
               </div>
-              {!paid && <OrderActions id={r.id} admin={me.role === 'admin'} />}
+              {!paid && !r.has_access && <OrderActions id={r.id} admin={me.role === 'admin'} />}
             </div>
           );
         })}
