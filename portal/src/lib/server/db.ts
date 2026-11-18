@@ -59,3 +59,12 @@ function reservedBegin(sql: ReturnType<typeof postgres>) {
 
 /** Shared connection pool (reused across hot reloads in development). */
 export const sql = globalThis.__deSql ?? (globalThis.__deSql = connect());
+
+/**
+ * Questions that sit in a full mock, sectional or previous-year paper (live or draft) are kept for those
+ * tests only: never served in daily tests or practice sets, so students meet them first in the mock.
+ * Use inside a query on `questions q`.
+ */
+export const notInMocks = () => sql`not exists (
+  select 1 from test_questions tq join tests t on t.id = tq.test_id
+  where tq.question_id = q.id and t.type in ('full_mock', 'sectional', 'pyq'))`;

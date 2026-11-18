@@ -1,5 +1,5 @@
 import 'server-only';
-import { sql } from './db';
+import { sql, notInMocks } from './db';
 import {
   syncTimer, isSectional, canVisitSection, marksFor, scoreAttempt, percentileFromCurve, percentileFromScores,
   REAL_PERCENTILE_MIN_ATTEMPTS, PEER_STATS_MIN_ATTEMPTS, normaliseAnswer, type Rules, type Marking, type QuestionKey,
@@ -277,7 +277,7 @@ export async function ensureDailyTest(examCode: string): Promise<string | null> 
   const [have] = await sql`select id from tests where slug = ${slug}`;
   if (have) return have.id;
   const qs = await sql`
-    select q.id, q.section_id from questions q where q.exam_id = ${exam.id} and q.status = 'live'
+    select q.id, q.section_id from questions q where q.exam_id = ${exam.id} and q.status = 'live' and ${notInMocks()}
     order by md5(q.id::text || ${day}) limit 5`;
   if (!qs.length) return null;
   const label = new Date(day + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
