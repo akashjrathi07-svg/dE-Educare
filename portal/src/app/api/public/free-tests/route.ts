@@ -1,4 +1,4 @@
-import { sql } from '@/lib/server/db';
+import { sql, notInMocks } from '@/lib/server/db';
 import { corsHeaders } from '@/lib/server/cors';
 
 /** Tests marked Free and live in Admin → Tests, for the website's free tests; `daily` lists the exams with a daily test. */
@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     order by e.sort, case t.type when 'full_mock' then 0 when 'pyq' then 1 when 'sectional' then 2 else 3 end, t.sort, t.created_at
     limit 200`,
     // Exams that can make a daily test (live, with live questions).
-    sql`select e.code from exams e where e.status = 'live' and exists (select 1 from questions q where q.exam_id = e.id and q.status = 'live') order by e.sort`]);
+    sql`select e.code from exams e where e.status = 'live' and exists (select 1 from questions q where q.exam_id = e.id and q.status = 'live' and ${notInMocks()}) order by e.sort`]);
   const tests = rows.map(r => ({ slug: r.slug, name: r.name, type: r.type, exam: r.exam, minutes: r.duration_min, questions: r.questions }));
   return Response.json({ tests, daily: daily.map(d => d.code) }, { headers: { ...corsHeaders(req), 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
 }

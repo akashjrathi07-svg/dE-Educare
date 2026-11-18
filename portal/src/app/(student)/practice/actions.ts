@@ -1,7 +1,7 @@
 'use server';
 import crypto from 'node:crypto';
 import { currentUser } from '@/lib/server/auth';
-import { sql } from '@/lib/server/db';
+import { sql, notInMocks } from '@/lib/server/db';
 import { consumeGuru } from '@/lib/server/guru';
 import { refundCoins } from '@/lib/server/coins';
 import { practiceCost } from '@/lib/economy';
@@ -20,14 +20,14 @@ export async function createPracticeSet(p: { exam: string; section: string; topi
   const topicId = p.topic ? (await sql`select id from topics where section_id = ${sec.id} and name = ${p.topic}`)[0]?.id : null;
   if (p.topic && !topicId) return { ok: false, message: 'That topic was not found.' };
   const level = ['easy', 'medium', 'hard'].includes(p.level) ? p.level : null;
-  // Prefer questions this student has not seen yet.
+  // Never questions from mocks or sectionals; prefer ones this student has not seen yet.
   const pool = await sql`
     select q.id from questions q
-    where q.exam_id = ${sec.exam_id} and q.section_id = ${sec.id} and q.status = 'live' and q.set_id is null
+    where q.exam_id = ${sec.exam_id} and q.section_id = ${sec.id} and q.status = 'live' and q.set_id is null and ${notInMocks()}
       ${topicId ? sql`and q.topic_id = ${topicId}` : sql``} ${level ? sql`and q.difficulty = ${level}` : sql``}
     order by exists (select 1 from attempt_answers aa join attempts a on a.id = aa.attempt_id where a.user_id = ${u.id} and aa.question_id = q.id), random()
     limit ${count}`;
-  if (pool.length < count) return { ok: false, message: `Only ${pool.length} matching question${pool.length === 1 ? '' : 's'} right now. Pick fewer questions, another level or the whole section.` };
+  if (pool.length < count) return { ok: false, message: pool.length ? `Only ${pool.length} practice question${pool.length === 1 ? '' : 's'} match right now. Pick fewer questions, another level or the whole section.` : 'Practice questions for this section are coming soon. Mock questions are kept for the mocks.' };
 
   const pay = await consumeGuru(u.id, practiceCost(count), 'practice');
   if (!pay.ok) return { ok: false, message: pay.message };
