@@ -49,7 +49,7 @@ export async function updateStudent(s: StudentUpdate) {
       await grantBonus(u.id, credits, 'grant', 'grant-' + crypto.randomUUID(), tx);
       done.push(`${credits} bonus Guru coins added`);
     }
-    if (me.role === 'admin' && s.role && s.role !== u.role && ['student', 'faculty', 'content', 'support', 'admin'].includes(s.role)) {
+    if (me.role === 'admin' && s.role && s.role !== u.role && ['student', 'mentor', 'faculty', 'content', 'support', 'admin'].includes(s.role)) {
       if (u.id === me.id) throw new Error('You cannot change your own role');
       await tx`update users set role = ${s.role} where id = ${u.id}`;
       done.push('role set to ' + s.role);

@@ -30,7 +30,7 @@ export type AdminExam = Omit<ExamRef, 'sections'> & {
 
 /** People who can teach a class or run a batch. */
 export async function facultyList() {
-  return (await sql`select id, name from users where role in ('faculty', 'admin') and name is not null order by role = 'admin', name`) as unknown as { id: string; name: string }[];
+  return (await sql`select id, name from users where role in ('faculty', 'mentor', 'admin') and name is not null order by role = 'admin', name`) as unknown as { id: string; name: string }[];
 }
 
 export const VALIDITY: Record<string, string> = { till_exam: 'Till exam date', '6m': '6 months', '12m': '12 months' };

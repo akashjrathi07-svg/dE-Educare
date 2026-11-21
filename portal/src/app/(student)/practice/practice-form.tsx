@@ -48,7 +48,7 @@ export function PracticeForm({ exams, defaultExam }: { exams: Exam[]; defaultExa
       {err && <div className="alert err">{err}</div>}
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="note">About {Math.ceil(count * 1.5)} minutes · not ranked · full solutions and analysis after you submit</span>
-        <button type="button" className="btn" disabled={busy} onClick={go}>{busy ? 'Building…' : `Build my set · ${practiceCost(count)} coin${practiceCost(count) > 1 ? 's' : ''}`}</button>
+        <button type="button" className="btn" disabled={busy} onClick={go}>{busy ? 'Building… (up to a minute)' : `Build my set · ${practiceCost(count)} coin${practiceCost(count) > 1 ? 's' : ''}`}</button>
       </div>
     </div>
   );

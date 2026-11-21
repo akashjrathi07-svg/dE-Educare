@@ -267,25 +267,40 @@ export async function submitAttempt(attemptId: string, userId: string) {
   return { ok: true };
 }
 
-/** Daily free test for an exam: created on first request each day from the live question bank. */
+/**
+ * Today's free daily test for an exam, in this order:
+ * 1. a daily test uploaded in Admin → Tests for today (SNAP and CET daily tests are uploaded by hand);
+ * 2. today's auto test, built once from questions that are in no mock, sectional or previous paper (CAT);
+ * 3. the latest uploaded daily test, so the link always opens something.
+ */
 export async function ensureDailyTest(examCode: string): Promise<string | null> {
   const [exam] = await sql`select e.id, e.code, e.name from exams e where e.code = ${examCode} and e.status = 'live'`;
   if (!exam) return null;
   const day = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);   // India date
+  const uploaded = sql`t.exam_id = ${exam.id} and t.type = 'daily' and t.status = 'live' and t.slug !~ '-d-[0-9]{8}$'
+    and (t.live_from is null or t.live_from <= now()) and exists (select 1 from test_questions tq where tq.test_id = t.id)`;
+  const [today] = await sql`
+    select t.id from tests t where ${uploaded} and (coalesce(t.live_from, t.created_at) at time zone 'Asia/Kolkata')::date = ${day}::date
+    order by coalesce(t.live_from, t.created_at) desc limit 1`;
+  if (today) return today.id;
+
   const pfx = examCode === 'CAT' ? 'cat' : examCode === 'MBA-CET' ? 'cet' : 'om-' + examCode.toLowerCase();
   const slug = `${pfx}-d-${day.replace(/-/g, '')}`;
-  const [have] = await sql`select id from tests where slug = ${slug}`;
+  const [have] = await sql`select id from tests where slug = ${slug} and status = 'live'`;
   if (have) return have.id;
   const qs = await sql`
-    select q.id, q.section_id from questions q where q.exam_id = ${exam.id} and q.status = 'live' and ${notInMocks()}
+    select q.id, q.section_id from questions q where q.exam_id = ${exam.id} and q.status = 'live' and q.set_id is null and ${notInMocks()}
     order by md5(q.id::text || ${day}) limit 5`;
-  if (!qs.length) return null;
+  if (qs.length < 5) {
+    const [latest] = await sql`select t.id from tests t where ${uploaded} order by coalesce(t.live_from, t.created_at) desc limit 1`;
+    return latest?.id ?? null;
+  }
   const label = new Date(day + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
   const node = examCode === 'CAT' ? 'cat-daily' : examCode === 'MBA-CET' ? 'cet-daily' : examCode.toLowerCase();
   return sql.begin(async tx => {
     const [t] = await tx`
-      insert into tests (slug, name, type, exam_id, node_id, duration_min, is_free, status, sort)
-      values (${slug}, ${exam.name + ' Daily Test · ' + label}, 'daily', ${exam.id}, ${node}, 10, true, 'live', ${-Number(day.replace(/-/g, ''))})
+      insert into tests (slug, name, type, exam_id, node_id, duration_min, is_free, status, sort, blueprint)
+      values (${slug}, ${exam.name + ' Daily Test · ' + label}, 'daily', ${exam.id}, ${node}, 10, true, 'live', ${-Number(day.replace(/-/g, ''))}, ${tx.json({ auto: true } as never)})
       on conflict (slug) do nothing returning id`;
     if (!t) return (await tx`select id from tests where slug = ${slug}`)[0].id;
     const [ts] = await tx`insert into test_sections (test_id, section_id, name, sort) values (${t.id}, ${qs[0].section_id}, 'Mixed', 0) returning id`;

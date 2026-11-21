@@ -42,8 +42,8 @@ export function Sidebar({ data }: { data: Data }) {
             {href === '/live' && data.liveNow && <span className="badge-live wide-only">LIVE</span>}
           </Link>
         ))}
-        {['admin', 'content', 'faculty', 'support'].includes(data.user.role) && (
-          <Link href="/admin" className="nav-item" title="Admin"><span className="nav-mark">AD</span><span className="nav-label wide-only">Admin</span><span className="nav-short" aria-hidden="true">Admin</span></Link>
+        {['admin', 'content', 'faculty', 'support', 'mentor'].includes(data.user.role) && (
+          <Link href={data.user.role === 'mentor' ? '/admin/mentees' : '/admin'} className="nav-item" title="Admin"><span className="nav-mark">{data.user.role === 'mentor' ? 'MS' : 'AD'}</span><span className="nav-label wide-only">{data.user.role === 'mentor' ? 'My students' : 'Admin'}</span><span className="nav-short" aria-hidden="true">{data.user.role === 'mentor' ? 'Students' : 'Admin'}</span></Link>
         )}
       </nav>
       <div className="side-foot">

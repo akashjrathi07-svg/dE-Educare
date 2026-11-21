@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/server/auth';
 import { sql } from '@/lib/server/db';
 import { attemptReport } from '@/lib/server/attempts';
+import { mentorCanSeeAttempt } from '@/lib/server/mentor';
 import { analyse, fmt, type AnalysedQuestion } from '@/lib/analysis';
 import { PEER_STATS_MIN_ATTEMPTS } from '@/lib/exam-logic';
 import { ResultTabs } from './result-tabs';
@@ -17,7 +18,9 @@ export default async function Result({ params }: { params: Promise<{ id: string 
   const { id } = await params;
   const u = await requireUser(`/results/${id}`);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const r = await attemptReport(id, u.id, ['admin', 'faculty', 'content', 'support'].includes(u.role));
+  // Staff see every result; a mentor sees the results of students in their own batches.
+  const staff = ['admin', 'faculty', 'content', 'support'].includes(u.role) || (u.role === 'mentor' && await mentorCanSeeAttempt(u.id, id));
+  const r = await attemptReport(id, u.id, staff);
   if (!r) notFound();
   const { attempt: a, bundle: b, answers, stats, histMap, solutionsOpen } = r;
   const topicNodes = await sql`select name, id from catalog_nodes where exam_id = ${b.test.exam_id} and id like '%tp-%' and not exists (select 1 from catalog_nodes c where c.parent_id = catalog_nodes.id)`;

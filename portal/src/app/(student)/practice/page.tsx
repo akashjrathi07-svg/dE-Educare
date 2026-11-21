@@ -5,6 +5,8 @@ import { examRefs } from '@/lib/server/admin';
 import { PracticeForm } from './practice-form';
 
 export const metadata = { title: 'Practice sets' };
+// Writing questions with Guru can take a minute.
+export const maxDuration = 300;
 
 export default async function Practice() {
   const u = await requireUser('/practice');
@@ -19,7 +21,7 @@ export default async function Practice() {
       <div className="head">
         <div className="stack" style={{ '--gap': '4px' } as React.CSSProperties}>
           <h1 className="h1">Practice sets</h1>
-          <span className="muted" style={{ fontSize: 14 }}>Guru builds a set from the question bank on any topic, preferring questions you haven’t seen. 1 coin per 10 questions.</span>
+          <span className="muted" style={{ fontSize: 14 }}>Guru builds a set on any topic from practice questions you haven’t seen, and writes new ones when needed. Mock questions are never used. 1 coin per 10 questions.</span>
         </div>
         <Link href="/tests" className="btn ghost">All tests</Link>
       </div>
