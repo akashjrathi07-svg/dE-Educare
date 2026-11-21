@@ -6,10 +6,10 @@ import { AdminNav, ToastHost } from './ui';
 
 export const metadata = { title: 'DE Educare Admin', robots: { index: false } };
 
-const ROLE: Record<string, string> = { admin: 'Super admin', content: 'Content team', faculty: 'Faculty', support: 'Support' };
+const ROLE: Record<string, string> = { admin: 'Super admin', content: 'Content team', faculty: 'Faculty', support: 'Support', mentor: 'Mentor' };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const u = await requireStaff('overview');
+  const u = await requireStaff('any');
   const areas = (Object.keys(STAFF_AREAS) as StaffArea[]).filter(a => canAccess(u.role, a));
   const [[{ n }], [{ pending }], [{ fresh }], [{ stuck }]] = await Promise.all([
     sql`select count(*)::int as n from questions`,

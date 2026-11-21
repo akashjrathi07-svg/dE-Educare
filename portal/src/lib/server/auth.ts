@@ -15,7 +15,7 @@ const OTP_MAX_ATTEMPTS = 5;
 const OTP_RESEND_SEC = 30;
 const OTP_PER_HOUR = 6;
 
-export type Role = 'student' | 'faculty' | 'content' | 'support' | 'admin';
+export type Role = 'student' | 'faculty' | 'content' | 'support' | 'admin' | 'mentor';
 export type User = {
   id: string; phone: string; de_id: string; name: string | null; email: string | null; city: string | null; role: Role;
   exam_group: 'mba' | 'upsc' | 'bank' | 'ug'; target_exam: string | null; target_year: number | null; target_percentile: number | null;
@@ -203,6 +203,7 @@ export const STAFF_AREAS = {
   leads: ['admin', 'support'],
   payments: ['admin', 'support'],
   app: ['admin'],
+  mentees: ['admin', 'mentor'],
 } as const satisfies Record<string, Role[]>;
 export type StaffArea = keyof typeof STAFF_AREAS;
 
@@ -210,10 +211,17 @@ export function canAccess(role: Role, area: StaffArea) {
   return (STAFF_AREAS[area] as readonly Role[]).includes(role);
 }
 
-export async function requireStaff(area: StaffArea): Promise<User> {
+/** Roles that can open the admin panel (any staff area). */
+export const STAFF_ROLES: Role[] = ['admin', 'content', 'faculty', 'support', 'mentor'];
+
+/** Where a role lands in the admin panel: the overview, or a mentor's own students. */
+export const adminHome = (role: Role) => (canAccess(role, 'overview') ? '/admin' : canAccess(role, 'mentees') ? '/admin/mentees' : '/');
+
+export async function requireStaff(area: StaffArea | 'any'): Promise<User> {
   const u = await currentUser();
   if (!u) redirect('/login?next=/admin');
-  if (!canAccess(u.role, area)) redirect(u.role === 'student' ? '/' : '/admin');
+  const ok = area === 'any' ? STAFF_ROLES.includes(u.role) : canAccess(u.role, area);
+  if (!ok) redirect(adminHome(u.role));
   return u;
 }
 

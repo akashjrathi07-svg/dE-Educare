@@ -5,17 +5,19 @@ import { sql, notInMocks } from '@/lib/server/db';
 import { consumeGuru } from '@/lib/server/guru';
 import { refundCoins } from '@/lib/server/coins';
 import { practiceCost } from '@/lib/economy';
+import { AI_MAX_PER_SET, generatePracticeQuestions } from '@/lib/server/ai-questions';
 
 /**
- * Builds a personal practice set from the question bank: one section, an optional topic,
- * 10/20/30 questions. Costs 1 coin per 10 questions. Practice sets are never sectionals
- * or full mocks, are not ranked and are visible only to their owner.
+ * Builds a personal practice set: one section, an optional topic, 10/20/30 questions, 1 coin per 10.
+ * Questions come from the bank (daily tests, free and earlier AI questions; never mock, sectional or
+ * previous-paper questions). If the bank is short by up to 10, Guru writes the rest, checked against the
+ * mocks, and they are saved for other students too. Not ranked; visible only to their owner.
  */
 export async function createPracticeSet(p: { exam: string; section: string; topic: string; count: number; level: string }): Promise<{ ok: false; message: string } | { ok: true; slug: string }> {
   const u = await currentUser();
   if (!u) return { ok: false, message: 'Please sign in again.' };
   const count = [10, 20, 30].includes(p.count) ? p.count : 10;
-  const [sec] = await sql`select s.id, s.name, e.id as exam_id, e.code from sections s join exams e on e.id = s.exam_id where e.code = ${p.exam} and s.code = ${p.section}`;
+  const [sec] = await sql`select s.id, s.name, e.id as exam_id, e.code, e.name as exam_name from sections s join exams e on e.id = s.exam_id where e.code = ${p.exam} and s.code = ${p.section}`;
   if (!sec) return { ok: false, message: 'Pick an exam and a section.' };
   const topicId = p.topic ? (await sql`select id from topics where section_id = ${sec.id} and name = ${p.topic}`)[0]?.id : null;
   if (p.topic && !topicId) return { ok: false, message: 'That topic was not found.' };
@@ -27,11 +29,20 @@ export async function createPracticeSet(p: { exam: string; section: string; topi
       ${topicId ? sql`and q.topic_id = ${topicId}` : sql``} ${level ? sql`and q.difficulty = ${level}` : sql``}
     order by exists (select 1 from attempt_answers aa join attempts a on a.id = aa.attempt_id where a.user_id = ${u.id} and aa.question_id = q.id), random()
     limit ${count}`;
-  if (pool.length < count) return { ok: false, message: pool.length ? `Only ${pool.length} practice question${pool.length === 1 ? '' : 's'} match right now. Pick fewer questions, another level or the whole section.` : 'Practice questions for this section are coming soon. Mock questions are kept for the mocks.' };
+  const short = count - pool.length;
+  if (short > AI_MAX_PER_SET) return { ok: false, message: `Only ${pool.length} practice question${pool.length === 1 ? '' : 's'} match right now and Guru can write up to ${AI_MAX_PER_SET} more. Pick fewer questions, another level or the whole section.` };
 
   const pay = await consumeGuru(u.id, practiceCost(count), 'practice');
   if (!pay.ok) return { ok: false, message: pay.message };
   try {
+    if (short > 0) {
+      const made = await generatePracticeQuestions({ examId: sec.exam_id, examName: sec.exam_name, sectionId: sec.id, sectionName: sec.name, topicId, topicName: p.topic || '', level, count: short });
+      if (made.length < short) {
+        await refundCoins(u.id, pay.spent, 'practice');
+        return { ok: false, message: 'Guru could not write enough questions right now. Your coins were returned; try fewer questions or again in a minute.' };
+      }
+      pool.push(...made.map(id => ({ id })) as never[]);
+    }
     const slug = 'px-' + crypto.randomBytes(5).toString('hex');
     const name = `Practice · ${p.topic || sec.name} · ${count} Q`;
     await sql.begin(async tx => {

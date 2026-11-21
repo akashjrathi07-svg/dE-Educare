@@ -81,7 +81,7 @@ export function StudentsClient({ rows, exams, batches, courses, role, openId, en
           {role === 'admin' && (
             <Field label="Role" hint="Staff roles open parts of this admin panel">
               <select className="input" value={form.role} onChange={e => set({ role: e.target.value })}>
-                {[['student', 'Student'], ['faculty', 'Faculty · batches, classes'], ['content', 'Content · question bank, tests'], ['support', 'Support · students'], ['admin', 'Admin · everything']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                {[['student', 'Student'], ['mentor', 'Mentor · sees only their own classes'], ['faculty', 'Faculty · batches, classes'], ['content', 'Content · question bank, tests'], ['support', 'Support · students'], ['admin', 'Admin · everything']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </Field>
           )}

@@ -21,7 +21,7 @@ export function BatchesClient({ batches, exams, courses, faculty }: { batches: R
 
   return (
     <>
-      <Head title="Batches" sub="Groups of students with a schedule and faculty">
+      <Head title="Batches" sub="Groups of students with a schedule and a faculty member or mentor. A partner institute’s students go in a batch with the partner as mentor.">
         <button type="button" className="btn" onClick={() => setForm(blank())}>New batch</button>
       </Head>
       {form && (
@@ -31,7 +31,7 @@ export function BatchesClient({ batches, exams, courses, faculty }: { batches: R
             <Field label="Batch name" req><input className="input" value={form.name} placeholder="CAT 2027 Weekend B" onChange={e => set({ name: e.target.value })} /></Field>
             <Field label="Exam">{sel(form.examId, exams, v => set({ examId: v }), 'Any exam')}</Field>
             <Field label="Linked course">{sel(form.courseId, courses, v => set({ courseId: v }), 'No course')}</Field>
-            <Field label="Faculty">{sel(form.facultyId, faculty, v => set({ facultyId: v }), 'Not assigned')}</Field>
+            <Field label="Faculty or mentor" hint="A mentor sees only the students in the batches they are assigned to">{sel(form.facultyId, faculty, v => set({ facultyId: v }), 'Not assigned')}</Field>
             <Field label="Days" group span><Chips options={DAYS} value={form.days} onChange={v => set({ days: v as string[] })} /></Field>
             <Field label="Class time"><input className="input" type="time" value={form.time} onChange={e => set({ time: e.target.value })} /></Field>
             <Field label="Start date"><input className="input" type="date" value={form.start} onChange={e => set({ start: e.target.value })} /></Field>
