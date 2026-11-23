@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireStaff } from '@/lib/server/auth';
-import { sql } from '@/lib/server/db';
+import { sql, testOrder } from '@/lib/server/db';
 import { examRefs, TEST_TYPES } from '@/lib/server/admin';
 import { Head } from '../ui';
 import { Builder, UploadTests } from './tests-client';
@@ -21,13 +21,13 @@ export default async function Tests({ searchParams }: { searchParams: Promise<SP
     ${status === 'scheduled' ? sql`and t.status = 'live' and t.live_from > now()` : status === 'live' ? sql`and t.status = 'live' and (t.live_from is null or t.live_from <= now())` : status ? sql`and t.status = ${status}` : sql``}`;
   const [exams, rows, [{ total }], pool, topicPool, courses, nodes] = await Promise.all([
     examRefs(),
-    sql`select t.id, t.slug, t.name, t.type, t.duration_min, t.is_free, t.status, t.live_from, t.window_end, t.node_id, t.solutions_visibility, t.ranking, t.views, e.code as exam,
+    sql`select t.id, t.slug, t.name, t.type, t.position, t.duration_min, t.is_free, t.status, t.live_from, t.window_end, t.node_id, t.solutions_visibility, t.ranking, t.views, e.code as exam,
           (select count(*)::int from test_questions q where q.test_id = t.id) as q,
           (select count(distinct a.user_id)::int from attempts a where a.test_id = t.id) as started,
           (select count(*)::int from attempts a where a.test_id = t.id and a.status = 'submitted') as attempts,
           coalesce((select array_agg(ct.course_id) from course_tests ct where ct.test_id = t.id), '{}') as course_ids
         from tests t join exams e on e.id = t.exam_id ${where}
-        order by ${tab && tab !== 'free' && tab !== 'none' ? sql`array_position('{full_mock,pyq,sectional,topic,daily,custom}'::text[], t.type), t.sort, t.created_at` : sql`t.created_at desc, t.sort`}
+        order by ${tab && tab !== 'free' && tab !== 'none' ? testOrder() : sql`t.created_at desc, t.sort`}
         limit ${PAGE} offset ${(page - 1) * PAGE}`,
     sql`select count(*)::int as total from tests t join exams e on e.id = t.exam_id ${where}`,
     sql`select e.code as exam, s.code as sec, q.difficulty, count(*)::int as n from questions q join exams e on e.id = q.exam_id join sections s on s.id = q.section_id where q.status = 'live' group by 1, 2, 3`,
@@ -98,7 +98,7 @@ export default async function Tests({ searchParams }: { searchParams: Promise<SP
         rows={rows.map(t => ({
           id: t.id, slug: t.slug, name: t.name, type: t.type, typeLabel: TEST_TYPES[t.type] ?? t.type, exam: t.exam, q: t.q, minutes: t.duration_min, free: t.is_free,
           status: t.status === 'live' && t.live_from && new Date(t.live_from) > new Date() ? 'scheduled' : t.status,
-          liveFrom: t.live_from ? new Date(t.live_from).toISOString() : '', windowEnd: t.window_end ? new Date(t.window_end).toISOString() : '',
+          position: t.position ?? null, liveFrom: t.live_from ? new Date(t.live_from).toISOString() : '', windowEnd: t.window_end ? new Date(t.window_end).toISOString() : '',
           nodeId: t.node_id ?? '', solutions: t.solutions_visibility, ranking: t.ranking, views: t.views, started: t.started, attempts: t.attempts, courseIds: t.course_ids ?? [],
         }))} />
       <div className="row" style={{ justifyContent: 'space-between' }}>

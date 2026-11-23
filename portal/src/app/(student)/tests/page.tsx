@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/server/auth';
-import { sql } from '@/lib/server/db';
+import { sql, testOrder } from '@/lib/server/db';
 import { testAccessMap, availableCredits } from '@/lib/server/access';
 import { rupees } from '@/lib/server/shell';
 
@@ -8,7 +8,6 @@ export const metadata = { title: 'Tests' };
 
 const markOf = (name: string) => name.replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
-const TYPE_ORDER = ['full_mock', 'pyq', 'sectional', 'topic', 'daily', 'custom'];
 const TYPE_HEAD: Record<string, string> = { full_mock: 'Full mocks', pyq: 'Previous year papers', sectional: 'Sectional tests', topic: 'Topic tests', daily: 'Daily tests', custom: 'Other tests' };
 const liveTest = () => sql`t.status = 'live' and (t.live_from is null or t.live_from <= now())`;
 
@@ -35,7 +34,7 @@ export default async function Tests({ searchParams }: { searchParams: Promise<{ 
       from tests t, catalog_nodes n
       where n.id = ${id} and ${liveTest()} and (t.node_id = n.id or (n.course_id is not null
         and exists (select 1 from course_tests ct where ct.course_id = n.course_id and ct.test_id = t.id) and (n.test_types is null or t.type = any(n.test_types))))
-      order by array_position(${TYPE_ORDER}::text[], t.type), t.sort, t.created_at limit 300`,
+      order by ${testOrder()} limit 300`,
     // The student's own courses, shown on the first Tests screen.
     nodeParam ? Promise.resolve([]) : sql`
       select distinct on (c.id) c.slug, c.name, c.sort,
@@ -173,7 +172,7 @@ async function CourseTests({ userId, slug }: { userId: string; slug: string }) {
     select t.id, t.slug, t.name, t.type, t.duration_min, t.is_free, (select count(*) from test_questions q where q.test_id = t.id)::int as q
     from course_tests ct join tests t on t.id = ct.test_id
     where ct.course_id = ${course.id} and ${liveTest()}
-    order by array_position(${TYPE_ORDER}::text[], t.type), t.sort, t.created_at`;
+    order by ${testOrder()}`;
   return (
     <>
       <nav className="crumbs" aria-label="Breadcrumb"><Link href="/tests">Tests</Link><span className="sep">/</span><span aria-current="page">{course.name}</span></nav>
