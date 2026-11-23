@@ -68,3 +68,17 @@ export const sql = globalThis.__deSql ?? (globalThis.__deSql = connect());
 export const notInMocks = () => sql`not exists (
   select 1 from test_questions tq join tests t on t.id = tq.test_id
   where tq.question_id = q.id and t.type in ('full_mock', 'sectional', 'pyq'))`;
+
+/**
+ * How tests are listed everywhere: by type (mocks, previous papers, sectionals, topic tests, daily), then an
+ * admin-set position if any, then by name with its number read as a number ("Mock 2" before "Mock 10";
+ * a re-uploaded "SNAP Mock 3 v2" sits after Mock 2, not at the end). Daily tests: newest first.
+ * Use in a query on `tests t`.
+ */
+export const testOrder = () => sql`
+  array_position('{full_mock,pyq,sectional,topic,daily,practice,custom}'::text[], t.type),
+  t.position nulls last,
+  case when t.type = 'daily' then coalesce(t.live_from, t.created_at) end desc nulls last,
+  lower(trim(coalesce(substring(t.name from '^[^0-9]*'), ''))),
+  coalesce((regexp_match(t.name, '[0-9]+'))[1]::numeric, 0),
+  lower(t.name), t.created_at`;

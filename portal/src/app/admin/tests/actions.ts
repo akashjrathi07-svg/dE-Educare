@@ -148,6 +148,8 @@ export type TestEdit = {
   name: string; slug: string; minutes: number; free: boolean; courses: string[]; nodeId: string;
   solutions: 'after_submit' | 'after_window'; windowEnd: string; ranking: 'all_india' | 'batch' | 'none';
   status: 'live' | 'draft' | 'archived' | 'schedule'; date: string; time: string;
+  /** Place in lists, 1 = first; '' = automatic (by the number in the name). */
+  position: string;
 };
 
 const done = () => { revalidatePath('/admin/tests'); revalidatePath('/tests'); revalidatePath('/admin/courses'); };
@@ -170,12 +172,14 @@ export async function updateTest(id: string, e: TestEdit) {
   const status = e.status === 'schedule' ? 'live' : e.status;
   const liveFrom = e.status === 'schedule' ? istTimestamp(e.date, e.time || '09:00') : null;
   const windowEnd = e.solutions === 'after_window' ? istTimestamp(e.windowEnd, '23:59') : null;
+  const position = String(e.position ?? '').trim() === '' ? null : Math.round(Number(e.position));
+  if (position !== null && !(position >= 1 && position <= 9999)) return { ok: false, message: 'Position is a number from 1 (first), or empty for automatic order' };
   const courses = uuids(e.courses);
   const [t] = await sql`select id, duration_min from tests where id = ${id}`;
   if (!t) return { ok: false, message: 'Test not found' };
   await sql.begin(async tx => {
     await tx`update tests set name = ${name}, slug = ${slug}, duration_min = ${minutes}, is_free = ${e.free}, node_id = ${e.nodeId || null},
-      solutions_visibility = ${e.solutions}, window_end = ${windowEnd}, ranking = ${e.ranking}, status = ${status}, live_from = ${liveFrom} where id = ${id}`;
+      solutions_visibility = ${e.solutions}, window_end = ${windowEnd}, ranking = ${e.ranking}, status = ${status}, live_from = ${liveFrom}, position = ${position} where id = ${id}`;
     // A whole-test timer change keeps section timers in proportion when the test has them.
     if (t.duration_min !== minutes) await tx`update test_sections set duration_min = greatest(1, round(duration_min * ${minutes}::numeric / ${t.duration_min})) where test_id = ${id} and duration_min is not null`;
     await tx`delete from course_tests where test_id = ${id} and not (course_id = any(${courses}::uuid[]))`;

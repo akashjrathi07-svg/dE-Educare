@@ -6,7 +6,7 @@ import { deleteTests, duplicateTests, setTestCourses, setTestStatus, updateTest,
 
 type Row = {
   id: string; slug: string; name: string; type: string; typeLabel: string; exam: string; q: number; minutes: number; free: boolean; status: string;
-  liveFrom: string; windowEnd: string; nodeId: string; solutions: string; ranking: string; views: number; started: number; attempts: number; courseIds: string[];
+  position: number | null; liveFrom: string; windowEnd: string; nodeId: string; solutions: string; ranking: string; views: number; started: number; attempts: number; courseIds: string[];
 };
 type Course = { id: string; name: string; exam: string | null };
 type Node = { id: string; path: string; exam: string };
@@ -118,6 +118,7 @@ function EditTest({ row, courses, nodes, onClose, copyLink, onDelete }: { row: R
     name: row.name, slug: row.slug, minutes: row.minutes, free: row.free, courses: row.courseIds, nodeId: row.nodeId,
     solutions: row.solutions as TestEdit['solutions'], windowEnd: win.date, ranking: row.ranking as TestEdit['ranking'],
     status: row.status === 'scheduled' ? 'schedule' : (row.status as TestEdit['status']), date: live.date, time: live.time,
+    position: row.position == null ? '' : String(row.position),
   });
   const set = (p: Partial<TestEdit>) => setF(x => ({ ...x, ...p }));
   const { busy, run } = useAction();
@@ -150,6 +151,9 @@ function EditTest({ row, courses, nodes, onClose, copyLink, onDelete }: { row: R
         <select className="input" value={f.nodeId} onChange={e => set({ nodeId: e.target.value })}>
           <option value="">Only in its courses' folders</option>{nodes.filter(n => n.exam === row.exam).map(n => <option key={n.id} value={n.id}>{n.path}</option>)}
         </select>
+      </Field>
+      <Field label="Position in lists" hint="Leave empty: tests are ordered by the number in their name (Mock 1, 2, 3 … 10). Enter 1 to show this test first, 2 second, and so on.">
+        <input className="input" type="number" min={1} max={9999} placeholder="Automatic" value={f.position} onChange={e => set({ position: e.target.value })} />
       </Field>
       <Field label="Status" group>
         <Chips options={['live', 'schedule', 'draft', 'archived']} labels={{ live: 'Live', schedule: 'Scheduled', draft: 'Draft', archived: 'Archived' }} value={f.status} onChange={v => set({ status: v as TestEdit['status'] })} />
